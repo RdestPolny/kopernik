@@ -13,8 +13,8 @@ from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
-FIRECRAWL_KEY = os.getenv("FIRECRAWL_KEY", "fc-c8d4232ea9ce4562821cc5f29723bde3")
-GEMINI_KEY = os.getenv("GEMINI_KEY", "AIzaSyBeRdBiiG9cVE-mzRoxY7-X4VdrXcMEKPg")
+FIRECRAWL_KEY = os.environ["FIRECRAWL_KEY"]
+GEMINI_KEY = os.environ["GEMINI_KEY"]
 GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape"
