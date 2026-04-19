@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 FIRECRAWL_KEY = os.environ["FIRECRAWL_KEY"]
 GEMINI_KEY = os.environ["GEMINI_KEY"]
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape"
 
@@ -35,7 +35,7 @@ def scrape_with_firecrawl(url: str) -> dict:
     resp = requests.post(
         FIRECRAWL_URL,
         headers={"Authorization": f"Bearer {FIRECRAWL_KEY}", "Content-Type": "application/json"},
-        json={"url": url, "formats": ["markdown", "html"], "onlyMainContent": False},
+        json={"url": url, "formats": ["markdown", "html", "rawHtml", "links"], "onlyMainContent": False},
         timeout=90,
     )
     resp.raise_for_status()
@@ -43,6 +43,57 @@ def scrape_with_firecrawl(url: str) -> dict:
     if not data.get("success"):
         raise ValueError(f"Firecrawl error: {data}")
     return data.get("data", {})
+
+
+def _classify_links(base_url: str, links: list) -> list[str]:
+    """Pick up to 4 additional pages: service, about, contact, article."""
+    parsed = urlparse(base_url)
+    domain = parsed.netloc
+    service_kw = ["/uslugi", "/oferta", "/services", "/service", "/produkty", "/produkt", "/cennik"]
+    about_kw = ["/o-nas", "/about", "/o-firmie", "/kim-jestesmy", "/o-mnie", "/zespol", "/team"]
+    contact_kw = ["/kontakt", "/contact"]
+    article_kw = ["/blog/", "/artykul", "/article/", "/post/", "/news/", "/poradnik", "/wiedza"]
+    buckets: dict[str, list] = {"article": [], "service": [], "about": [], "contact": []}
+    for link in (links or []):
+        if not link:
+            continue
+        lp = urlparse(link)
+        if lp.netloc and lp.netloc != domain:
+            continue
+        path = lp.path.lower()
+        if any(k in path for k in article_kw) and path.count("/") >= 2:
+            buckets["article"].append(link)
+        elif any(k in path for k in contact_kw):
+            buckets["contact"].append(link)
+        elif any(k in path for k in about_kw):
+            buckets["about"].append(link)
+        elif any(k in path for k in service_kw):
+            buckets["service"].append(link)
+    selected = []
+    for cat in ["service", "about", "contact", "article"]:
+        if buckets[cat]:
+            selected.append(buckets[cat][0])
+    return selected[:4]
+
+
+def crawl_domain_pages(url: str) -> tuple[dict, str, list[str]]:
+    """Scrape homepage + up to 4 classified subpages. Returns (homepage_data, combined_md, crawled_urls)."""
+    parsed = urlparse(url)
+    base_url = f"{parsed.scheme}://{parsed.netloc}"
+    homepage = scrape_with_firecrawl(url)
+    additional_urls = _classify_links(base_url, homepage.get("links", []))
+    crawled = [url]
+    parts = [f"=== STRONA GŁÓWNA: {url} ===\n{homepage.get('markdown', '')}"]
+    for extra in additional_urls:
+        try:
+            data = scrape_with_firecrawl(extra)
+            md = data.get("markdown", "")
+            if md:
+                parts.append(f"=== PODSTRONA ({extra}) ===\n{md}")
+                crawled.append(extra)
+        except Exception:
+            pass
+    return homepage, "\n\n".join(parts), crawled
 
 
 # --- TECHNICAL CHECKS ---
@@ -99,30 +150,33 @@ def check_sitemap(base_url: str) -> dict:
     return {"exists": False}
 
 
-def analyze_html(html: str, url: str) -> dict:
-    if not html:
+def analyze_html(html: str, url: str, raw_html: str = "") -> dict:
+    if not html and not raw_html:
         return {}
+    # Use rawHtml for meta/schema (has full <head>), fall back to html
+    full = raw_html if raw_html else html
+    body = html if html else raw_html
     sem = {
-        "article": bool(re.search(r"<article[\s>]", html, re.I)),
-        "main": bool(re.search(r"<main[\s>]", html, re.I)),
-        "section": bool(re.search(r"<section[\s>]", html, re.I)),
+        "article": bool(re.search(r"<article[\s>]", body, re.I)),
+        "main": bool(re.search(r"<main[\s>]", body, re.I)),
+        "section": bool(re.search(r"<section[\s>]", body, re.I)),
     }
-    h1 = len(re.findall(r"<h1[\s>]", html, re.I))
-    h2 = len(re.findall(r"<h2[\s>]", html, re.I))
-    h3 = len(re.findall(r"<h3[\s>]", html, re.I))
+    h1 = len(re.findall(r"<h1[\s>]", body, re.I))
+    h2 = len(re.findall(r"<h2[\s>]", body, re.I))
+    h3 = len(re.findall(r"<h3[\s>]", body, re.I))
     meta = {
-        "description": bool(re.search(r'<meta\s[^>]*name=["\']description["\']', html, re.I)),
-        "og_title": bool(re.search(r'<meta\s[^>]*property=["\']og:title["\']', html, re.I)),
-        "og_description": bool(re.search(r'<meta\s[^>]*property=["\']og:description["\']', html, re.I)),
-        "og_image": bool(re.search(r'<meta\s[^>]*property=["\']og:image["\']', html, re.I)),
-        "canonical": bool(re.search(r'<link\s[^>]*rel=["\']canonical["\']', html, re.I)),
+        "description": bool(re.search(r'<meta\s[^>]*name=["\']description["\']', full, re.I)),
+        "og_title": bool(re.search(r'<meta\s[^>]*property=["\']og:title["\']', full, re.I)),
+        "og_description": bool(re.search(r'<meta\s[^>]*property=["\']og:description["\']', full, re.I)),
+        "og_image": bool(re.search(r'<meta\s[^>]*property=["\']og:image["\']', full, re.I)),
+        "canonical": bool(re.search(r'<link\s[^>]*rel=["\']canonical["\']', full, re.I)),
     }
     schema = {
-        "any": bool(re.search(r"application/ld\+json", html, re.I)),
-        "faq": bool(re.search(r'"FAQPage"', html)),
-        "article": bool(re.search(r'"(Article|NewsArticle|BlogPosting)"', html)),
-        "breadcrumb": bool(re.search(r'"BreadcrumbList"', html)),
-        "organization": bool(re.search(r'"Organization"', html)),
+        "any": bool(re.search(r"application/ld\+json", full, re.I)),
+        "faq": bool(re.search(r'"FAQPage"', full)),
+        "article": bool(re.search(r'"(Article|NewsArticle|BlogPosting)"', full)),
+        "breadcrumb": bool(re.search(r'"BreadcrumbList"', full)),
+        "organization": bool(re.search(r'"Organization"', full)),
     }
     return {
         "semantic_html5": sem,
@@ -165,83 +219,86 @@ def build_tech_scores(robots: dict, sitemap: dict, html_checks: dict) -> dict:
 
 # --- GEMINI ANALYSIS ---
 
-GEMINI_PROMPT = """You are an expert AI SEO auditor specializing in optimizing content for LLM crawlers (GPTBot, PerplexityBot, ClaudeBot), RAG retrieval systems, and AI citation algorithms used by ChatGPT, Perplexity AI, and similar systems.
+GEMINI_PROMPT = """Jesteś ekspertem AI SEO audytorem specjalizującym się w optymalizacji treści dla crawlerów LLM (GPTBot, PerplexityBot, ClaudeBot), systemów RAG i algorytmów cytowania AI używanych przez ChatGPT, Perplexity AI i podobne systemy.
 
-Evaluate based on:
-- E-E-A-T with REAL model (Relevant, Evidence, Accessible, Legitimate)
-- Topical Authority and cluster/pillar content architecture
-- RAG Extractability — how easily LLMs can extract and cite facts
-- Query fan-out coverage — does content answer multiple related sub-questions?
+WAŻNE: Wszystkie wartości tekstowe w odpowiedzi JSON (pola "note", "overall_assessment", elementy "content_gaps" i "top_recommendations") MUSZĄ być napisane w języku polskim.
 
-Score each factor: 0=absent/poor, 1=partial, 2=good/present. Be critical and objective.
+Oceń na podstawie:
+- E-E-A-T z modelem REAL (Relevant, Evidence, Accessible, Legitimate)
+- Topical Authority i architektura klastrów/filarów treści
+- RAG Extractability — jak łatwo LLM może wyodrębnić i cytować fakty
+- Query fan-out coverage — czy treść odpowiada na wiele powiązanych podzapytań?
 
-PAGE URL: {url}
-PAGE TITLE: {title}
+Oceń każdy czynnik: 0=brak/słaby, 1=częściowy, 2=dobry/obecny. Bądź krytyczny i obiektywny.
+Analizujesz treść z WIELU PODSTRON tej samej domeny — oceniaj domenę jako całość.
+
+GŁÓWNY URL: {url}
+TYTUŁ STRONY: {title}
 META DESCRIPTION: {meta_desc}
-WORD COUNT: {word_count}
+ŁĄCZNA LICZBA SŁÓW: {word_count}
 
-SCRAPED CONTENT (markdown):
+TREŚĆ STRON (markdown, wiele podstron):
 ---
 {content}
 ---
 
-Return ONLY valid JSON (no markdown, no explanation):
+Zwróć TYLKO poprawny JSON (bez markdown, bez wyjaśnień):
 {{
   "eeat": {{
-    "author_bio_present": {{"score": 0, "note": "specific observation"}},
-    "author_credentials_stated": {{"score": 0, "note": "specific observation"}},
-    "publication_date_visible": {{"score": 0, "note": "specific observation"}},
-    "last_updated_date_visible": {{"score": 0, "note": "specific observation"}},
-    "external_authoritative_citations": {{"score": 0, "note": "specific observation"}},
-    "firsthand_experience_signals": {{"score": 0, "note": "specific observation"}},
-    "unique_data_or_original_statistics": {{"score": 0, "note": "specific observation"}},
-    "sources_cited_inline": {{"score": 0, "note": "specific observation"}},
-    "about_or_contact_page_linked": {{"score": 0, "note": "specific observation"}},
-    "content_not_generic_ai_fluff": {{"score": 0, "note": "specific observation"}}
+    "author_bio_present": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "author_credentials_stated": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "publication_date_visible": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "last_updated_date_visible": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "external_authoritative_citations": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "firsthand_experience_signals": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "unique_data_or_original_statistics": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "sources_cited_inline": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "about_or_contact_page_linked": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "content_not_generic_ai_fluff": {{"score": 0, "note": "konkretna obserwacja po polsku"}}
   }},
   "topical_authority": {{
-    "single_clear_topic_focus": {{"score": 0, "note": "specific observation"}},
-    "internal_links_to_related_content": {{"score": 0, "note": "specific observation"}},
-    "pillar_or_cluster_page_structure_signals": {{"score": 0, "note": "specific observation"}},
-    "content_depth_comprehensive": {{"score": 0, "note": "specific observation"}},
-    "multiple_subtopics_via_h2_sections": {{"score": 0, "note": "specific observation"}},
-    "direct_definitions_or_answers_present": {{"score": 0, "note": "specific observation"}},
-    "fan_out_query_coverage": {{"score": 0, "note": "specific observation"}},
-    "content_freshness_or_timeliness_signals": {{"score": 0, "note": "specific observation"}},
-    "unique_angle_or_original_pov": {{"score": 0, "note": "specific observation"}},
-    "clear_user_value_proposition": {{"score": 0, "note": "specific observation"}}
+    "single_clear_topic_focus": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "internal_links_to_related_content": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "pillar_or_cluster_page_structure_signals": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "content_depth_comprehensive": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "multiple_subtopics_via_h2_sections": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "direct_definitions_or_answers_present": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "fan_out_query_coverage": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "content_freshness_or_timeliness_signals": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "unique_angle_or_original_pov": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "clear_user_value_proposition": {{"score": 0, "note": "konkretna obserwacja po polsku"}}
   }},
   "rag_extractability": {{
-    "headings_formatted_as_questions": {{"score": 0, "note": "specific observation"}},
-    "faq_section_present": {{"score": 0, "note": "specific observation"}},
-    "direct_answer_near_content_start": {{"score": 0, "note": "specific observation"}},
-    "numbered_lists_or_bullets_for_steps": {{"score": 0, "note": "specific observation"}},
-    "table_of_contents_present": {{"score": 0, "note": "specific observation"}},
-    "key_facts_or_stats_scannable": {{"score": 0, "note": "specific observation"}},
-    "summary_or_tldr_section": {{"score": 0, "note": "specific observation"}},
-    "concise_extractable_definitions": {{"score": 0, "note": "specific observation"}},
-    "data_tables_present": {{"score": 0, "note": "specific observation"}},
-    "overall_scannable_structure": {{"score": 0, "note": "specific observation"}}
+    "headings_formatted_as_questions": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "faq_section_present": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "direct_answer_near_content_start": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "numbered_lists_or_bullets_for_steps": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "table_of_contents_present": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "key_facts_or_stats_scannable": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "summary_or_tldr_section": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "concise_extractable_definitions": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "data_tables_present": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
+    "overall_scannable_structure": {{"score": 0, "note": "konkretna obserwacja po polsku"}}
   }},
   "content_gaps": [
-    "Specific missing topic or angle",
-    "Specific missing topic or angle",
-    "Specific missing topic or angle",
-    "Specific missing topic or angle"
+    "Konkretny brakujący temat lub kąt widzenia po polsku",
+    "Konkretny brakujący temat lub kąt widzenia po polsku",
+    "Konkretny brakujący temat lub kąt widzenia po polsku",
+    "Konkretny brakujący temat lub kąt widzenia po polsku"
   ],
   "top_recommendations": [
-    "Priority 1 (highest impact): concrete action",
-    "Priority 2: concrete action",
-    "Priority 3: concrete action",
-    "Priority 4: concrete action",
-    "Priority 5: concrete action"
+    "Priorytet 1 (największy wpływ): konkretne działanie po polsku",
+    "Priorytet 2: konkretne działanie po polsku",
+    "Priorytet 3: konkretne działanie po polsku",
+    "Priorytet 4: konkretne działanie po polsku",
+    "Priorytet 5: konkretne działanie po polsku"
   ],
-  "overall_assessment": "2-3 sentence evaluation of AI-readiness with main strengths and critical blockers."
+  "overall_assessment": "Ocena 2-3 zdania po polsku: gotowość AI, główne mocne strony i krytyczne blokery cytowania przez LLM."
 }}"""
 
 
 def analyze_with_gemini(url: str, markdown: str, title: str, meta_desc: str) -> dict:
-    content = markdown[:9000] if len(markdown) > 9000 else markdown
+    content = markdown[:12000] if len(markdown) > 12000 else markdown
     prompt = GEMINI_PROMPT.format(
         url=url, title=title, meta_desc=meta_desc,
         word_count=len(markdown.split()), content=content,
@@ -288,22 +345,23 @@ def audit_stream(url: str):
         parsed = urlparse(url)
         base_url = f"{parsed.scheme}://{parsed.netloc}"
 
-        yield event("progress", {"message": "Scrapowanie strony przez Firecrawl...", "pct": 10})
-        scraped = scrape_with_firecrawl(url)
-        markdown = scraped.get("markdown", "")
-        html = scraped.get("html", "")
-        meta = scraped.get("metadata", {})
+        yield event("progress", {"message": "Wykrywanie i scrapowanie podstron domeny (max 5)...", "pct": 10})
+        homepage, combined_markdown, crawled_urls = crawl_domain_pages(url)
+        meta = homepage.get("metadata", {})
         title = meta.get("title", "")
         meta_desc = meta.get("description", "")
+        raw_html = homepage.get("rawHtml", "")
+        html = homepage.get("html", "")
+        yield event("progress", {"message": f"Scrapowano {len(crawled_urls)} podstron: {', '.join(crawled_urls)}", "pct": 30})
 
-        yield event("progress", {"message": "Analiza techniczna (robots.txt, sitemap, HTML)...", "pct": 35})
+        yield event("progress", {"message": "Analiza techniczna (robots.txt, sitemap, HTML)...", "pct": 40})
         robots = check_robots_txt(base_url)
         sitemap = check_sitemap(base_url)
-        html_checks = analyze_html(html, url)
+        html_checks = analyze_html(html, url, raw_html)
         tech_scores = build_tech_scores(robots, sitemap, html_checks)
 
         yield event("progress", {"message": f"Analiza treści przez Gemini ({GEMINI_MODEL})...", "pct": 60})
-        gemini = analyze_with_gemini(url, markdown, title, meta_desc)
+        gemini = analyze_with_gemini(url, combined_markdown, title, meta_desc)
 
         yield event("progress", {"message": "Obliczanie wyników...", "pct": 90})
         eeat = category_score(gemini.get("eeat", {}))
@@ -314,6 +372,7 @@ def audit_stream(url: str):
 
         result = {
             "url": url,
+            "crawled_urls": crawled_urls,
             "title": title,
             "meta_desc": meta_desc,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
