@@ -15,7 +15,7 @@ from pydantic import BaseModel
 
 FIRECRAWL_KEY = os.getenv("FIRECRAWL_KEY", "fc-c8d4232ea9ce4562821cc5f29723bde3")
 GEMINI_KEY = os.getenv("GEMINI_KEY", "AIzaSyBeRdBiiG9cVE-mzRoxY7-X4VdrXcMEKPg")
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3-flash-preview")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-flash-latest")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape"
 
