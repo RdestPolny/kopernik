@@ -252,7 +252,7 @@ def analyze_with_gemini(url: str, markdown: str, title: str, meta_desc: str) -> 
         headers={"Content-Type": "application/json"},
         json={
             "contents": [{"parts": [{"text": prompt}]}],
-            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4096, "responseMimeType": "application/json"},
+            "generationConfig": {"temperature": 0.1, "maxOutputTokens": 4096},
         },
         timeout=90,
     )
