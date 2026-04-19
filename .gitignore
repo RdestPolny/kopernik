@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.env
+*.json
+audit_report.html
+.DS_Store

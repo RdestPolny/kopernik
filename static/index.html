@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>AI SEO Audit</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#0f172a;--surface:#1e293b;--surface2:#263348;--border:#334155;
+  --text:#e2e8f0;--muted:#94a3b8;--accent:#38bdf8;
+  --green:#4ade80;--yellow:#facc15;--red:#f87171;
+  --green-bg:#052e16;--yellow-bg:#1c1100;--red-bg:#2d0a0a;
+}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;line-height:1.6}
+
+/* HERO */
+.hero{text-align:center;padding:60px 24px 40px;background:linear-gradient(180deg,#0c1829 0%,var(--bg) 100%)}
+.hero h1{font-size:clamp(1.8em,4vw,2.8em);font-weight:800;letter-spacing:-1px;margin-bottom:10px}
+.hero h1 span{background:linear-gradient(90deg,#38bdf8,#818cf8);-webkit-background-clip:text;-webkit-text-fill-color:transparent}
+.hero p{color:var(--muted);font-size:1.05em;max-width:540px;margin:0 auto 32px}
+
+/* FORM */
+.search-box{display:flex;gap:10px;max-width:680px;margin:0 auto;flex-wrap:wrap}
+.search-box input{
+  flex:1;min-width:200px;padding:14px 18px;
+  background:var(--surface);border:1px solid var(--border);border-radius:10px;
+  color:var(--text);font-size:1em;outline:none;transition:border .2s
+}
+.search-box input:focus{border-color:var(--accent)}
+.search-box input::placeholder{color:var(--muted)}
+.btn-audit{
+  padding:14px 28px;background:var(--accent);color:#0f172a;
+  border:none;border-radius:10px;font-size:1em;font-weight:700;
+  cursor:pointer;white-space:nowrap;transition:opacity .15s
+}
+.btn-audit:hover{opacity:.85}
+.btn-audit:disabled{opacity:.5;cursor:not-allowed}
+
+/* CONTAINER */
+.container{max-width:1100px;margin:0 auto;padding:24px}
+
+/* PROGRESS */
+#progress-section{display:none;text-align:center;padding:40px 24px}
+.progress-bar-wrap{background:var(--surface);border-radius:20px;height:8px;max-width:400px;margin:16px auto;overflow:hidden}
+.progress-bar{height:100%;background:linear-gradient(90deg,#38bdf8,#818cf8);border-radius:20px;transition:width .5s ease;width:0%}
+.progress-msg{color:var(--muted);font-size:.9em;margin-top:8px}
+.spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* RESULTS */
+#results-section{display:none}
+
+/* SCORE GRID */
+.score-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:14px;margin-bottom:24px}
+.score-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px;text-align:center}
+.score-card.main{border-color:var(--accent);background:linear-gradient(135deg,#0c2233,var(--surface))}
+.score-lbl{font-size:.75em;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px}
+.score-num{font-size:2.6em;font-weight:800;line-height:1}
+.score-tag{font-size:.75em;font-weight:600;margin-top:6px}
+.good{color:var(--green)}.warn{color:var(--yellow)}.bad{color:var(--red)}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:24px;margin-bottom:18px}
+.card h2{font-size:1.05em;font-weight:700;margin-bottom:16px;display:flex;align-items:center;gap:8px}
+.assessment{background:var(--surface2);border-left:3px solid var(--accent);padding:14px 18px;border-radius:0 8px 8px 0;color:var(--text);font-size:.95em}
+
+/* TABLE */
+table{width:100%;border-collapse:collapse}
+th{padding:9px 12px;text-align:left;font-size:.75em;color:var(--muted);text-transform:uppercase;letter-spacing:.3px;border-bottom:1px solid var(--border)}
+td{padding:8px 12px;border-bottom:1px solid #1e2d3d;font-size:.88em;vertical-align:top}
+tr:last-child td{border-bottom:none}
+tr.row-good{background:#0a1f0a}tr.row-warn{background:#1c1500}tr.row-bad{background:#1f0a0a}
+.status-icon{font-weight:700;text-align:center!important;width:50px}
+
+/* BOTS */
+.bots-row{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:16px}
+.bot-badge{padding:4px 12px;border-radius:20px;font-size:.78em;font-weight:600}
+.bot-ok{background:#052e16;color:var(--green);border:1px solid #166534}
+.bot-bad{background:#2d0a0a;color:var(--red);border:1px solid #7f1d1d}
+
+/* INFO GRID */
+.info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:10px;margin-bottom:16px}
+.info-item{background:var(--surface2);border-radius:8px;padding:10px 14px}
+.info-item strong{display:block;color:var(--muted);font-size:.72em;text-transform:uppercase;margin-bottom:3px}
+
+/* GAPS / RECS */
+.gap-list{list-style:none;padding:0}
+.gap-list li{padding:8px 12px;margin:5px 0;border-radius:6px;background:var(--red-bg);color:var(--red);border-left:3px solid var(--red);font-size:.9em}
+.rec-list{padding-left:20px}
+.rec-list li{padding:6px 0;font-size:.92em;border-bottom:1px solid var(--border)}
+.rec-list li:last-child{border-bottom:none}
+
+/* ERROR */
+.error-box{background:#2d0a0a;border:1px solid #7f1d1d;border-radius:10px;padding:20px;color:var(--red);text-align:center}
+
+/* FOOTER */
+footer{text-align:center;padding:32px;color:var(--muted);font-size:.8em}
+
+@media(max-width:600px){
+  .hero{padding:40px 16px 28px}
+  .search-box{flex-direction:column}
+  .btn-audit{width:100%}
+}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <h1>🤖 <span>AI SEO Audit</span></h1>
+  <p>Sprawdź gotowość strony pod kątem crawlerów LLM, cytowań w ChatGPT/Perplexity oraz czynników E-E-A-T i Topical Authority.</p>
+  <div class="search-box">
+    <input type="url" id="url-input" placeholder="https://twojastrona.pl" />
+    <button class="btn-audit" id="audit-btn" onclick="startAudit()">Audituj →</button>
+  </div>
+</div>
+
+<div class="container">
+  <div id="progress-section">
+    <div class="spinner"></div>
+    <div class="progress-bar-wrap"><div class="progress-bar" id="prog-bar"></div></div>
+    <div class="progress-msg" id="prog-msg">Inicjalizacja...</div>
+  </div>
+
+  <div id="error-section" style="display:none">
+    <div class="error-box">
+      <strong>Błąd audytu</strong><br>
+      <span id="error-msg"></span>
+    </div>
+  </div>
+
+  <div id="results-section"></div>
+</div>
+
+<footer>Powered by Firecrawl + Gemini (gemini-3.1-flash-lite-preview) | AI SEO Audit</footer>
+
+<script>
+const urlInput = document.getElementById('url-input');
+urlInput.addEventListener('keydown', e => { if (e.key === 'Enter') startAudit(); });
+
+function startAudit() {
+  let url = urlInput.value.trim();
+  if (!url) { urlInput.focus(); return; }
+  if (!url.startsWith('http')) url = 'https://' + url;
+
+  document.getElementById('audit-btn').disabled = true;
+  document.getElementById('progress-section').style.display = 'block';
+  document.getElementById('results-section').style.display = 'none';
+  document.getElementById('results-section').innerHTML = '';
+  document.getElementById('error-section').style.display = 'none';
+  setProgress(5, 'Łączenie z Firecrawl...');
+
+  const es = new EventSource(`/audit/stream?url=${encodeURIComponent(url)}`);
+
+  es.onmessage = e => {
+    const data = JSON.parse(e.data);
+    if (data.step === 'progress') {
+      setProgress(data.pct, data.message);
+    } else if (data.step === 'done') {
+      es.close();
+      setProgress(100, 'Gotowe!');
+      setTimeout(() => {
+        document.getElementById('progress-section').style.display = 'none';
+        renderResults(data.result);
+        document.getElementById('audit-btn').disabled = false;
+      }, 400);
+    } else if (data.step === 'error') {
+      es.close();
+      document.getElementById('progress-section').style.display = 'none';
+      document.getElementById('error-section').style.display = 'block';
+      document.getElementById('error-msg').textContent = data.message;
+      document.getElementById('audit-btn').disabled = false;
+    }
+  };
+
+  es.onerror = () => {
+    es.close();
+    document.getElementById('progress-section').style.display = 'none';
+    document.getElementById('error-section').style.display = 'block';
+    document.getElementById('error-msg').textContent = 'Połączenie przerwane. Spróbuj ponownie.';
+    document.getElementById('audit-btn').disabled = false;
+  };
+}
+
+function setProgress(pct, msg) {
+  document.getElementById('prog-bar').style.width = pct + '%';
+  document.getElementById('prog-msg').textContent = msg;
+}
+
+function scoreClass(s) {
+  return s >= 70 ? 'good' : s >= 45 ? 'warn' : 'bad';
+}
+function scoreLabel(s) {
+  return s >= 70 ? 'Dobry' : s >= 45 ? 'Wymaga pracy' : 'Krytyczny';
+}
+function factorName(k) {
+  return k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+}
+
+function scoreCard(label, score, main = false) {
+  const cls = scoreClass(score);
+  return `<div class="score-card${main ? ' main' : ''}">
+    <div class="score-lbl">${label}</div>
+    <div class="score-num ${cls}">${score}%</div>
+    <div class="score-tag ${cls}">${scoreLabel(score)}</div>
+  </div>`;
+}
+
+function factorRows(factors) {
+  return Object.entries(factors).map(([k, v]) => {
+    const s = v.score;
+    const rowCls = s === 2 ? 'row-good' : s === 1 ? 'row-warn' : 'row-bad';
+    const icon = s === 2 ? '<span class="good">✓</span>' : s === 1 ? '<span class="warn">~</span>' : '<span class="bad">✗</span>';
+    return `<tr class="${rowCls}">
+      <td>${factorName(k)}</td>
+      <td class="status-icon">${icon}</td>
+      <td style="color:var(--muted)">${v.note || '—'}</td>
+    </tr>`;
+  }).join('');
+}
+
+function techRows(tech) {
+  return Object.entries(tech).map(([k, v]) => {
+    const rowCls = v === 2 ? 'row-good' : v === 1 ? 'row-warn' : 'row-bad';
+    const icon = v === 2 ? '<span class="good">✓</span>' : v === 1 ? '<span class="warn">~</span>' : '<span class="bad">✗</span>';
+    return `<tr class="${rowCls}">
+      <td>${factorName(k)}</td>
+      <td class="status-icon">${icon}</td>
+    </tr>`;
+  }).join('');
+}
+
+function renderResults(r) {
+  const sc = r.scores;
+  const g = r.gemini;
+  const robots = r.robots || {};
+  const sitemap = r.sitemap || {};
+  const hc = r.html_checks || {};
+
+  const botsHtml = Object.entries(robots.bots || {}).map(([bot, info]) => {
+    const ok = info.allowed;
+    return `<span class="bot-badge ${ok ? 'bot-ok' : 'bot-bad'}">${ok ? '✓' : '✗'} ${bot}</span>`;
+  }).join('') || '<span style="color:var(--muted);font-size:.85em">Brak wpisów dla botów AI</span>';
+
+  const gaps = (g.content_gaps || []).map(gap => `<li>${gap}</li>`).join('');
+  const recs = (g.top_recommendations || []).map(r => `<li>${r}</li>`).join('');
+
+  const crawlDelay = robots.crawl_delay ? `${robots.crawl_delay}s` : 'Nie ustawiono';
+  const sitemapInfo = sitemap.exists ? `✓ ${sitemap.url} (${sitemap.size_kb} KB)` : '✗ Nie znaleziono';
+
+  const html = `
+    <div class="score-grid">
+      ${scoreCard('Wynik Ogólny', sc.overall, true)}
+      ${scoreCard('E-E-A-T', sc.eeat)}
+      ${scoreCard('Topical Authority', sc.topical_authority)}
+      ${scoreCard('RAG Extractability', sc.rag_extractability)}
+      ${scoreCard('Techniczny AI-Bot', sc.technical)}
+    </div>
+
+    <div class="card">
+      <h2>💬 Ogólna Ocena AI-Readiness</h2>
+      <div class="assessment">${g.overall_assessment || '—'}</div>
+    </div>
+
+    <div class="card">
+      <h2>📋 E-E-A-T / Wiarygodność (Model REAL) <span class="${scoreClass(sc.eeat)}" style="font-size:.85em">${sc.eeat}%</span></h2>
+      <table>
+        <tr><th>Czynnik</th><th style="width:50px;text-align:center">Status</th><th>Obserwacja</th></tr>
+        ${factorRows(g.eeat || {})}
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>🏛️ Topical Authority <span class="${scoreClass(sc.topical_authority)}" style="font-size:.85em">${sc.topical_authority}%</span></h2>
+      <table>
+        <tr><th>Czynnik</th><th style="width:50px;text-align:center">Status</th><th>Obserwacja</th></tr>
+        ${factorRows(g.topical_authority || {})}
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>⚡ RAG Extractability <span class="${scoreClass(sc.rag_extractability)}" style="font-size:.85em">${sc.rag_extractability}%</span></h2>
+      <table>
+        <tr><th>Czynnik</th><th style="width:50px;text-align:center">Status</th><th>Obserwacja</th></tr>
+        ${factorRows(g.rag_extractability || {})}
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>🤖 Dostępność dla Botów AI <span class="${scoreClass(sc.technical)}" style="font-size:.85em">${sc.technical}%</span></h2>
+      <div class="info-grid">
+        <div class="info-item"><strong>robots.txt</strong>${robots.accessible ? '✓ Dostępny' : '✗ Niedostępny'}</div>
+        <div class="info-item"><strong>Crawl-Delay</strong>${crawlDelay}</div>
+        <div class="info-item"><strong>Sitemap XML</strong>${sitemapInfo}</div>
+        <div class="info-item"><strong>Rozmiar HTML</strong>${(hc.html_size_kb || '?')} KB</div>
+      </div>
+      <div class="bots-row">${botsHtml}</div>
+      <table>
+        <tr><th>Czynnik Techniczny</th><th style="width:50px;text-align:center">Status</th></tr>
+        ${techRows(r.tech_scores || {})}
+      </table>
+    </div>
+
+    <div class="card">
+      <h2 style="color:var(--red)">🔍 Luki w Treści (Content GAPs)</h2>
+      <ul class="gap-list">${gaps || '<li style="color:var(--muted)">Brak wykrytych luk</li>'}</ul>
+    </div>
+
+    <div class="card">
+      <h2 style="color:var(--accent)">💡 Top Rekomendacje</h2>
+      <ol class="rec-list">${recs}</ol>
+    </div>
+
+    <div style="text-align:center;padding:8px 0 16px;color:var(--muted);font-size:.78em">
+      Audyt: ${r.url} | ${r.timestamp}
+    </div>`;
+
+  const section = document.getElementById('results-section');
+  section.innerHTML = html;
+  section.style.display = 'block';
+  section.scrollIntoView({behavior: 'smooth', block: 'start'});
+}
+</script>
+</body>
+</html>
