@@ -41,7 +41,7 @@ h3{font-size:1.25rem;margin-bottom:0.4rem;font-style:normal;font-weight:600}
 button{font:inherit;cursor:pointer}
 
 /* --- TOP NAV --- */
-.topnav{position:sticky;top:0;z-index:50;background:var(--brand-bg);border-bottom:1px solid rgba(0,0,0,0.2)}
+.topnav{position:sticky;top:0;z-index:50;background:#1e3351;border-bottom:1px solid rgba(0,0,0,0.2)}
 .topnav-inner{max-width:1120px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;justify-content:space-between;gap:24px}
 .brand{display:flex;align-items:center;gap:14px;color:#fff;text-decoration:none}
 .brand img{height:38px;width:auto;display:block}
@@ -235,11 +235,7 @@ button{font:inherit;cursor:pointer}
   <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:center; flex-wrap:wrap;">
     <div class="hero-left" style="flex:1; min-width:300px; max-width:560px;">
       <div class="meta-line">
-        <span>Research-Grade Audit</span>
-        <span>·</span>
         <span>Perplexity · ChatGPT · Gemini</span>
-        <span>·</span>
-        <span>LLM-Readiness Index</span>
       </div>
       <h1>Czy Twoja strona istnieje dla <em>AI</em>?</h1>
       <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań — per podstrona, z dopasowaniem factor setu do typu strony.</p>
@@ -247,23 +243,23 @@ button{font:inherit;cursor:pointer}
         <input type="url" id="urlInput" placeholder="https://twojadomena.pl" required>
         <button type="submit" class="btn" id="submitBtn">Uruchom audyt</button>
       </form>
-      <div id="ctaContainer" style="display:none; margin-top:24px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:24px;">
-        <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px;">
-          <div id="ctaScoreWrapper"></div>
+      <div id="ctaContainer" style="display:none; margin-top:32px; background:#1e3351; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:32px; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
+        <div style="display:flex; align-items:center; gap:32px; flex-wrap:wrap; margin-bottom:24px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:24px;">
+          <div id="ctaScoreWrapper" style="flex-shrink:0;"></div>
           <div style="flex:1; min-width:200px;">
-            <h3 style="color:#fff; margin-bottom:6px; font-size:1.2rem; font-family:var(--sans);">Chcesz poprawić ten wynik?</h3>
-            <p style="color:#D8D8D5; font-size:0.95rem; line-height:1.5;">Umów się na konsultację i porozmawiajmy o dedykowanej strategii AI SEO dla Twojej firmy.</p>
+            <h3 style="color:#fff; margin-bottom:8px; font-size:1.25rem; font-family:var(--sans); font-weight:600;">Chcesz poprawić ten wynik?</h3>
+            <p style="color:#D8D8D5; font-size:0.95rem; line-height:1.5; margin:0; max-width:400px;">Umów się na konsultację i porozmawiajmy o dedykowanej strategii AI SEO dla Twojej firmy.</p>
           </div>
         </div>
         <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
-          <div style="display:flex; align-items:center; gap:14px;">
-            <img src="https://strategiczni.pl/wp-content/uploads/2022/02/dawid-kasprzyk-e1644931069495-300x300.jpg" alt="Dawid Kasprzyk" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
+          <div style="display:flex; align-items:center; gap:16px;">
+            <img src="https://strategiczni.pl/wp-content/uploads/2022/02/dawid-kasprzyk-e1644931069495-300x300.jpg" alt="Dawid Kasprzyk" style="width:64px; height:64px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
             <div>
-              <div style="font-family:var(--sans); font-weight:600; font-size:0.95rem; color:#fff; line-height:1.2;">Dawid Kasprzyk</div>
-              <div style="font-family:var(--mono); font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">CEO Strategiczni</div>
+              <div style="font-family:var(--sans); font-weight:600; font-size:1rem; color:#fff; line-height:1.2;">Dawid Kasprzyk</div>
+              <div style="font-family:var(--mono); font-size:0.75rem; color:rgba(255,255,255,0.4); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">CEO Strategiczni</div>
             </div>
           </div>
-          <a href="https://strategiczni.pl/kontakt" target="_blank" class="btn" style="text-decoration:none; display:inline-block; font-size:0.8rem; padding:12px 24px; color:#fff;">Umów konsultację</a>
+          <a href="https://strategiczni.pl/kontakt" target="_blank" class="btn" style="text-decoration:none; display:inline-block; font-size:0.85rem; padding:14px 28px; color:#fff; letter-spacing:0.1em; font-weight:600;">UMÓW KONSULTACJĘ</a>
         </div>
       </div>
       <div class="hint"></div>
@@ -438,8 +434,9 @@ function renderResult(r) {
   document.getElementById('heroScoreContainer').innerHTML = heroChartHtml;
   
   const ctaScoreHtml = `
-    <div class="score-big" style="color:${overallColor}; font-size:4.8rem; line-height:1; font-weight:700; font-family:var(--sans); letter-spacing:-0.04em;">
-      ${overall}<sub style="color:rgba(255,255,255,0.5); font-size:1.2rem; font-weight:500; letter-spacing:0; margin-left:2px;">/100</sub>
+    <div style="display:flex; align-items:baseline; color:${overallColor}; font-family:var(--sans); letter-spacing:-0.04em;">
+      <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
+      <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
     </div>
   `;
   document.getElementById('ctaScoreWrapper').innerHTML = ctaScoreHtml;
