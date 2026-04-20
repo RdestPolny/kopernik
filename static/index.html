@@ -91,14 +91,23 @@ button{font:inherit;cursor:pointer}
 /* (mode toggle moved to nav) */
 
 /* --- LAYOUT & TOC --- */
-.results-layout{display:grid;grid-template-columns:220px 1fr;gap:40px;align-items:start}
+.results-layout{display:grid;grid-template-columns:260px 1fr;gap:56px;align-items:start}
 @media(max-width:900px){.results-layout{grid-template-columns:1fr}}
-.sidebar-toc{position:sticky;top:90px;padding:20px 0}
+.sidebar-toc{position:sticky;top:100px;background:var(--paper-2);border:1px solid var(--rule);padding:24px;border-radius:4px}
 @media(max-width:900px){.sidebar-toc{display:none}}
+.toc-title{font-size:1.1rem;margin-bottom:16px;border-bottom:2px solid var(--ink);padding-bottom:12px;font-weight:700;font-family:var(--sans)}
 .sidebar-toc ul{list-style:none}
-.sidebar-toc li{margin-bottom:14px}
-.sidebar-toc a{font-weight:500;font-size:0.95rem;text-decoration:none;color:var(--muted);transition:color .15s}
-.sidebar-toc a:hover{color:var(--ink)}
+.sidebar-toc li{margin-bottom:12px}
+.sidebar-toc a{font-weight:500;font-size:0.95rem;text-decoration:none;color:var(--ink-2);display:block;padding:6px 8px;border-radius:3px;transition:all .15s;border:1px solid transparent}
+.sidebar-toc a:hover{background:var(--paper);border-color:var(--rule);color:var(--gold)}
+
+/* --- AUDIT TABLE --- */
+.audit-table{width:100%;border-collapse:collapse;margin-top:24px;font-size:0.95rem;background:var(--paper);border:1px solid var(--rule);border-radius:4px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.audit-table th,.audit-table td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--rule)}
+.audit-table th{background:var(--paper-2);font-weight:600;color:var(--ink);text-transform:uppercase;font-family:var(--mono);font-size:0.75rem;letter-spacing:0.05em}
+.audit-table td{vertical-align:top;line-height:1.6}
+.audit-table tr:last-child td{border-bottom:none}
+.audit-table tr:hover td{background:#fafafa}
 
 /* --- SCORE HEAD --- */
 .score-band{background:transparent;padding:0;margin:0}
@@ -399,6 +408,7 @@ function renderResult(r) {
   let html = `
     <div class="results-layout">
       <aside class="sidebar-toc">
+        <h3 class="toc-title">Spis treści</h3>
         <nav id="toc">
           <ul>
             <li><a href="#section-score">Wynik Ogólny</a></li>
@@ -560,45 +570,41 @@ function renderPageAudits(r, tab, mode) {
     const pageTech = Object.entries(pa.tech_scores || {})
       .filter(() => tab === 'accessibility');
 
-    const factorCards = pageFactors.map(([k, v]) => {
+    const factorRows = pageFactors.map(([k, v]) => {
       const fm = factorMeta[k] || {};
       const label = fm.label || k;
-      const cat = fm.category || 'tech';
       const sc = v.score;
       const cls = sc === 2 ? 'good' : sc === 1 ? 'warn' : 'bad';
       const scTxt = sc === 2 ? 'OK' : sc === 1 ? 'CZĘŚC.' : 'BRAK';
       const clientExp = r.client_mode?.client_factor_explanations?.[k] || '';
       return `
-        <div class="factor-card" data-score="${sc}">
-          <div class="factor-card-head">
-            <div class="factor-card-name">${esc(label)} <span class="badge cat-${cat}" style="margin-left:4px;font-size:0.6rem">${esc((meta.category_labels||{})[cat] || cat)}</span></div>
-            <span class="factor-card-score ${cls}">${scTxt}</span>
-          </div>
-          <div class="factor-card-note">${esc(v.note || '')}</div>
-          ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
-        </div>`;
+        <tr>
+          <td style="font-weight:600;color:var(--ink)">${esc(label)}</td>
+          <td><span class="factor-card-score ${cls}">${scTxt}</span></td>
+          <td>
+            <div class="factor-card-note">${esc(v.note || '')}</div>
+            ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
+          </td>
+        </tr>`;
     }).join('');
 
-    const techCards = pageTech.map(([k, v]) => {
+    const techRows = pageTech.map(([k, v]) => {
       const tm = techMeta[k] || {};
       const label = tm.label || k;
       const cls = v === 2 ? 'good' : v === 1 ? 'warn' : 'bad';
       const scTxt = v === 2 ? 'OK' : v === 1 ? 'CZĘŚC.' : 'BRAK';
       const clientExp = r.client_mode?.client_factor_explanations?.[k] || '';
       return `
-        <div class="factor-card" data-score="${v}">
-          <div class="factor-card-head">
-            <div class="factor-card-name">${esc(label)} <span class="badge cat-tech" style="margin-left:4px;font-size:0.6rem">Tech</span></div>
-            <span class="factor-card-score ${cls}">${scTxt}</span>
-          </div>
-          ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
-        </div>`;
+        <tr>
+          <td style="font-weight:600;color:var(--ink)">${esc(label)}</td>
+          <td><span class="factor-card-score ${cls}">${scTxt}</span></td>
+          <td>
+             ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : '<span style="color:var(--muted);font-style:italic">Brak uwag technicznych.</span>'}
+          </td>
+        </tr>`;
     }).join('');
 
-    if (!factorCards && !techCards) return '';
-
-    const cs = pa.combined_score;
-    const csCls = scoreClass(cs);
+    if (!factorRows && !techRows) return '';
 
     return `
       <div class="page-audit">
@@ -613,13 +619,19 @@ function renderPageAudits(r, tab, mode) {
               ${(pa.html_checks_summary?.schema_types || []).length ? `<span class="badge">schema: ${esc((pa.html_checks_summary.schema_types||[]).slice(0,3).join(', '))}</span>` : ''}
             </div>
           </div>
-          <div class="page-audit-scores">
-            <div class="mini-score"><div class="lbl">Treść</div><div class="val ${scoreClass(pa.factor_score_pct)}">${pa.factor_score_pct}</div></div>
-            <div class="mini-score"><div class="lbl">Tech</div><div class="val ${scoreClass(pa.tech_score_pct)}">${pa.tech_score_pct}</div></div>
-            <div class="mini-score"><div class="lbl">Łącznie</div><div class="val ${csCls}">${cs}</div></div>
-          </div>
         </div>
-        <div class="factor-grid">${factorCards}${techCards}</div>
+        <table class="audit-table">
+          <thead>
+            <tr>
+              <th style="width:35%">Czynnik</th>
+              <th style="width:100px">Ocena</th>
+              <th>Obserwacja</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${factorRows}${techRows}
+          </tbody>
+        </table>
       </div>`;
   }).join('') || '<p style="color:var(--muted);font-style:italic">Brak wyników dla tej zakładki.</p>';
 }
