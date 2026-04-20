@@ -233,7 +233,7 @@ button{font:inherit;cursor:pointer}
 <!-- HERO -->
 <header class="hero" id="hero">
   <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:center; flex-wrap:wrap;">
-    <div class="hero-left" style="flex:1; min-width:300px; max-width:640px;">
+    <div class="hero-left" style="flex:1; min-width:300px; max-width:560px;">
       <div class="meta-line">
         <span>Research-Grade Audit</span>
         <span>·</span>
@@ -247,9 +247,19 @@ button{font:inherit;cursor:pointer}
         <input type="url" id="urlInput" placeholder="https://twojadomena.pl" required>
         <button type="submit" class="btn" id="submitBtn">Uruchom audyt</button>
       </form>
+      <div id="ctaContainer" style="display:none; margin-top:16px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:20px;">
+        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
+          <img src="https://strategiczni.pl/wp-content/uploads/2022/01/dawid-300x300.png" alt="Dawid Kasprzyk" style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
+          <div style="flex:1; min-width:200px;">
+            <h3 style="color:#fff; margin-bottom:4px; font-size:1.15rem; font-family:var(--sans);">Chcesz poprawić swój wynik?</h3>
+            <p style="color:#D8D8D5; font-size:0.95rem; margin-bottom:12px; line-height:1.4;">Porozmawiajmy o dedykowanej strategii AI SEO.</p>
+            <a href="https://strategiczni.pl/kontakt" target="_blank" class="btn" style="text-decoration:none; display:inline-block; font-size:0.75rem; padding:10px 20px;">Umów konsultację</a>
+          </div>
+        </div>
+      </div>
       <div class="hint"></div>
     </div>
-    <div class="hero-right" id="heroScoreContainer" style="display:none; width:360px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:32px 24px; text-align:center;">
+    <div class="hero-right" id="heroScoreContainer" style="display:none; width:440px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:32px 24px; text-align:center;">
     </div>
   </div>
 </header>
@@ -412,7 +422,7 @@ function renderResult(r) {
 
   const overallColor = overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b';
   const heroScoreHtml = `
-    <div class="chart-wrap" style="width:280px; height:280px; margin:0 auto 24px;">
+    <div class="chart-wrap" style="width:340px; height:340px; margin:0 auto 24px;">
       <canvas id="radarChart"></canvas>
     </div>
     <div class="score-big" style="color:${overallColor}; font-size:6rem; line-height:1; font-weight:700; font-family:var(--sans); letter-spacing:-0.04em;">
@@ -421,6 +431,8 @@ function renderResult(r) {
   `;
   document.getElementById('heroScoreContainer').innerHTML = heroScoreHtml;
   document.getElementById('heroScoreContainer').style.display = 'block';
+  document.getElementById('auditForm').style.display = 'none';
+  document.getElementById('ctaContainer').style.display = 'block';
 
   let html = `
     <div class="results-layout">
@@ -524,7 +536,7 @@ function renderResult(r) {
     new Chart(ctx, {
       type: 'radar',
       data: {
-        labels: ['EEAT', 'Topical Authority', 'GEO', 'Dostępność'],
+        labels: ['EEAT', ['Topical', 'Authority'], 'GEO', 'Dostępność'],
         datasets: [{
           data: chartData,
           backgroundColor: 'rgba(237, 217, 113, 0.25)',
