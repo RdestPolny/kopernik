@@ -232,21 +232,25 @@ button{font:inherit;cursor:pointer}
 
 <!-- HERO -->
 <header class="hero" id="hero">
-  <div class="inner">
-    <div class="meta-line">
-      <span>Research-Grade Audit</span>
-      <span>·</span>
-      <span>Perplexity · ChatGPT · Gemini</span>
-      <span>·</span>
-      <span>LLM-Readiness Index</span>
+  <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:center; flex-wrap:wrap;">
+    <div class="hero-left" style="flex:1; min-width:300px; max-width:640px;">
+      <div class="meta-line">
+        <span>Research-Grade Audit</span>
+        <span>·</span>
+        <span>Perplexity · ChatGPT · Gemini</span>
+        <span>·</span>
+        <span>LLM-Readiness Index</span>
+      </div>
+      <h1>Czy Twoja strona istnieje dla <em>AI</em>?</h1>
+      <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań — per podstrona, z dopasowaniem factor setu do typu strony.</p>
+      <form class="form" id="auditForm">
+        <input type="url" id="urlInput" placeholder="https://twojadomena.pl" required>
+        <button type="submit" class="btn" id="submitBtn">Uruchom audyt</button>
+      </form>
+      <div class="hint"></div>
     </div>
-    <h1>Czy Twoja strona istnieje dla <em>AI</em>?</h1>
-    <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań — per podstrona, z dopasowaniem factor setu do typu strony.</p>
-    <form class="form" id="auditForm">
-      <input type="url" id="urlInput" placeholder="https://twojadomena.pl" required>
-      <button type="submit" class="btn" id="submitBtn">Uruchom audyt</button>
-    </form>
-    <div class="hint">Analiza trwa 60–120 sekund · Sitemap → Gemini selekcja → Firecrawl (markdown+HTML) → per-URL factor analysis → synteza + tryb klienta</div>
+    <div class="hero-right" id="heroScoreContainer" style="display:none; width:360px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:32px 24px; text-align:center;">
+    </div>
   </div>
 </header>
 
@@ -402,8 +406,21 @@ function renderResult(r) {
     groupScores.accessibility.max ? Math.round((groupScores.accessibility.val / groupScores.accessibility.max) * 100) : 0,
   ];
 
-  const verdict = scoreLabel(r.scores.overall);
+  const overall = r.scores?.overall || 0;
+  const verdict = scoreLabel(overall);
   const cm = r.client_mode || {};
+
+  const overallColor = overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b';
+  const heroScoreHtml = `
+    <div class="score-big" style="color:${overallColor}; font-size:6rem; line-height:1; font-weight:700; font-family:var(--sans); letter-spacing:-0.04em;">
+      ${overall}<sub style="color:rgba(255,255,255,0.5); font-size:1.5rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</sub>
+    </div>
+    <div class="chart-wrap" style="width:280px; height:280px; margin:24px auto 0;">
+      <canvas id="radarChart"></canvas>
+    </div>
+  `;
+  document.getElementById('heroScoreContainer').innerHTML = heroScoreHtml;
+  document.getElementById('heroScoreContainer').style.display = 'block';
 
   let html = `
     <div class="results-layout">
@@ -411,26 +428,19 @@ function renderResult(r) {
         <h3 class="toc-title">Spis treści</h3>
         <nav id="toc">
           <ul>
-            <li><a href="#section-score">Wynik Ogólny</a></li>
+            <li><a href="#section-verdict">Werdykt</a></li>
             <li><a href="#section-page-audits">Audyt podstron</a></li>
             <li><a href="#section-gaps">Luki treści</a></li>
             <li><a href="#section-fanout">Fan-out zapytań</a></li>
             <li><a href="#section-domain">Tech domenowe</a></li>
+            <li><a href="#section-legend">Legenda pojęć</a></li>
           </ul>
         </nav>
       </aside>
 
       <div class="results-content">
-        <section class="section" id="section-score" style="margin-top:0">
-          <div class="score-band">
-            <div class="score-band-inner">
-              <div class="score-big">${r.scores.overall}<sub>/100</sub></div>
-              <div class="chart-wrap">
-                <canvas id="radarChart"></canvas>
-              </div>
-            </div>
-          </div>
-          <div class="verdict-card" id="verdictCard" style="margin-top:40px">${esc(r.synthesis?.overall_assessment || '')}</div>
+        <section class="section" id="section-verdict" style="margin-top:0">
+          <div class="verdict-card" id="verdictCard" style="margin-top:0">${esc(r.synthesis?.overall_assessment || '')}</div>
         </section>
 
         <section class="section" id="section-page-audits">
@@ -440,8 +450,8 @@ function renderResult(r) {
           <div class="tabs" id="tabs">
             <button class="tab active" data-tab="eeat">EEAT <span class="count">${groupCounts.eeat}</span></button>
             <button class="tab" data-tab="topical">Topical Authority <span class="count">${groupCounts.topical}</span></button>
-            <button class="tab" data-tab="geo">GEO (pozycjonowanie w AI) <span class="count">${groupCounts.geo}</span></button>
-            <button class="tab" data-tab="accessibility">Dostępność (dla botów AI) <span class="count">${groupCounts.accessibility}</span></button>
+            <button class="tab" data-tab="geo">GEO <span class="count">${groupCounts.geo}</span></button>
+            <button class="tab" data-tab="accessibility">Dostępność <span class="count">${groupCounts.accessibility}</span></button>
           </div>
 
           <div id="pageAudits">${renderPageAudits(r, 'eeat', 'pro')}</div>
@@ -463,6 +473,28 @@ function renderResult(r) {
         <section class="section" id="section-domain">
           <div class="section-label"><span class="num">04</span><h2>Techniczne domenowe</h2></div>
           <div class="factor-grid">${renderDomainTech(r, domainMeta)}</div>
+        </section>
+
+        <section class="section" id="section-legend">
+          <div class="section-label"><span class="num">05</span><h2>Legenda pojęć</h2></div>
+          <div class="factor-grid">
+            <div class="factor-card">
+              <div class="factor-card-head"><div class="factor-card-name">E-E-A-T</div></div>
+              <div class="factor-card-note">Doświadczenie, Ekspertyza, Autorytatywność i Wiarygodność (Experience, Expertise, Authoritativeness, Trustworthiness) - zbiór czynników branych pod uwagę przez algorytmy (w tym AI) do oceny jakości i wiarygodności treści.</div>
+            </div>
+            <div class="factor-card">
+              <div class="factor-card-head"><div class="factor-card-name">Topical Authority</div></div>
+              <div class="factor-card-note">Autorytet tematyczny - stopień, w jakim Twoja strona wyczerpuje dany temat, pokazując pełne zrozumienie i wiedzę w danej dziedzinie, co jest kluczowe dla odpowiedzi generowanych przez AI.</div>
+            </div>
+            <div class="factor-card">
+              <div class="factor-card-head"><div class="factor-card-name">GEO</div></div>
+              <div class="factor-card-note">Generative Engine Optimization - optymalizacja treści i struktury strony pod kątem wyszukiwarek opartych na generatywnej sztucznej inteligencji (np. AI Overviews, Perplexity).</div>
+            </div>
+            <div class="factor-card">
+              <div class="factor-card-head"><div class="factor-card-name">Dostępność</div></div>
+              <div class="factor-card-note">Dostępność dla botów AI - techniczna przystępność witryny pozwalająca crawlerom LLM na łatwe pobieranie, przetwarzanie i rozumienie struktury oraz treści strony.</div>
+            </div>
+          </div>
         </section>
       </div>
     </div>
@@ -486,12 +518,12 @@ function renderResult(r) {
     new Chart(ctx, {
       type: 'radar',
       data: {
-        labels: ['EEAT', 'Topical Authority', 'GEO (Pozycjonowanie w AI)', 'Dostępność (dla botów AI)'],
+        labels: ['EEAT', 'Topical Authority', 'GEO', 'Dostępność'],
         datasets: [{
           data: chartData,
-          backgroundColor: 'rgba(184, 143, 58, 0.4)',
-          borderColor: '#b88f3a',
-          pointBackgroundColor: '#b88f3a',
+          backgroundColor: 'rgba(237, 217, 113, 0.25)',
+          borderColor: '#edd971',
+          pointBackgroundColor: '#edd971',
           borderWidth: 2,
         }]
       },
@@ -504,9 +536,11 @@ function renderResult(r) {
             min: 0,
             max: 100,
             ticks: { display: false },
+            grid: { color: 'rgba(255, 255, 255, 0.1)' },
+            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
             pointLabels: {
-              font: { family: "'Inter', sans-serif", size: 10, weight: '600' },
-              color: '#0A0A0A'
+              font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
+              color: 'rgba(255, 255, 255, 0.75)'
             }
           }
         }
@@ -559,81 +593,128 @@ function renderPageAudits(r, tab, mode) {
   const meta = r.meta || {};
   const factorMeta = meta.factor_meta || {};
   const techMeta = meta.tech_factor_meta || {};
-  const ptLabels = meta.page_type_labels || {};
-  return (r.page_audits || []).map(pa => {
-    const pageFactors = Object.entries(pa.factors || {})
-      .filter(([k, v]) => {
-        if (!v || typeof v !== 'object' || !('score' in v)) return false;
-        const cat = (factorMeta[k] || {}).category || 'tech';
-        return getGroupForCategory(cat) === tab;
-      });
-    const pageTech = Object.entries(pa.tech_scores || {})
-      .filter(() => tab === 'accessibility');
+  const pages = r.page_audits || [];
 
-    const factorRows = pageFactors.map(([k, v]) => {
-      const fm = factorMeta[k] || {};
-      const label = fm.label || k;
+  if (!pages.length) return '<p style="color:var(--muted);font-style:italic">Brak wyników.</p>';
+
+  const grouped = {}; 
+
+  pages.forEach((pa, pageIndex) => {
+    const pageNum = pageIndex + 1;
+    const pageUrl = pa.url;
+    
+    Object.entries(pa.factors || {}).forEach(([k, v]) => {
+      if (!v || typeof v !== 'object' || !('score' in v)) return;
+      const cat = (factorMeta[k] || {}).category || 'tech';
+      if (getGroupForCategory(cat) !== tab) return;
+      
       const sc = v.score;
-      const cls = sc === 2 ? 'good' : sc === 1 ? 'warn' : 'bad';
-      const scTxt = sc === 2 ? 'OK' : sc === 1 ? 'CZĘŚC.' : 'BRAK';
-      const clientExp = r.client_mode?.client_factor_explanations?.[k] || '';
-      return `
-        <tr>
-          <td style="font-weight:600;color:var(--ink)">${esc(label)}</td>
-          <td><span class="factor-card-score ${cls}">${scTxt}</span></td>
-          <td>
-            <div class="factor-card-note">${esc(v.note || '')}</div>
-            ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
-          </td>
-        </tr>`;
-    }).join('');
+      const note = v.note || '';
+      const groupKey = `${k}|${sc}`;
+      
+      if (!grouped[groupKey]) {
+        grouped[groupKey] = { key: k, score: sc, pages: [], notesMap: new Map(), isTech: false };
+      }
+      grouped[groupKey].pages.push({ num: pageNum, url: pageUrl });
+      
+      if (note) {
+        if (!grouped[groupKey].notesMap.has(note)) {
+          grouped[groupKey].notesMap.set(note, []);
+        }
+        grouped[groupKey].notesMap.get(note).push(pageNum);
+      }
+    });
 
-    const techRows = pageTech.map(([k, v]) => {
-      const tm = techMeta[k] || {};
-      const label = tm.label || k;
-      const cls = v === 2 ? 'good' : v === 1 ? 'warn' : 'bad';
-      const scTxt = v === 2 ? 'OK' : v === 1 ? 'CZĘŚC.' : 'BRAK';
-      const clientExp = r.client_mode?.client_factor_explanations?.[k] || '';
-      return `
-        <tr>
-          <td style="font-weight:600;color:var(--ink)">${esc(label)}</td>
-          <td><span class="factor-card-score ${cls}">${scTxt}</span></td>
-          <td>
-             ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : '<span style="color:var(--muted);font-style:italic">Brak uwag technicznych.</span>'}
-          </td>
-        </tr>`;
-    }).join('');
+    if (tab === 'accessibility') {
+      Object.entries(pa.tech_scores || {}).forEach(([k, v]) => {
+        const sc = v;
+        const groupKey = `${k}|${sc}|tech`;
+        if (!grouped[groupKey]) {
+          grouped[groupKey] = { key: k, score: sc, pages: [], notesMap: new Map(), isTech: true };
+        }
+        grouped[groupKey].pages.push({ num: pageNum, url: pageUrl });
+      });
+    }
+  });
 
-    if (!factorRows && !techRows) return '';
+  const rowValues = Object.values(grouped);
+  if (!rowValues.length) return '<p style="color:var(--muted);font-style:italic">Brak wyników dla tej zakładki.</p>';
+
+  const rowsHtml = rowValues.map(g => {
+    const fm = g.isTech ? (techMeta[g.key] || {}) : (factorMeta[g.key] || {});
+    const label = fm.label || g.key;
+    const sc = g.score;
+    const cls = sc === 2 ? 'good' : sc === 1 ? 'warn' : 'bad';
+    const scTxt = sc === 2 ? 'OK' : sc === 1 ? 'CZĘŚC.' : 'BRAK';
+    const clientExp = r.client_mode?.client_factor_explanations?.[g.key] || '';
+    
+    const pageLinks = g.pages.map(p => `<span title="${esc(p.url)}" style="cursor:help;text-decoration:underline;text-decoration-style:dotted;padding:0 3px;font-family:var(--mono);font-weight:600;color:var(--ink);">${p.num}</span>`).join(', ');
+    
+    let obsHtml = '';
+    if (g.isTech) {
+      obsHtml = (mode === 'client' && clientExp) ? `<div class="factor-card-client">${esc(clientExp)}</div>` : '<span style="color:var(--muted);font-style:italic">Brak uwag technicznych.</span>';
+    } else {
+      let notesJoined = '';
+      if (g.notesMap.size === 1) {
+        notesJoined = esc(Array.from(g.notesMap.keys())[0]);
+      } else if (g.notesMap.size > 1) {
+        notesJoined = Array.from(g.notesMap.entries()).map(([note, pNums]) => {
+          return `<div style="margin-bottom:6px"><strong style="font-family:var(--mono);font-size:0.75rem;">Str. ${pNums.join(', ')}:</strong> ${esc(note)}</div>`;
+        }).join('');
+      }
+      obsHtml = `<div class="factor-card-note">${notesJoined}</div>` + ((mode === 'client' && clientExp) ? `<div class="factor-card-client">${esc(clientExp)}</div>` : '');
+    }
 
     return `
-      <div class="page-audit">
-        <div class="page-audit-head">
-          <div class="page-audit-title">
-            <h3>${esc(pa.title || pa.url)}</h3>
-            <div class="url">${esc(pa.url)}</div>
-            <div class="page-audit-badges">
+      <tr>
+        <td style="font-weight:600;color:var(--ink)">${esc(label)}</td>
+        <td style="text-align:center;">${pageLinks}</td>
+        <td style="text-align:center;"><span class="factor-card-score ${cls}">${scTxt}</span></td>
+        <td>${obsHtml}</td>
+      </tr>`;
+  }).join('');
+
+  const pagesListHtml = `
+    <div class="analyzed-pages-list" style="margin-bottom: 24px; padding: 16px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px;">
+      <h4 style="font-size:0.95rem;margin-bottom:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Analizowane podstrony:</h4>
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${pages.map((pa, idx) => `
+          <div style="display:flex; align-items:flex-start; gap:12px; font-size:0.9rem; flex-wrap:wrap;">
+            <span style="font-family:var(--mono);font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--rule);padding:2px 8px;border-radius:3px;margin-top:2px;">${idx + 1}</span>
+            <div style="flex:1;min-width:200px;">
+              <div style="color:var(--ink);font-weight:500;margin-bottom:4px;line-height:1.2;">${esc(pa.title || pa.url)}</div>
+              <div style="color:var(--ink-2);word-break:break-all;font-size:0.8rem;">${esc(pa.url)}</div>
+            </div>
+            <div class="page-audit-badges" style="margin-top:0;">
               <span class="badge page-type">${esc(pa.page_type_label || pa.page_type)}</span>
               ${pa.reason ? `<span class="badge">${esc(pa.reason)}</span>` : ''}
               <span class="badge">${pa.html_checks_summary?.word_count || 0} słów</span>
               ${(pa.html_checks_summary?.schema_types || []).length ? `<span class="badge">schema: ${esc((pa.html_checks_summary.schema_types||[]).slice(0,3).join(', '))}</span>` : ''}
             </div>
           </div>
-        </div>
-        <table class="audit-table">
-          <thead>
-            <tr>
-              <th style="width:35%">Czynnik</th>
-              <th style="width:100px">Ocena</th>
-              <th>Obserwacja</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${factorRows}${techRows}
-          </tbody>
-        </table>
-      </div>`;
-  }).join('') || '<p style="color:var(--muted);font-style:italic">Brak wyników dla tej zakładki.</p>';
+        `).join('')}
+      </div>
+    </div>
+  `;
+
+  return `
+    ${pagesListHtml}
+    <div style="overflow-x:auto;">
+      <table class="audit-table">
+        <thead>
+          <tr>
+            <th style="width:25%">Czynnik</th>
+            <th style="width:80px;text-align:center;">Strona</th>
+            <th style="width:100px;text-align:center;">Ocena</th>
+            <th>Obserwacja</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rowsHtml}
+        </tbody>
+      </table>
+    </div>
+  `;
 }
 
 function renderDomainTech(r, domainMeta) {
