@@ -50,6 +50,11 @@ button{font:inherit;cursor:pointer}
 .brand-meta .t2{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold-2)}
 .topnav-right{display:flex;align-items:center;gap:16px;font-family:var(--mono);font-size:0.72rem;color:var(--gold-2);text-transform:uppercase;letter-spacing:0.12em}
 
+/* --- MODE TOGGLE NAV --- */
+.mode-toggle{display:inline-flex;background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.2);border-radius:3px;overflow:hidden;align-items:stretch;margin-right:16px}
+.mode-toggle button{padding:6px 14px;background:transparent;color:#fff;border:none;font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;font-weight:600;cursor:pointer;transition:all 0.2s}
+.mode-toggle button.active{background:#fff;color:var(--brand-bg)}
+
 /* --- HERO (dark) --- */
 .hero{background:var(--brand-bg);color:#fff;padding:72px 0 64px;border-bottom:3px solid var(--gold)}
 .hero .inner{max-width:1120px;margin:0 auto;padding:0 28px}
@@ -83,17 +88,11 @@ button{font:inherit;cursor:pointer}
 .progress-fill{height:100%;background:var(--gold);transition:width .6s}
 .progress-msg{margin-top:14px;font-family:var(--mono);font-size:0.8rem;color:var(--muted);letter-spacing:0.04em}
 
-/* --- MODE TOGGLE --- */
-.mode-bar{background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;padding:16px 20px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;margin:32px 0}
-.mode-label{font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--muted)}
-.mode-toggle{display:inline-flex;background:var(--paper);border:1px solid var(--ink);border-radius:2px;overflow:hidden}
-.mode-toggle button{padding:8px 20px;background:var(--paper);color:var(--ink);border:none;font-family:var(--mono);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.12em;font-weight:500}
-.mode-toggle button.active{background:var(--ink);color:#fff}
-.mode-hint{font-size:0.85rem;color:var(--muted);font-style:italic}
+/* (mode toggle moved to nav) */
 
 /* --- SCORE HEAD (sky band) --- */
 .score-band{background:linear-gradient(180deg,var(--sky) 0%,#B7ECF7 100%);padding:40px 0;margin:40px -28px 0;padding-left:28px;padding-right:28px}
-.score-band-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:auto 1fr;gap:40px;align-items:center}
+.score-band-inner{max-width:1120px;margin:0 auto;display:grid;grid-template-columns:auto 1fr auto;gap:40px;align-items:center}
 .score-big{font-family:var(--serif);font-size:6rem;line-height:1;color:var(--ink)}
 .score-big sub{font-size:1.5rem;color:var(--ink-2);margin-left:4px}
 .score-meta{display:flex;flex-direction:column;gap:8px}
@@ -157,17 +156,7 @@ button{font:inherit;cursor:pointer}
 .factor-card-note{font-size:0.85rem;color:var(--ink-2);line-height:1.5}
 .factor-card-client{margin-top:8px;padding-top:8px;border-top:1px dashed var(--rule);font-size:0.85rem;color:var(--ink-2);font-style:italic}
 
-/* --- RECOMMENDATIONS --- */
-.rec-list{list-style:none;counter-reset:rec;margin-top:8px}
-.rec-item{display:grid;grid-template-columns:48px 1fr;gap:20px;padding:22px 0;border-top:1px solid var(--rule);counter-increment:rec}
-.rec-item:first-child{border-top:none}
-.rec-num{font-family:var(--serif);font-size:2.2rem;color:var(--gold);line-height:1}
-.rec-num::before{content:counter(rec,decimal-leading-zero)}
-.rec-body h4{font-family:var(--serif);font-size:1.15rem;font-style:italic;margin-bottom:6px}
-.rec-body .rec-text{margin-bottom:8px}
-.rec-body .rec-meta{font-family:var(--mono);font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em}
-.rec-body .rec-meta a{color:var(--gold);text-decoration:none}
-.rec-body .rec-why{margin-top:6px;font-size:0.9rem;color:var(--ink-2);font-style:italic}
+/* (recommendations removed) */
 
 /* --- CONTENT GAPS --- */
 .gap-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:20px}
@@ -189,8 +178,6 @@ button{font:inherit;cursor:pointer}
 .section-dark h2,.section-dark h3,.section-dark h4{color:#fff}
 .section-dark .section-label .num{color:var(--gold-2)}
 .section-dark .verdict-card{background:rgba(0,0,0,0.2);border-left-color:var(--gold);color:#E8E8E5}
-.section-dark .rec-item{border-top-color:rgba(255,255,255,0.1)}
-.section-dark .rec-body .rec-why{color:#B5B5B0}
 .section-dark .gap-card{background:rgba(0,0,0,0.2);color:#E8E8E5;border-left-color:var(--gold-2)}
 
 /* --- FOOTER --- */
@@ -201,10 +188,10 @@ button{font:inherit;cursor:pointer}
 /* --- UTILS --- */
 .hidden{display:none !important}
 .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-@media(max-width:900px){.two-col{grid-template-columns:1fr}.score-band-inner{grid-template-columns:1fr}.score-sub-grid{grid-template-columns:1fr}}
+@media(max-width:900px){.two-col{grid-template-columns:1fr}.score-band-inner{grid-template-columns:1fr;text-align:center}.score-band-inner .chart-wrap{margin:20px auto 0}.score-sub-grid{grid-template-columns:1fr}}
 
 /* --- CHART --- */
-.chart-wrap{max-width:260px;margin:0 auto}
+.chart-wrap{width:220px;height:220px;margin:0}
 </style>
 </head>
 <body>
@@ -220,6 +207,10 @@ button{font:inherit;cursor:pointer}
       </span>
     </a>
     <div class="topnav-right">
+      <div class="mode-toggle hidden" id="modeToggleNav">
+        <button class="active" data-mode="pro">PRO</button>
+        <button data-mode="client">Klient</button>
+      </div>
       <span>v2.0</span>
       <span>·</span>
       <span id="nav-date"></span>
@@ -278,8 +269,23 @@ const progressMsg = document.getElementById('progressMsg');
 const results = document.getElementById('results');
 
 let currentMode = 'pro';
-let currentTab = 'all';
+let currentTab = 'eeat';
 let currentResult = null;
+
+function getGroupForCategory(cat) {
+  if (cat === 'eeat' || cat === 'trust') return 'eeat';
+  if (cat === 'topical') return 'topical';
+  if (cat === 'rag' || cat === 'conversion') return 'geo';
+  return 'accessibility';
+}
+
+document.getElementById('modeToggleNav').addEventListener('click', (e) => {
+  const btn = e.target.closest('button[data-mode]');
+  if (!btn) return;
+  currentMode = btn.dataset.mode;
+  document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b === btn));
+  applyMode();
+});
 
 form.addEventListener('submit', (e) => {
   e.preventDefault();
@@ -342,28 +348,47 @@ function esc(s) { return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp
 
 function renderResult(r) {
   currentMode = 'pro';
-  currentTab = 'all';
+  currentTab = 'eeat';
   const meta = r.meta || {};
   const factorMeta = meta.factor_meta || {};
   const techMeta = meta.tech_factor_meta || {};
   const domainMeta = meta.domain_tech_meta || {};
-  const catLabels = meta.category_labels || {};
-  const ptLabels = meta.page_type_labels || {};
 
-  // Count factors per category for tab badges
-  const categoryCounts = {all: 0};
-  Object.keys(catLabels).forEach(c => categoryCounts[c] = 0);
+  document.getElementById('modeToggleNav').classList.remove('hidden');
+  document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
+
+  const groupCounts = { eeat: 0, topical: 0, geo: 0, accessibility: 0 };
+  const groupScores = { eeat: {max:0, val:0}, topical: {max:0, val:0}, geo: {max:0, val:0}, accessibility: {max:0, val:0} };
+
   (r.page_audits || []).forEach(pa => {
-    Object.keys(pa.factors || {}).forEach(fk => {
+    Object.entries(pa.factors || {}).forEach(([fk, v]) => {
       const cat = (factorMeta[fk] || {}).category || 'tech';
-      categoryCounts.all++;
-      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1;
+      const grp = getGroupForCategory(cat);
+      if (grp) {
+        groupCounts[grp]++;
+        groupScores[grp].max += 2;
+        groupScores[grp].val += (v.score || 0);
+      }
     });
-    Object.keys(pa.tech_scores || {}).forEach(() => {
-      categoryCounts.all++;
-      categoryCounts.tech = (categoryCounts.tech || 0) + 1;
+    Object.entries(pa.tech_scores || {}).forEach(([fk, v]) => {
+      groupCounts.accessibility++;
+      groupScores.accessibility.max += 2;
+      groupScores.accessibility.val += (v || 0);
     });
   });
+
+  const ds = r.domain_technical?.scores || {};
+  Object.values(ds).forEach(v => {
+    groupScores.accessibility.max += 2;
+    groupScores.accessibility.val += (v || 0);
+  });
+
+  const chartData = [
+    groupScores.eeat.max ? Math.round((groupScores.eeat.val / groupScores.eeat.max) * 100) : 0,
+    groupScores.topical.max ? Math.round((groupScores.topical.val / groupScores.topical.max) * 100) : 0,
+    groupScores.geo.max ? Math.round((groupScores.geo.val / groupScores.geo.max) * 100) : 0,
+    groupScores.accessibility.max ? Math.round((groupScores.accessibility.val / groupScores.accessibility.max) * 100) : 0,
+  ];
 
   const verdict = scoreLabel(r.scores.overall);
   const cm = r.client_mode || {};
@@ -380,6 +405,9 @@ function renderResult(r) {
             <span class="verdict">${esc(verdict)}</span>
             <span class="label" style="margin-top:8px">${esc(r.homepage_title || r.url)} · ${esc(r.timestamp)}</span>
           </div>
+          <div class="chart-wrap">
+            <canvas id="radarChart"></canvas>
+          </div>
         </div>
         <div class="score-sub-grid" style="max-width:1120px;margin:24px auto 0">
           <div class="score-sub"><div class="lbl">Podstrony (średnia)</div><div class="val">${r.scores.page_average}</div></div>
@@ -388,71 +416,44 @@ function renderResult(r) {
         </div>
       </div>
 
-      <div class="mode-bar">
-        <div>
-          <div class="mode-label">Tryb raportu</div>
-          <div class="mode-hint" id="modeHint">Pełny raport techniczny dla SEO / marketera</div>
-        </div>
-        <div class="mode-toggle" id="modeToggle">
-          <button class="active" data-mode="pro">PRO</button>
-          <button data-mode="client">Klient</button>
-        </div>
-      </div>
-
-      <div class="verdict-card" id="verdictCard">${esc(r.synthesis?.overall_assessment || '')}</div>
+      <div class="verdict-card" id="verdictCard" style="margin-top:32px">${esc(r.synthesis?.overall_assessment || '')}</div>
     </section>
 
     <section class="section">
-      <div class="section-label"><span class="num">01</span><h2>Priorytetowe rekomendacje</h2></div>
-      <ol class="rec-list" id="recList">${renderRecs(r, 'pro')}</ol>
-    </section>
-
-    <hr class="rule">
-
-    <section class="section">
-      <div class="section-label"><span class="num">02</span><h2>Audyt per podstrona</h2></div>
+      <div class="section-label"><span class="num">01</span><h2>Audyt per podstrona</h2></div>
       <p class="lede" style="margin-bottom:24px">Każda podstrona analizowana z factor setem dopasowanym do jej typu. Filtruj przez zakładki kategorii.</p>
 
       <div class="tabs" id="tabs">
-        <button class="tab active" data-tab="all">Wszystko <span class="count">${categoryCounts.all}</span></button>
-        ${Object.entries(catLabels).map(([k,v]) => `<button class="tab" data-tab="${k}">${esc(v)} <span class="count">${categoryCounts[k]||0}</span></button>`).join('')}
+        <button class="tab active" data-tab="eeat">EEAT <span class="count">${groupCounts.eeat}</span></button>
+        <button class="tab" data-tab="topical">Topical Authority <span class="count">${groupCounts.topical}</span></button>
+        <button class="tab" data-tab="geo">GEO (pozycjonowanie w AI) <span class="count">${groupCounts.geo}</span></button>
+        <button class="tab" data-tab="accessibility">Dostępność (dla botów AI) <span class="count">${groupCounts.accessibility}</span></button>
       </div>
 
-      <div id="pageAudits">${renderPageAudits(r, 'all', 'pro')}</div>
+      <div id="pageAudits">${renderPageAudits(r, 'eeat', 'pro')}</div>
     </section>
 
     <div class="section-dark">
       <div class="section-dark-inner">
-        <div class="section-label"><span class="num">03</span><h2>Luki treści (Topical Authority)</h2></div>
+        <div class="section-label"><span class="num">02</span><h2>Luki treści (Topical Authority)</h2></div>
         <div class="gap-list" id="gapList">${renderGaps(r, 'pro')}</div>
       </div>
     </div>
 
     <section class="section">
-      <div class="section-label"><span class="num">04</span><h2>Fan-out zapytań</h2></div>
+      <div class="section-label"><span class="num">03</span><h2>Fan-out zapytań</h2></div>
       <p class="lede" style="margin-bottom:20px">Jak LLM generuje podpytania do Twojej domeny i ile z nich Twoja treść pokrywa.</p>
       <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
     </section>
 
     <section class="section">
-      <div class="section-label"><span class="num">05</span><h2>Techniczne domenowe</h2></div>
+      <div class="section-label"><span class="num">04</span><h2>Techniczne domenowe</h2></div>
       <div class="factor-grid">${renderDomainTech(r, domainMeta)}</div>
     </section>
   `;
 
   results.innerHTML = html;
   results.classList.remove('hidden');
-
-  document.getElementById('modeToggle').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-mode]');
-    if (!btn) return;
-    currentMode = btn.dataset.mode;
-    document.querySelectorAll('#modeToggle button').forEach(b => b.classList.toggle('active', b === btn));
-    document.getElementById('modeHint').textContent = currentMode === 'client'
-      ? 'Uproszczony język dla właściciela firmy bez wiedzy technicznej'
-      : 'Pełny raport techniczny dla SEO / marketera';
-    applyMode();
-  });
 
   document.getElementById('tabs').addEventListener('click', (e) => {
     const btn = e.target.closest('button[data-tab]');
@@ -461,6 +462,41 @@ function renderResult(r) {
     document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('active', b === btn));
     document.getElementById('pageAudits').innerHTML = renderPageAudits(currentResult, currentTab, currentMode);
   });
+
+  setTimeout(() => {
+    const canvas = document.getElementById('radarChart');
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    new Chart(ctx, {
+      type: 'radar',
+      data: {
+        labels: ['EEAT', 'Topical Authority', 'GEO (Pozycjonowanie w AI)', 'Dostępność (dla botów AI)'],
+        datasets: [{
+          data: chartData,
+          backgroundColor: 'rgba(184, 143, 58, 0.4)',
+          borderColor: '#b88f3a',
+          pointBackgroundColor: '#b88f3a',
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false } },
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            ticks: { display: false },
+            pointLabels: {
+              font: { family: "'Inter', sans-serif", size: 10, weight: '600' },
+              color: '#0A0A0A'
+            }
+          }
+        }
+      }
+    });
+  }, 50);
 
   results.scrollIntoView({behavior: 'smooth', block: 'start'});
 }
@@ -478,36 +514,12 @@ function applyMode() {
     verdictEl.classList.remove('client');
     verdictEl.innerHTML = esc(r.synthesis?.overall_assessment || '');
   }
-  document.getElementById('recList').innerHTML = renderRecs(r, currentMode);
-  document.getElementById('gapList').innerHTML = renderGaps(r, currentMode);
-  document.getElementById('pageAudits').innerHTML = renderPageAudits(r, currentTab, currentMode);
+  const gapList = document.getElementById('gapList');
+  if (gapList) gapList.innerHTML = renderGaps(r, currentMode);
+  const pageAudits = document.getElementById('pageAudits');
+  if (pageAudits) pageAudits.innerHTML = renderPageAudits(r, currentTab, currentMode);
 }
 
-function renderRecs(r, mode) {
-  if (mode === 'client') {
-    const cr = (r.client_mode?.client_recommendations || []);
-    if (!cr.length) return '<li class="rec-item"><span class="rec-num"></span><div class="rec-body">Brak rekomendacji.</div></li>';
-    return cr.map(x => `
-      <li class="rec-item">
-        <span class="rec-num"></span>
-        <div class="rec-body">
-          <h4>${esc(x.action || '')}</h4>
-          <div class="rec-why">${esc(x.why_matters || '')}</div>
-          <div class="rec-meta">${x.page_url && x.page_url !== 'domain' ? `<a href="${esc(x.page_url)}" target="_blank">${esc(x.page_url)}</a>` : 'domena'} · ${esc(x.page_type || '')}</div>
-        </div>
-      </li>`).join('');
-  }
-  const recs = r.synthesis?.top_recommendations || [];
-  if (!recs.length) return '<li class="rec-item"><span class="rec-num"></span><div class="rec-body">Brak rekomendacji.</div></li>';
-  return recs.map(x => `
-    <li class="rec-item">
-      <span class="rec-num"></span>
-      <div class="rec-body">
-        <div class="rec-text">${esc(x.text || '')}</div>
-        <div class="rec-meta">${x.page_url && x.page_url !== 'domain' ? `<a href="${esc(x.page_url)}" target="_blank">${esc(x.page_url)}</a>` : 'domena (globalne)'} · ${esc(x.page_type || '')}</div>
-      </div>
-    </li>`).join('');
-}
 
 function renderGaps(r, mode) {
   const gaps = mode === 'client'
@@ -536,12 +548,11 @@ function renderPageAudits(r, tab, mode) {
     const pageFactors = Object.entries(pa.factors || {})
       .filter(([k, v]) => {
         if (!v || typeof v !== 'object' || !('score' in v)) return false;
-        if (tab === 'all') return true;
         const cat = (factorMeta[k] || {}).category || 'tech';
-        return cat === tab;
+        return getGroupForCategory(cat) === tab;
       });
     const pageTech = Object.entries(pa.tech_scores || {})
-      .filter(() => tab === 'all' || tab === 'tech');
+      .filter(() => tab === 'accessibility');
 
     const factorCards = pageFactors.map(([k, v]) => {
       const fm = factorMeta[k] || {};
