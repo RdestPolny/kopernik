@@ -5,6 +5,7 @@ Audits website AI-readiness: E-E-A-T, Topical Authority, RAG Extractability, Tec
 Usage: python audit.py <URL> [--output report.html]
 """
 
+import os
 import sys
 import json
 import re
@@ -14,9 +15,9 @@ from datetime import datetime
 from urllib.parse import urlparse, urljoin
 
 # --- CONFIG ---
-FIRECRAWL_KEY = "fc-c8d4232ea9ce4562821cc5f29723bde3"
-GEMINI_KEY = "AIzaSyBeRdBiiG9cVE-mzRoxY7-X4VdrXcMEKPg"
-GEMINI_MODEL = "gemini-3.1-flash-lite-preview"
+FIRECRAWL_KEY = os.environ["FIRECRAWL_KEY"]
+GEMINI_KEY = os.environ["GEMINI_KEY"]
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape"
 
