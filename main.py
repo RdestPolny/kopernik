@@ -188,6 +188,252 @@ PAGE_TYPE_FACTORS = {
 }
 
 
+# --- FACTOR META: Polish labels + meta-categories for tabs ---
+
+CATEGORY_LABELS = {
+    "eeat": "E-E-A-T / Wiarygodność",
+    "topical": "Topical Authority",
+    "rag": "RAG Extractability",
+    "conversion": "Konwersja / Sprzedaż",
+    "trust": "Zaufanie / Kontakt",
+    "tech": "Techniczne",
+}
+
+FACTOR_META = {
+    # HOMEPAGE
+    "clear_value_proposition_above_fold": {"label": "Jasna propozycja wartości w pierwszym ekranie", "category": "conversion"},
+    "primary_cta_visible": {"label": "Widoczne główne wezwanie do działania", "category": "conversion"},
+    "navigation_to_key_sections_clear": {"label": "Czytelna nawigacja do kluczowych sekcji", "category": "conversion"},
+    "trust_signals_logos_reviews_numbers": {"label": "Sygnały zaufania (logotypy klientów, opinie, liczby)", "category": "eeat"},
+    "organization_entity_clearly_stated": {"label": "Jasno określona tożsamość firmy", "category": "eeat"},
+    "contact_info_accessible_from_home": {"label": "Dostęp do kontaktu ze strony głównej", "category": "trust"},
+    "brand_identity_consistent_and_unique": {"label": "Spójna i unikalna tożsamość marki", "category": "trust"},
+    "no_generic_marketing_fluff": {"label": "Brak ogólnikowej marketingowej waty", "category": "eeat"},
+    "internal_links_to_services_or_products": {"label": "Linki wewnętrzne do usług/produktów", "category": "topical"},
+    "external_proof_social_press_awards": {"label": "Dowody zewnętrzne (social media, prasa, nagrody)", "category": "eeat"},
+    # SERVICE
+    "clear_offer_or_service_definition": {"label": "Jasna definicja oferty/usługi", "category": "conversion"},
+    "benefits_stated_explicitly_not_just_features": {"label": "Wyrażone wprost korzyści (nie tylko cechy)", "category": "conversion"},
+    "pricing_or_price_range_indication": {"label": "Cena lub przedział cenowy", "category": "conversion"},
+    "use_cases_or_target_customer_defined": {"label": "Scenariusze użycia / profil klienta", "category": "conversion"},
+    "social_proof_testimonials_clients_case_studies": {"label": "Dowody społeczne (opinie, klienci, case study)", "category": "eeat"},
+    "faq_section_addressing_objections": {"label": "Sekcja FAQ odpowiadająca na obiekcje", "category": "rag"},
+    "clear_primary_cta_to_contact_or_buy": {"label": "Wyraźne CTA do kontaktu/zakupu", "category": "conversion"},
+    "differentiation_vs_competition": {"label": "Wyróżnienie się od konkurencji", "category": "topical"},
+    "content_substance_over_fluff": {"label": "Konkret zamiast waty", "category": "eeat"},
+    "risk_reversal_guarantee_trial_or_process_clarity": {"label": "Ograniczenie ryzyka (gwarancja/test/przejrzysty proces)", "category": "conversion"},
+    # ARTICLE
+    "author_bio_with_name_and_credentials": {"label": "Bio autora z imieniem i kwalifikacjami", "category": "eeat"},
+    "publication_date_visible_inline": {"label": "Widoczna data publikacji", "category": "eeat"},
+    "last_updated_date_visible": {"label": "Widoczna data ostatniej aktualizacji", "category": "eeat"},
+    "external_authoritative_citations_with_links": {"label": "Cytowania autorytatywnych źródeł z linkami", "category": "eeat"},
+    "firsthand_experience_or_original_data": {"label": "Doświadczenie z pierwszej ręki lub własne dane", "category": "eeat"},
+    "direct_answer_near_content_start": {"label": "Bezpośrednia odpowiedź na początku treści", "category": "rag"},
+    "scannable_structure_headings_lists_tables": {"label": "Skanowalna struktura (nagłówki, listy, tabele)", "category": "rag"},
+    "unique_pov_not_generic_rehash": {"label": "Unikalny punkt widzenia (nie powielanie cudzego)", "category": "eeat"},
+    "depth_comprehensive_treatment_of_topic": {"label": "Głębia i kompleksowość ujęcia tematu", "category": "topical"},
+    "internal_links_to_related_content": {"label": "Linki wewnętrzne do powiązanych treści", "category": "topical"},
+    # ABOUT
+    "founder_or_team_profiles_with_names": {"label": "Profile założycieli/zespołu z imionami", "category": "eeat"},
+    "credentials_certifications_or_qualifications": {"label": "Certyfikaty i kwalifikacje", "category": "eeat"},
+    "company_history_mission_or_founding_story": {"label": "Historia firmy / misja / historia powstania", "category": "topical"},
+    "external_validation_awards_partners_media": {"label": "Walidacja zewnętrzna (nagrody, partnerzy, media)", "category": "eeat"},
+    "office_location_or_physical_presence": {"label": "Lokalizacja biura / fizyczna obecność", "category": "trust"},
+    "values_or_real_differentiators": {"label": "Wartości i realne wyróżniki", "category": "topical"},
+    "links_to_linkedin_or_professional_profiles": {"label": "Linki do LinkedIn / profili zawodowych", "category": "eeat"},
+    "real_photos_not_stock_implied": {"label": "Prawdziwe zdjęcia (nie stockowe)", "category": "eeat"},
+    "clients_or_projects_showcased": {"label": "Prezentacja klientów / projektów", "category": "eeat"},
+    "contact_pathway_from_about": {"label": "Ścieżka do kontaktu z O nas", "category": "trust"},
+    # CONTACT
+    "nap_name_address_phone_complete_and_visible": {"label": "Pełny i widoczny NAP (nazwa/adres/telefon)", "category": "trust"},
+    "contact_form_present_and_clear": {"label": "Czytelny formularz kontaktowy", "category": "trust"},
+    "opening_hours_visible": {"label": "Widoczne godziny otwarcia", "category": "trust"},
+    "phone_clickable_tel_link": {"label": "Klikalny numer telefonu", "category": "trust"},
+    "email_clickable_mailto": {"label": "Klikalny e-mail", "category": "trust"},
+    "map_or_embedded_location": {"label": "Mapa lub osadzona lokalizacja", "category": "trust"},
+    "multiple_contact_channels": {"label": "Wiele kanałów kontaktu", "category": "trust"},
+    "department_or_role_specific_contacts": {"label": "Kontakty per dział / rola", "category": "trust"},
+    "response_time_expectation": {"label": "Informacja o czasie odpowiedzi", "category": "trust"},
+    "physical_office_photo_or_proof": {"label": "Zdjęcie biura / dowód fizycznej obecności", "category": "eeat"},
+    # CATEGORY
+    "meaningful_category_intro_copy_not_thin": {"label": "Sensowny wstęp kategorii (nie thin content)", "category": "topical"},
+    "unique_category_h1_and_title": {"label": "Unikalny H1 i title kategorii", "category": "topical"},
+    "category_specific_meta_description": {"label": "Meta description dedykowana kategorii", "category": "tech"},
+    "internal_links_to_items_with_context": {"label": "Linki wewnętrzne do elementów z kontekstem", "category": "topical"},
+    "filters_or_facets_if_applicable": {"label": "Filtry / fasety (jeśli zasadne)", "category": "conversion"},
+    "pagination_or_load_more_sensible": {"label": "Paginacja lub 'załaduj więcej' z sensem", "category": "tech"},
+    "subcategory_links_exposed": {"label": "Widoczne linki do podkategorii", "category": "topical"},
+    "no_boilerplate_content_duplicated": {"label": "Brak powielanego szablonowego contentu", "category": "eeat"},
+    "visual_hierarchy_for_scannability": {"label": "Wizualna hierarchia ułatwiająca skanowanie", "category": "rag"},
+    "related_categories_linked": {"label": "Powiązane kategorie z linkami", "category": "topical"},
+    # OTHER
+    "clear_page_purpose_stated": {"label": "Jasno określony cel strony", "category": "conversion"},
+    "value_for_user_evident": {"label": "Widoczna wartość dla użytkownika", "category": "conversion"},
+    "heading_hierarchy_correct": {"label": "Poprawna hierarchia nagłówków", "category": "rag"},
+    "meta_description_descriptive_and_unique": {"label": "Opisowa i unikalna meta description", "category": "tech"},
+    "scannable_structure_lists_or_subheadings": {"label": "Skanowalna struktura (listy / podtytuły)", "category": "rag"},
+    "appropriate_schema_for_content_type": {"label": "Odpowiedni schema dla typu treści", "category": "tech"},
+    "internal_links_to_contextual_content": {"label": "Linki wewnętrzne do kontekstowych treści", "category": "topical"},
+    "no_generic_ai_generated_content": {"label": "Brak generycznego AI contentu", "category": "eeat"},
+    "external_sources_or_proof_where_relevant": {"label": "Zewnętrzne źródła / dowody gdzie zasadne", "category": "eeat"},
+    "clear_next_step_or_cta": {"label": "Jasny następny krok / CTA", "category": "conversion"},
+}
+
+TECH_FACTOR_META = {
+    "meta_title_present": {"label": "Obecny tag <title>", "category": "tech"},
+    "meta_description": {"label": "Obecna meta description", "category": "tech"},
+    "canonical_tag": {"label": "Tag canonical", "category": "tech"},
+    "h1_single": {"label": "Pojedynczy nagłówek H1", "category": "tech"},
+    "heading_hierarchy": {"label": "Poprawna hierarchia nagłówków", "category": "tech"},
+    "og_tags": {"label": "Tagi Open Graph", "category": "tech"},
+    "viewport_meta": {"label": "Meta viewport (mobile)", "category": "tech"},
+    "lang_attribute": {"label": "Atrybut lang w <html>", "category": "tech"},
+    "image_alt_coverage": {"label": "Pokrycie obrazów atrybutem alt", "category": "tech"},
+    "semantic_html5_tags": {"label": "Semantyczne tagi HTML5", "category": "tech"},
+    "response_size_ok": {"label": "Rozmiar HTML w normie", "category": "tech"},
+    "organization_schema": {"label": "Schema Organization", "category": "tech"},
+    "website_schema": {"label": "Schema WebSite", "category": "tech"},
+    "any_schema": {"label": "Dowolne schema.org", "category": "tech"},
+    "product_or_service_schema": {"label": "Schema Product lub Service", "category": "tech"},
+    "faq_schema_bonus": {"label": "Schema FAQPage (bonus)", "category": "tech"},
+    "breadcrumb_schema": {"label": "Schema BreadcrumbList", "category": "tech"},
+    "article_schema": {"label": "Schema Article / BlogPosting", "category": "tech"},
+    "schema_author_field": {"label": "Pole 'author' w schema", "category": "tech"},
+    "schema_dates": {"label": "Daty w schema (published / modified)", "category": "tech"},
+    "person_schema_team": {"label": "Schema Person (zespół)", "category": "tech"},
+    "localbusiness_or_organization_schema": {"label": "Schema LocalBusiness / Organization", "category": "tech"},
+    "tel_link_present": {"label": "Klikalny numer telefonu (tel:)", "category": "tech"},
+    "mailto_link_present": {"label": "Klikalny e-mail (mailto:)", "category": "tech"},
+    "contact_form_present": {"label": "Formularz kontaktowy (<form>)", "category": "tech"},
+    "itemlist_schema": {"label": "Schema ItemList", "category": "tech"},
+}
+
+
+CLIENT_FACTOR_EXPLANATIONS = {
+    "clear_value_proposition_above_fold": "Od razu tłumaczymy klientom i AI, czym zajmuje się firma i co oferuje.",
+    "primary_cta_visible": "Wskazujemy jasny następny krok, by ułatwić kontakt lub zakup.",
+    "navigation_to_key_sections_clear": "Ułatwiamy odnalezienie najważniejszych informacji na stronie.",
+    "trust_signals_logos_reviews_numbers": "Budujemy zaufanie dzięki opiniom i doświadczeniu.",
+    "organization_entity_clearly_stated": "Sygnalizujemy AI kim dokładnie jesteśmy jako firma (budowa marki).",
+    "contact_info_accessible_from_home": "Umożliwiamy szybki i prosty kontakt bezpośrednio po wejściu na stronę.",
+    "brand_identity_consistent_and_unique": "Wyróżniamy się na tle innych i zapadamy w pamięć.",
+    "no_generic_marketing_fluff": "Unikamy pustych haseł reklamowych, które AI i użytkownicy ignorują.",
+    "internal_links_to_services_or_products": "Łączymy stronę główną z najważniejszymi elementami oferty.",
+    "external_proof_social_press_awards": "Potwierdzamy nasz profesjonalizm linkami do nagród i mediów.",
+    "clear_offer_or_service_definition": "Precyzyjnie opisujemy, co klient u nas kupuje.",
+    "benefits_stated_explicitly_not_just_features": "Mówimy językiem korzyści dla klienta, a nie tylko wypisujemy cechy produktu.",
+    "pricing_or_price_range_indication": "Pokazujemy choćby przedziały cenowe, bo tego szukają klienci i AI.",
+    "use_cases_or_target_customer_defined": "Wskazujemy dokładnie komu nasza oferta najbardziej pomoże.",
+    "social_proof_testimonials_clients_case_studies": "Dowodzimy skuteczności na podstawie historii zadowolonych klientów.",
+    "faq_section_addressing_objections": "Odpowiadamy z góry na obawy i częste pytania kupujących.",
+    "clear_primary_cta_to_contact_or_buy": "Wyraźnie prosimy o kontakt lub dodanie do koszyka.",
+    "differentiation_vs_competition": "Wyjaśniamy dlaczego warto wybrać nas, a nie konkurencję.",
+    "content_substance_over_fluff": "Dajemy same konkrety w tekście, by nikt nie tracił czasu.",
+    "risk_reversal_guarantee_trial_or_process_clarity": "Zdejmujemy z klienta obawy o ryzyko, np. pokazując łatwe zwroty.",
+    "author_bio_with_name_and_credentials": "Pokazujemy AI i czytelnikom, że tekst pisał prawdziwy ekspert.",
+    "publication_date_visible_inline": "Udowadniamy, że informacja jest świeża.",
+    "last_updated_date_visible": "Sygnalizujemy, że artykuł jest na bieżąco aktualizowany.",
+    "external_authoritative_citations_with_links": "Powołujemy się na mocne i wiarygodne źródła zewnętrzne.",
+    "firsthand_experience_or_original_data": "Prezentujemy własne doświadczenia, a nie tylko kopiujemy wiedzę z innych miejsc.",
+    "direct_answer_near_content_start": "Dajemy odpowiedź na początku, bo AI lubi streszczenia i konkrety.",
+    "scannable_structure_headings_lists_tables": "Formatujemy tekst tak, by czytało się go łatwo i skanowało wzrokiem.",
+    "unique_pov_not_generic_rehash": "Dodajemy unikalną wartość, zamiast pisać to co wszyscy inni.",
+    "depth_comprehensive_treatment_of_topic": "Wyczerpujemy temat, stając się najlepszym źródłem w sieci.",
+    "internal_links_to_related_content": "Prowadzimy czytelnika do innych, wartościowych stron na naszym portalu.",
+    "founder_or_team_profiles_with_names": "Budujemy ludzką twarz firmy pokazując ludzi za nią stojących.",
+    "credentials_certifications_or_qualifications": "Potwierdzamy nasze umiejętności certyfikatami.",
+    "company_history_mission_or_founding_story": "Opowiadamy autentyczną historię firmy.",
+    "external_validation_awards_partners_media": "Uwiarygadniamy naszą pozycję partnerami i nagrodami.",
+    "office_location_or_physical_presence": "Udowadniamy, że istniejemy w realnym świecie.",
+    "values_or_real_differentiators": "Pokazujemy wartości jakimi kieruje się nasz zespół.",
+    "links_to_linkedin_or_professional_profiles": "Łączymy naszą stronę z zawodowymi profilami z sieci.",
+    "real_photos_not_stock_implied": "Wzbudzamy większe zaufanie dzięki prawdziwym zdjęciom.",
+    "clients_or_projects_showcased": "Pokazujemy komu do tej pory pomogliśmy.",
+    "contact_pathway_from_about": "Umożliwiamy płynne przejście z poznania zespołu do wysłania wiadomości.",
+    "nap_name_address_phone_complete_and_visible": "Podajemy komplet danych rejestrowych - nazwa, adres, telefon.",
+    "contact_form_present_and_clear": "Dajemy łatwy formularz dla tych, którzy nie chcą pisać maili.",
+    "opening_hours_visible": "Informujemy, kiedy można się z nami kontaktować.",
+    "phone_clickable_tel_link": "Pozwalamy na szybkie wykonanie połączenia z telefonu klikając w numer.",
+    "email_clickable_mailto": "Umożliwiamy otwarcie programu pocztowego przez kliknięcie w maila.",
+    "map_or_embedded_location": "Ułatwiamy znalezienie naszego biura dodając mapę.",
+    "multiple_contact_channels": "Dajemy klientowi wybór preferowanej formy kontaktu.",
+    "department_or_role_specific_contacts": "Ułatwiamy dotarcie do odpowiednich specjalistów w większej firmie.",
+    "response_time_expectation": "Tłumaczymy, jak długo czeka się na odpowiedź od nas.",
+    "physical_office_photo_or_proof": "Uwiarygadniamy lokalne wyniki w Google poprzez zdjęcia biura.",
+    "meaningful_category_intro_copy_not_thin": "Dodajemy opis ułatwiający AI zrozumienie tematyki tej kategorii.",
+    "unique_category_h1_and_title": "Jasno zatytułowana sekcja, niepowtarzalna z innymi.",
+    "category_specific_meta_description": "Posiadamy opis podstrony używany przez wyszukiwarki do jej streszczenia.",
+    "internal_links_to_items_with_context": "Ułatwiamy AI przechodzenie do poszczególnych produktów z kategorii.",
+    "filters_or_facets_if_applicable": "Dajemy klientom narzędzia, żeby szybko znaleźli to, czego chcą.",
+    "pagination_or_load_more_sensible": "Ułatwiamy przełączanie między kolejnymi stronami długich kategorii.",
+    "subcategory_links_exposed": "Tworzymy sensowną hierarchię grupującą mniejsze tematy.",
+    "no_boilerplate_content_duplicated": "Nie mamy automatycznie generowanych i powtarzalnych zapychaczy.",
+    "visual_hierarchy_for_scannability": "Prezentujemy zawartość tej sekcji w przyjemny dla oka sposób.",
+    "related_categories_linked": "Sugerujemy podobne tematy, zatrzymując użytkownika na dłużej.",
+    "clear_page_purpose_stated": "Szybko informujemy jaki jest cel tej podstrony.",
+    "value_for_user_evident": "Pokazujemy korzyść za wejście na ten link.",
+    "heading_hierarchy_correct": "Tytuły i podtytuły (H1, H2) są ułożone logicznie jak w dobrej książce.",
+    "meta_description_descriptive_and_unique": "Unikalne streszczenie witryny pod roboty wyszukiwarek.",
+    "scannable_structure_lists_or_subheadings": "Rozdzielamy długie bloki tekstu listami i wypunktowaniami.",
+    "appropriate_schema_for_content_type": "Posiadamy techniczne znaczniki w kodzie potrzebne dla AI.",
+    "internal_links_to_contextual_content": "Linkujemy do innych artykułów, dając wiedzę na szerszy temat.",
+    "no_generic_ai_generated_content": "Nie wrzucamy byle jakiego materiału od AI (dbamy o jakość).",
+    "external_sources_or_proof_where_relevant": "Dodajemy odnośniki potwierdzające prawdziwość informacji.",
+    "clear_next_step_or_cta": "Podpowiadamy co zrobić po przeczytaniu tego materiału.",
+    "meta_title_present": "Mamy prawidłowo wpisany tytuł ułatwiający Google i AI zrozumienie strony.",
+    "meta_description": "Mamy zwięzły opis dla Google podsumowujący o czym jest podstrona.",
+    "canonical_tag": "Mamy sygnał dla Google unikający problemów ze sklonowanymi podstronami.",
+    "h1_single": "Jest tylko jeden główny tytuł, co ułatwia kategoryzowanie strony.",
+    "heading_hierarchy": "Podtytuły na stronie zachowują logiczną hierarchię jak w podręczniku.",
+    "og_tags": "Strona poprawnie wyświetla się podczas udostępniania w social mediach.",
+    "viewport_meta": "Strona poprawnie skaluje się do telefonów i tabletów.",
+    "lang_attribute": "Mówimy botom, w jakim języku pomyślana jest strona.",
+    "image_alt_coverage": "Posiadamy opisy graficzne ułatwiające AI 'zobaczenie' zdjęć.",
+    "semantic_html5_tags": "Kod strony jest nowoczesny i łatwo czytelny przez dzisiejsze boty internetowe.",
+    "response_size_ok": "Rozmiar wagowy witryny jest w granicach normy.",
+    "organization_schema": "Prowadzimy AI za rękę poprzez kod informujący wprost, że jesteśmy Organizacją.",
+    "website_schema": "Mamy odpowiednie znaczniki kodowe świadczące o posiadaniu poprawnej struktury serwisu.",
+    "any_schema": "Używamy specjalnych, ukrytych w kodzie opisów (Schema), na których polega sztuczna inteligencja.",
+    "product_or_service_schema": "Posiadamy ukryty w kodzie znacznik wspierający widoczność Oferty w Google i AI.",
+    "faq_schema_bonus": "Posiadamy w kodzie znacznik wyróżniający często zadawane pytania (FAQ).",
+    "breadcrumb_schema": "Struktura nawigacyjna tzw. Okruszki ma wsparcie techniczne.",
+    "article_schema": "Kod naszej strony wskazuje wprost do AI, że dany tekst to autorski Artykuł.",
+    "schema_author_field": "W ukrytym kodzie precyzujemy, kto napisał dany tekst.",
+    "schema_dates": "W kodzie dla AI wysyłamy poprawną datę pierwszej i ostatniej wersji artykułu.",
+    "person_schema_team": "W kodzie znajduje się opis techniczny poszczególnych osób z zespołu.",
+    "localbusiness_or_organization_schema": "Zdefiniowaliśmy w kodzie dla AI naszą obecność lokalną lub jako firma.",
+    "tel_link_present": "Kliknięcie w telefon automatycznie go wybiera w urządzeniu.",
+    "mailto_link_present": "Kliknięcie w maila automatycznie otwiera aplikację pocztową.",
+    "contact_form_present": "Klient może napisać wiadomość od razu bez przechodzenia na swoją pocztę.",
+    "itemlist_schema": "Kategoria używa odpowiednich danych strukturalnych do opisania listy przedmiotów.",
+    "robots_txt_accessible": "Sygnalizujemy robotom wyszukiwarek plik z instrukcjami, jak czytać całą domenę.",
+    "gptbot_not_blocked": "Pozwalamy robotowi ChatGPT czytać naszą domenę.",
+    "perplexitybot_not_blocked": "Pozwalamy robotowi Perplexity uczyć się z naszych tekstów.",
+    "claudebot_not_blocked": "Zezwalamy botowi sztucznej inteligencji od Claude (Anthropic) na wejścia.",
+    "google_extended_not_blocked": "Nie blokujemy bota Google tworzącego odpowiedzi z udziałem AI.",
+    "crawl_delay_ok": "Boty badające stronę nie są spowalniane dziwnymi limitami czasowymi.",
+    "sitemap_present": "Wskazujemy robotom mapę całej strony z wypisanymi adresami.",
+    "sitemap_in_robots": "Linkujemy od razu do mapy witryny we wspomnianym wyżej pliku 'robots.txt'.",
+    "llms_txt_present": "Tworzymy specjalny plik tekstowy, ułatwiający botom AI zebranie wiedzy z całej naszej witryny.",
+    "https_enabled": "Posiadamy bezpieczny certyfikat zabezpieczający całą domenę - kłódeczkę w przeglądarce.",
+    "hreflang_used": "Podajemy w kodzie do AI i Google języki, w których dostępna jest nasza firma."
+}
+
+DOMAIN_TECH_META = {
+    "robots_txt_accessible": {"label": "Dostępny plik robots.txt", "category": "tech"},
+    "gptbot_not_blocked": {"label": "GPTBot (OpenAI) niezablokowany", "category": "tech"},
+    "perplexitybot_not_blocked": {"label": "PerplexityBot niezablokowany", "category": "tech"},
+    "claudebot_not_blocked": {"label": "ClaudeBot (Anthropic) niezablokowany", "category": "tech"},
+    "google_extended_not_blocked": {"label": "Google-Extended niezablokowany (AI Overviews)", "category": "tech"},
+    "crawl_delay_ok": {"label": "Crawl-delay w normie", "category": "tech"},
+    "sitemap_present": {"label": "Sitemap XML obecna", "category": "tech"},
+    "sitemap_in_robots": {"label": "Link do sitemap w robots.txt", "category": "tech"},
+    "llms_txt_present": {"label": "Plik llms.txt obecny", "category": "tech"},
+    "https_enabled": {"label": "HTTPS włączone", "category": "tech"},
+    "hreflang_used": {"label": "Tagi hreflang", "category": "tech"},
+}
+
+
 # --- URL DISCOVERY ---
 
 def fetch_sitemap_urls(base_url: str) -> list[str]:
@@ -882,6 +1128,63 @@ Zwróć TYLKO JSON (po polsku):
     return _extract_json(_gemini_call(prompt, temperature=0.3, max_tokens=2500))
 
 
+def translate_for_client_mode(page_audits: list[dict], synthesis: dict, scores: dict, fan_out: dict, site_title: str) -> dict:
+    """Osobne zapytanie — tłumaczy techniczny audyt na język klienta-laika (bez żargonu)."""
+    critical: list[str] = []
+    for pa in page_audits:
+        url = pa.get("url", "")
+        pt = pa.get("page_type", "other")
+        for k, v in (pa.get("factors") or {}).items():
+            if isinstance(v, dict) and v.get("score", 0) == 0:
+                label = FACTOR_META.get(k, {}).get("label", k)
+                critical.append(f"[{pt} | {url}] {label}: {v.get('note','')}")
+    critical = critical[:15]
+
+    top_recs = synthesis.get("top_recommendations", [])[:6]
+    top_recs_txt = "\n".join(f"- [{r.get('page_type','?')} | {r.get('page_url','?')}] {r.get('text','')}" for r in top_recs) or "(brak)"
+
+    missing_queries = [q.get("query","") for q in fan_out.get("queries", []) if q.get("coverage") in ("missing","partial")][:8]
+
+    overall_score = scores.get("overall", 0)
+    verdict_src = synthesis.get("overall_assessment", "")
+
+    prompt = f"""Jesteś copywriterem B2B tłumaczącym audyt AI SEO dla właściciela firmy BEZ wiedzy technicznej.
+
+<kontekst>
+Strona: {site_title}
+Wynik ogólny: {overall_score}/100
+Werdykt ekspercki (do przetłumaczenia na prosty język): {verdict_src}
+
+Najważniejsze rekomendacje techniczne:
+{top_recs_txt}
+
+Krytyczne braki treści per podstrona:
+{chr(10).join(f"- {c}" for c in critical) or "(brak)"}
+
+Brakujące pytania klientów (fan-out):
+{chr(10).join(f"- {q}" for q in missing_queries) or "(brak)"}
+</kontekst>
+
+<zasady_tlumaczenia>
+ZERO żargonu. NIE używaj słów: RAG, E-E-A-T, crawler, LLM, schema, entity, canonical, meta, markup, fan-out, topical authority, indeksowanie, ekstraktywność.
+ZAMIAST: "schema" → "oznaczenia które pomagają AI zrozumieć stronę"; "E-E-A-T" → "oznaki że jesteś ekspertem"; "crawler/LLM" → "AI takie jak ChatGPT i Perplexity"; "fan-out" → "pytania które klienci zadają AI".
+Mów językiem korzyści: "więcej klientów z AI", "AI będzie Cię polecać", "stracisz klientów którzy pytają ChatGPT".
+Każde wyjaśnienie 1-2 zdania MAX. Krótko, konkretnie, po polsku.
+</zasady_tlumaczenia>
+
+Zwróć TYLKO JSON:
+{{
+  "client_verdict": "3-4 zdania dla właściciela firmy: co to oznacza dla biznesu, czy jest źle/średnio/dobrze, co zyska jeśli poprawi",
+  "client_recommendations": [
+    {{"priority": 1, "action": "Co zrobić (prosty język)", "why_matters": "Co zyska biznes (1 zdanie)", "page_url": "...", "page_type": "..."}},
+    ... (6 pozycji, kolejność jak w rekomendacjach eksperckich)
+  ],
+  "client_content_gaps": ["Temat 1 który warto opisać na blogu (prosty język, dlaczego warto)", ... 5 pozycji],
+  "client_next_step": "1 zdanie: najprostszy pierwszy krok jeśli klient chce sam zacząć"
+}}"""
+    return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=2500))
+
+
 # --- SCORING ---
 
 def factor_score_pct(factors: dict) -> int:
@@ -1049,7 +1352,7 @@ def audit_stream(url: str):
                 },
             })
 
-        yield event("progress", {"message": "Synteza: priorytetyzowane rekomendacje per strona...", "pct": 92})
+        yield event("progress", {"message": "Synteza: priorytetyzowane rekomendacje per strona...", "pct": 90})
 
         try:
             synth = synthesize_findings(page_audits, {"robots": robots, "sitemap": sitemap, "llms": llms}, domain_tech_scores, fan_out, url, homepage_title)
@@ -1062,6 +1365,19 @@ def audit_stream(url: str):
         page_scores = [pa["combined_score"] for pa in page_audits] if page_audits else [0]
         avg_page = round(sum(page_scores) / len(page_scores))
         overall = round(avg_page * 0.6 + domain_tech_pct * 0.25 + fan_pct * 0.15)
+        scores_obj = {
+            "overall": overall,
+            "page_average": avg_page,
+            "domain_technical": domain_tech_pct,
+            "fan_out": fan_pct,
+        }
+
+        yield event("progress", {"message": "Tryb Klient: tłumaczenie wyników na prosty język (osobne zapytanie)...", "pct": 95})
+        try:
+            client_mode = translate_for_client_mode(page_audits, synth, scores_obj, fan_out, homepage_title)
+            client_mode["client_factor_explanations"] = CLIENT_FACTOR_EXPLANATIONS
+        except Exception as e:
+            client_mode = {"client_verdict": f"Tłumaczenie nieudane: {e}", "client_recommendations": [], "client_content_gaps": [], "client_next_step": "", "client_factor_explanations": CLIENT_FACTOR_EXPLANATIONS}
 
         result = {
             "url": url,
@@ -1069,12 +1385,7 @@ def audit_stream(url: str):
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "homepage_title": homepage_title,
             "homepage_meta_desc": homepage_data["meta_desc"],
-            "scores": {
-                "overall": overall,
-                "page_average": avg_page,
-                "domain_technical": domain_tech_pct,
-                "fan_out": fan_pct,
-            },
+            "scores": scores_obj,
             "page_audits": page_audits,
             "domain_technical": {
                 "scores": domain_tech_scores,
@@ -1085,6 +1396,14 @@ def audit_stream(url: str):
             },
             "fan_out": fan_out,
             "synthesis": synth,
+            "client_mode": client_mode,
+            "meta": {
+                "factor_meta": FACTOR_META,
+                "tech_factor_meta": TECH_FACTOR_META,
+                "domain_tech_meta": DOMAIN_TECH_META,
+                "category_labels": CATEGORY_LABELS,
+                "page_type_labels": PAGE_TYPE_LABELS,
+            },
         }
         yield event("done", {"result": result, "pct": 100})
 
