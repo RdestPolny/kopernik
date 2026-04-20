@@ -412,11 +412,11 @@ function renderResult(r) {
 
   const overallColor = overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b';
   const heroScoreHtml = `
+    <div class="chart-wrap" style="width:280px; height:280px; margin:0 auto 24px;">
+      <canvas id="radarChart"></canvas>
+    </div>
     <div class="score-big" style="color:${overallColor}; font-size:6rem; line-height:1; font-weight:700; font-family:var(--sans); letter-spacing:-0.04em;">
       ${overall}<sub style="color:rgba(255,255,255,0.5); font-size:1.5rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</sub>
-    </div>
-    <div class="chart-wrap" style="width:280px; height:280px; margin:24px auto 0;">
-      <canvas id="radarChart"></canvas>
     </div>
   `;
   document.getElementById('heroScoreContainer').innerHTML = heroScoreHtml;
@@ -434,6 +434,7 @@ function renderResult(r) {
             <li><a href="#section-fanout">Fan-out zapytań</a></li>
             <li><a href="#section-domain">Tech domenowe</a></li>
             <li><a href="#section-legend">Legenda pojęć</a></li>
+            <li><a href="#section-page-list">Lista podstron</a></li>
           </ul>
         </nav>
       </aside>
@@ -495,6 +496,11 @@ function renderResult(r) {
               <div class="factor-card-note">Dostępność dla botów AI - techniczna przystępność witryny pozwalająca crawlerom LLM na łatwe pobieranie, przetwarzanie i rozumienie struktury oraz treści strony.</div>
             </div>
           </div>
+        </section>
+
+        <section class="section" id="section-page-list">
+          <div class="section-label"><span class="num">06</span><h2>Lista analizowanych podstron</h2></div>
+          ${renderPagesList(r.page_audits || [])}
         </section>
       </div>
     </div>
@@ -674,31 +680,7 @@ function renderPageAudits(r, tab, mode) {
       </tr>`;
   }).join('');
 
-  const pagesListHtml = `
-    <div class="analyzed-pages-list" style="margin-bottom: 24px; padding: 16px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px;">
-      <h4 style="font-size:0.95rem;margin-bottom:12px;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.05em;color:var(--muted);">Analizowane podstrony:</h4>
-      <div style="display:flex; flex-direction:column; gap:10px;">
-        ${pages.map((pa, idx) => `
-          <div style="display:flex; align-items:flex-start; gap:12px; font-size:0.9rem; flex-wrap:wrap;">
-            <span style="font-family:var(--mono);font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--rule);padding:2px 8px;border-radius:3px;margin-top:2px;">${idx + 1}</span>
-            <div style="flex:1;min-width:200px;">
-              <div style="color:var(--ink);font-weight:500;margin-bottom:4px;line-height:1.2;">${esc(pa.title || pa.url)}</div>
-              <div style="color:var(--ink-2);word-break:break-all;font-size:0.8rem;">${esc(pa.url)}</div>
-            </div>
-            <div class="page-audit-badges" style="margin-top:0;">
-              <span class="badge page-type">${esc(pa.page_type_label || pa.page_type)}</span>
-              ${pa.reason ? `<span class="badge">${esc(pa.reason)}</span>` : ''}
-              <span class="badge">${pa.html_checks_summary?.word_count || 0} słów</span>
-              ${(pa.html_checks_summary?.schema_types || []).length ? `<span class="badge">schema: ${esc((pa.html_checks_summary.schema_types||[]).slice(0,3).join(', '))}</span>` : ''}
-            </div>
-          </div>
-        `).join('')}
-      </div>
-    </div>
-  `;
-
   return `
-    ${pagesListHtml}
     <div style="overflow-x:auto;">
       <table class="audit-table">
         <thead>
@@ -735,6 +717,31 @@ function renderDomainTech(r, domainMeta) {
         ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
       </div>`;
   }).join('');
+}
+
+function renderPagesList(pages) {
+  if (!pages.length) return '<p style="color:var(--muted);font-style:italic">Brak analizowanych stron.</p>';
+  return `
+    <div class="analyzed-pages-list" style="padding: 16px; background: var(--paper-2); border: 1px solid var(--rule); border-radius: 4px;">
+      <div style="display:flex; flex-direction:column; gap:10px;">
+        ${pages.map((pa, idx) => `
+          <div style="display:flex; align-items:flex-start; gap:12px; font-size:0.9rem; flex-wrap:wrap;">
+            <span style="font-family:var(--mono);font-weight:600;color:var(--ink);background:var(--paper);border:1px solid var(--rule);padding:2px 8px;border-radius:3px;margin-top:2px;">${idx + 1}</span>
+            <div style="flex:1;min-width:200px;">
+              <div style="color:var(--ink);font-weight:500;margin-bottom:4px;line-height:1.2;">${esc(pa.title || pa.url)}</div>
+              <div style="color:var(--ink-2);word-break:break-all;font-size:0.8rem;">${esc(pa.url)}</div>
+            </div>
+            <div class="page-audit-badges" style="margin-top:0;">
+              <span class="badge page-type">${esc(pa.page_type_label || pa.page_type)}</span>
+              ${pa.reason ? `<span class="badge">${esc(pa.reason)}</span>` : ''}
+              <span class="badge">${pa.html_checks_summary?.word_count || 0} słów</span>
+              ${(pa.html_checks_summary?.schema_types || []).length ? `<span class="badge">schema: ${esc((pa.html_checks_summary.schema_types||[]).slice(0,3).join(', '))}</span>` : ''}
+            </div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
 }
 </script>
 </body>
