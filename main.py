@@ -433,6 +433,42 @@ DOMAIN_TECH_META = {
     "hreflang_used": {"label": "Tagi hreflang", "category": "tech"},
 }
 
+# Domain tech factor weights (sum = 100). Critical AI-visibility factors dominate.
+DOMAIN_TECH_WEIGHTS = {
+    "llms_txt_present": 20,
+    "gptbot_not_blocked": 15,
+    "claudebot_not_blocked": 12,
+    "perplexitybot_not_blocked": 12,
+    "google_extended_not_blocked": 8,
+    "robots_txt_accessible": 10,
+    "sitemap_present": 8,
+    "https_enabled": 7,
+    "crawl_delay_ok": 4,
+    "sitemap_in_robots": 3,
+    "hreflang_used": 1,
+}
+
+# Content category weights for per-page factor scoring. EEAT matters most.
+CONTENT_CATEGORY_WEIGHTS = {
+    "eeat": 3.0,
+    "rag": 2.0,
+    "conversion": 1.5,
+    "trust": 1.5,
+    "topical": 1.0,
+    "tech": 1.0,
+}
+
+# Per-factor point penalties applied to overall score when critical factors are absent.
+CRITICAL_FACTOR_PENALTIES = {
+    "llms_txt_present": 8,
+    "gptbot_not_blocked": 7,
+    "claudebot_not_blocked": 6,
+    "perplexitybot_not_blocked": 6,
+    "google_extended_not_blocked": 4,
+    "robots_txt_accessible": 6,
+    "https_enabled": 12,
+}
+
 
 # --- URL DISCOVERY ---
 
@@ -939,6 +975,21 @@ def tech_score_pct(tech_scores: dict) -> int:
     return round((sum(tech_scores.values()) / (len(tech_scores) * 2)) * 100)
 
 
+def weighted_domain_tech_score_pct(tech_scores: dict) -> int:
+    """Domain tech scored by DOMAIN_TECH_WEIGHTS — critical AI-access factors dominate."""
+    if not tech_scores:
+        return 0
+    total_weighted = sum(
+        (tech_scores.get(k, 0) / 2) * w
+        for k, w in DOMAIN_TECH_WEIGHTS.items()
+        if k in tech_scores
+    )
+    total_weight = sum(w for k, w in DOMAIN_TECH_WEIGHTS.items() if k in tech_scores)
+    if total_weight == 0:
+        return 0
+    return round((total_weighted / total_weight) * 100)
+
+
 # --- GEMINI ---
 
 def _gemini_call(prompt: str, temperature: float = 0.1, max_tokens: int = 4096) -> str:
@@ -1204,13 +1255,21 @@ Zwróć TYLKO JSON:
 # --- SCORING ---
 
 def factor_score_pct(factors: dict) -> int:
+    """Weighted average: EEAT factors count 3×, RAG 2×, conversion/trust 1.5×, topical 1×."""
     if not factors:
         return 0
-    valid = [v for v in factors.values() if isinstance(v, dict) and "score" in v]
-    if not valid:
+    total_weighted = 0.0
+    total_max = 0.0
+    for key, v in factors.items():
+        if not isinstance(v, dict) or "score" not in v:
+            continue
+        category = FACTOR_META.get(key, {}).get("category", "")
+        w = CONTENT_CATEGORY_WEIGHTS.get(category, 1.5)
+        total_weighted += v["score"] * w
+        total_max += 2 * w
+    if total_max == 0:
         return 0
-    total = sum(v.get("score", 0) for v in valid)
-    return round((total / (len(valid) * 2)) * 100)
+    return round((total_weighted / total_max) * 100)
 
 
 def fan_out_score(fan_out: dict) -> int:
@@ -1376,13 +1435,49 @@ def audit_stream(url: str):
             synth = {"top_recommendations": [], "content_gaps": [], "overall_assessment": f"Synteza nieudana: {e}"}
 
         # 8. Aggregate scores
-        domain_tech_pct = tech_score_pct(domain_tech_scores)
+        domain_tech_pct = weighted_domain_tech_score_pct(domain_tech_scores)
         fan_pct = fan_out_score(fan_out)
         page_scores = [pa["combined_score"] for pa in page_audits] if page_audits else [0]
         avg_page = round(sum(page_scores) / len(page_scores))
-        overall = round(avg_page * 0.6 + domain_tech_pct * 0.25 + fan_pct * 0.15)
+
+        # Category breakdowns (display only, unweighted averages per category)
+        _CAT_MAP = {"eeat": "eeat", "trust": "eeat", "topical": "topical", "rag": "rag", "conversion": "conversion"}
+        grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "rag", "conversion")}
+        for pa in page_audits:
+            for fk, v in (pa.get("factors") or {}).items():
+                cat = FACTOR_META.get(fk, {}).get("category", "")
+                g = _CAT_MAP.get(cat)
+                if g:
+                    grp[g]["max"] += 2
+                    grp[g]["val"] += (v.get("score", 0) if isinstance(v, dict) else 0)
+
+        def _grp_pct(g): return round(g["val"] / g["max"] * 100) if g["max"] else 0
+        cat_eeat = _grp_pct(grp["eeat"])
+        cat_topical = _grp_pct(grp["topical"])
+        cat_rag = _grp_pct(grp["rag"])
+        cat_conversion = _grp_pct(grp["conversion"])
+
+        # Base overall: page scores carry category weights (via factor_score_pct),
+        # domain tech is weighted by DOMAIN_TECH_WEIGHTS, fan-out coverage last.
+        base_overall = round(avg_page * 0.55 + domain_tech_pct * 0.30 + fan_pct * 0.15)
+
+        # Per-factor critical penalties — each absent P0 factor subtracts fixed points.
+        ds = domain_tech_scores
+        penalties = sum(
+            penalty for factor, penalty in CRITICAL_FACTOR_PENALTIES.items()
+            if ds.get(factor, 2) == 0
+        )
+
+        overall = max(0, base_overall - penalties)
         scores_obj = {
             "overall": overall,
+            "category": {
+                "eeat": cat_eeat,
+                "topical": cat_topical,
+                "rag": cat_rag,
+                "conversion": cat_conversion,
+            },
+            "penalties": penalties,
             "page_average": avg_page,
             "domain_technical": domain_tech_pct,
             "fan_out": fan_pct,

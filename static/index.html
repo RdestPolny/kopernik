@@ -389,36 +389,23 @@ function renderResult(r) {
   document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
 
   const groupCounts = { eeat: 0, topical: 0, geo: 0, accessibility: 0 };
-  const groupScores = { eeat: {max:0, val:0}, topical: {max:0, val:0}, geo: {max:0, val:0}, accessibility: {max:0, val:0} };
 
   (r.page_audits || []).forEach(pa => {
-    Object.entries(pa.factors || {}).forEach(([fk, v]) => {
+    Object.entries(pa.factors || {}).forEach(([fk]) => {
       const cat = (factorMeta[fk] || {}).category || 'tech';
       const grp = getGroupForCategory(cat);
-      if (grp) {
-        groupCounts[grp]++;
-        groupScores[grp].max += 2;
-        groupScores[grp].val += (v.score || 0);
-      }
+      if (grp) groupCounts[grp]++;
     });
-    Object.entries(pa.tech_scores || {}).forEach(([fk, v]) => {
-      groupCounts.accessibility++;
-      groupScores.accessibility.max += 2;
-      groupScores.accessibility.val += (v || 0);
-    });
+    Object.keys(pa.tech_scores || {}).forEach(() => { groupCounts.accessibility++; });
   });
 
-  const ds = r.domain_technical?.scores || {};
-  Object.values(ds).forEach(v => {
-    groupScores.accessibility.max += 2;
-    groupScores.accessibility.val += (v || 0);
-  });
-
+  // Use server-computed weighted category scores
+  const sc = r.scores?.category || {};
   const chartData = [
-    groupScores.eeat.max ? Math.round((groupScores.eeat.val / groupScores.eeat.max) * 100) : 0,
-    groupScores.topical.max ? Math.round((groupScores.topical.val / groupScores.topical.max) * 100) : 0,
-    groupScores.geo.max ? Math.round((groupScores.geo.val / groupScores.geo.max) * 100) : 0,
-    groupScores.accessibility.max ? Math.round((groupScores.accessibility.val / groupScores.accessibility.max) * 100) : 0,
+    sc.eeat ?? 0,
+    sc.topical ?? 0,
+    sc.geo ?? 0,
+    sc.accessibility ?? 0,
   ];
 
   const overall = r.scores?.overall || 0;
