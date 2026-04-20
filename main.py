@@ -1054,7 +1054,7 @@ Dokładnie 12 pytań, różnorodne intencje."""
     return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=3000))
 
 
-def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_scores: dict, fan_out: dict, homepage_url: str, site_title: str) -> dict:
+def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_scores: dict, fan_out: dict, homepage_url: str, site_title: str, sitemap_urls: list[str] = None) -> dict:
     """Generate prioritized recommendations with URL + page_type refs."""
     weak_per_page: list[str] = []
     for pa in page_audits:
@@ -1080,11 +1080,27 @@ def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_
 
     pages_list = "\n".join(f"- {pa.get('page_type')}: {pa.get('url')}" for pa in page_audits)
 
+    from urllib.parse import urlparse, unquote
+    topics = []
+    if sitemap_urls:
+        for u in sitemap_urls[:100]:
+            path = urlparse(u).path.strip('/')
+            if path:
+                slug = path.split('/')[-1]
+                topic = unquote(slug).replace('-', ' ').replace('_', ' ').capitalize()
+                if topic:
+                    topics.append(topic)
+    topics_list = "\n".join(f"- {t}" for t in topics) or "(brak tematów z sitemapy)"
+
     prompt = f"""Jesteś starszym konsultantem AI SEO. Masz wyniki per-URL audytu. Stwórz syntetyczny werdykt + rekomendacje z przypisaniem do KONKRETNEJ podstrony.
 
 <input>
 <strona>{homepage_url}</strona>
 <tytuł_domeny>{site_title}</tytuł_domeny>
+
+<lista_istniejacych_tematow_z_sitemapy>
+{topics_list}
+</lista_istniejacych_tematow_z_sitemapy>
 
 <audytowane_podstrony>
 {pages_list}
@@ -1112,7 +1128,7 @@ def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_
 - KAŻDA rekomendacja: pole "page_url" wskazujące konkretną podstronę (lub "domain" dla zmian globalnych jak robots/sitemap/llms.txt).
 - KAŻDA rekomendacja: pole "page_type" wskazujące typ (homepage/service/article/about/contact/category/domain).
 - Tekst rekomendacji musi być KONKRETNY i DOPASOWANY do typu strony. NIE rekomenduj dat publikacji na stronie sprzedażowej.
-- "content_gaps": 5 tematów których brakuje domenie jako całości (luki topical authority).
+- "content_gaps": przeanalizuj <lista_istniejacych_tematow_z_sitemapy>. Wygeneruj 5 NOWYCH tematów, których wyraźnie brakuje na blogu/stronie, ale są istotne w tej niszy. Zwróć jako konkretne tytuły artykułów/podstron (nie kategorie).
 - "overall_assessment": 3 zdania po polsku: (1) werdykt ogólny, (2) największa mocna strona, (3) największy bloker.
 </zasady>
 
@@ -1355,7 +1371,7 @@ def audit_stream(url: str):
         yield event("progress", {"message": "Synteza: priorytetyzowane rekomendacje per strona...", "pct": 90})
 
         try:
-            synth = synthesize_findings(page_audits, {"robots": robots, "sitemap": sitemap, "llms": llms}, domain_tech_scores, fan_out, url, homepage_title)
+            synth = synthesize_findings(page_audits, {"robots": robots, "sitemap": sitemap, "llms": llms}, domain_tech_scores, fan_out, url, homepage_title, sitemap_urls)
         except Exception as e:
             synth = {"top_recommendations": [], "content_gaps": [], "overall_assessment": f"Synteza nieudana: {e}"}
 
