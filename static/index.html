@@ -21,27 +21,28 @@
   --green:#0F7B36;
   --amber:#B76E00;
   --red:#B3261E;
+  --blue:#1A5FA8;
   --bg-good:#EAF5EE;
   --bg-warn:#FBF1DD;
   --bg-bad:#FBE6E4;
-  --serif:'Instrument Serif', 'Times New Roman', serif;
-  --sans:'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
-  --mono:'JetBrains Mono', ui-monospace, monospace;
+  --bg-blue:#E6EEF9;
+  --serif:'Instrument Serif','Times New Roman',serif;
+  --sans:'Inter',-apple-system,BlinkMacSystemFont,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,monospace;
 }
 html,body{background:var(--paper);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.65;-webkit-font-smoothing:antialiased}
 a{color:var(--ink);text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--rule)}
 a:hover{text-decoration-color:var(--ink)}
 
-/* Typography */
 h1,h2,h3,h4{font-family:var(--serif);font-weight:400;letter-spacing:-0.01em;line-height:1.15;color:var(--ink)}
 h1{font-size:clamp(2.4rem,6vw,3.8rem);font-weight:400}
 h2{font-size:1.75rem;margin-bottom:0.6rem}
 h3{font-size:1.25rem;margin-bottom:0.4rem;font-style:italic}
 .eyebrow{font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:500}
 .lede{font-size:1.1rem;color:var(--ink-2);max-width:52ch}
+.mono{font-family:var(--mono)}
 
-/* Layout */
-.page{max-width:860px;margin:0 auto;padding:clamp(24px,5vw,72px) clamp(20px,4vw,48px)}
+.page{max-width:880px;margin:0 auto;padding:clamp(24px,5vw,72px) clamp(20px,4vw,48px)}
 .rule{border:none;border-top:1px solid var(--rule);margin:56px 0}
 .rule-thick{border:none;border-top:2px solid var(--ink);margin:40px 0 32px}
 .section{margin:56px 0}
@@ -49,7 +50,7 @@ h3{font-size:1.25rem;margin-bottom:0.4rem;font-style:italic}
 .section-label .num{font-family:var(--mono);font-size:0.8rem;color:var(--muted);font-weight:500}
 .section-label h2{margin:0}
 
-/* Landing / Form */
+/* Landing */
 .landing{text-align:left;padding:80px 0 40px}
 .landing .meta-line{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-family:var(--mono);font-size:0.72rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em}
 .landing h1{margin:12px 0 18px;max-width:14ch}
@@ -70,7 +71,7 @@ h3{font-size:1.25rem;margin-bottom:0.4rem;font-style:italic}
 .progress-head .eyebrow{color:var(--ink-2)}
 .progress-bar-track{height:2px;background:var(--rule);overflow:hidden;border-radius:1px}
 .progress-bar-fill{height:100%;background:var(--ink);width:0%;transition:width .5s ease}
-.progress-msg{margin-top:14px;font-size:0.95rem;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.progress-msg{margin-top:14px;font-size:0.95rem;color:var(--ink-2)}
 .progress-msg .dot{display:inline-block;width:6px;height:6px;background:var(--ink);border-radius:50%;margin-right:10px;animation:pulse 1.2s ease-in-out infinite}
 @keyframes pulse{0%,100%{opacity:.3}50%{opacity:1}}
 
@@ -92,56 +93,55 @@ h3{font-size:1.25rem;margin-bottom:0.4rem;font-style:italic}
 .verdict-text{font-family:var(--serif);font-style:italic;font-size:1.25rem;line-height:1.4;color:var(--ink-2)}
 .verdict-text strong{font-style:normal;font-weight:400;color:var(--ink)}
 
+/* Score tiles */
+.score-tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:28px 0}
+.score-tile{padding:18px 16px;background:var(--paper-2);border:1px solid var(--rule);border-radius:3px;text-align:center}
+.score-tile .tile-val{font-family:var(--serif);font-size:2.4rem;font-weight:400;letter-spacing:-0.02em;line-height:1}
+.score-tile .tile-lbl{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-top:6px;display:block}
+
 /* Exec summary */
 .exec-summary{font-size:1.05rem;line-height:1.7;max-width:62ch;color:var(--ink-2);padding:20px 0}
 .exec-summary p:first-child::first-letter{font-family:var(--serif);font-size:3.6rem;float:left;line-height:0.85;padding:6px 10px 0 0;color:var(--ink);font-weight:400}
 
-/* Score grid */
-.score-grid{display:grid;grid-template-columns:1.2fr 1fr;gap:40px;align-items:center;margin:32px 0}
-.score-axes{display:flex;flex-direction:column;gap:14px}
+/* Radar / score chart */
+.score-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center;margin:32px 0}
+.score-axes{display:flex;flex-direction:column;gap:16px}
 .score-axis{display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center}
-.score-axis-label{font-family:var(--mono);font-size:0.75rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);width:130px}
+.score-axis-label{font-size:0.82rem;color:var(--ink-2);width:160px;display:flex;align-items:center;gap:6px;line-height:1.3}
 .score-axis-bar{height:4px;background:var(--rule);position:relative;overflow:hidden}
 .score-axis-bar-fill{height:100%;background:var(--ink);transition:width .8s ease}
-.score-axis-val{font-family:var(--mono);font-size:0.95rem;font-weight:500;color:var(--ink);min-width:42px;text-align:right;font-variant-numeric:tabular-nums}
-.chart-wrap{min-height:300px;display:flex;align-items:center;justify-content:center;position:relative}
+.score-axis-val{font-family:var(--mono);font-size:0.95rem;font-weight:500;color:var(--ink);min-width:36px;text-align:right;font-variant-numeric:tabular-nums}
+.chart-wrap{min-height:280px;display:flex;align-items:center;justify-content:center;position:relative}
 
-/* Color scale */
-.good{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}
+/* Color */
+.good{color:var(--green)}.warn{color:var(--amber)}.bad{color:var(--red)}.blue{color:var(--blue)}
 .score-axis[data-tier="bad"] .score-axis-bar-fill{background:var(--red)}
 .score-axis[data-tier="warn"] .score-axis-bar-fill{background:var(--amber)}
 .score-axis[data-tier="good"] .score-axis-bar-fill{background:var(--green)}
 
+/* Page type badges */
+.pt-badge{display:inline-block;font-family:var(--mono);font-size:0.67rem;text-transform:uppercase;letter-spacing:0.08em;padding:2px 8px;border-radius:2px;white-space:nowrap;font-weight:500}
+.pt-homepage{background:#EDE9FF;color:#5B3FCC}
+.pt-service{background:var(--bg-blue);color:var(--blue)}
+.pt-article{background:var(--bg-good);color:var(--green)}
+.pt-about{background:var(--bg-warn);color:var(--amber)}
+.pt-contact{background:var(--bg-bad);color:var(--red)}
+.pt-category{background:#E6F4FA;color:#0D6B8F}
+.pt-other{background:var(--paper-2);color:var(--muted)}
+
 /* Recommendations */
-.rec-list{counter-reset:rec;list-style:none;padding:0;margin:24px 0}
-.rec-list li{counter-increment:rec;display:grid;grid-template-columns:auto 1fr;gap:20px;padding:18px 0;border-bottom:1px solid var(--rule)}
+.rec-list{list-style:none;padding:0;margin:24px 0;counter-reset:rec}
+.rec-list li{counter-increment:rec;padding:16px 0;border-bottom:1px solid var(--rule);display:grid;grid-template-columns:auto 1fr;gap:20px}
 .rec-list li:last-child{border-bottom:none}
-.rec-list li::before{content:counter(rec, decimal-leading-zero);font-family:var(--mono);font-size:0.8rem;color:var(--muted);padding-top:2px;letter-spacing:0.05em}
-.rec-list .rec-text{font-size:1rem;line-height:1.55}
+.rec-list li::before{content:counter(rec,decimal-leading-zero);font-family:var(--mono);font-size:0.8rem;color:var(--muted);padding-top:3px;letter-spacing:0.05em}
+.rec-body{}
+.rec-text{font-size:1rem;line-height:1.55;display:block;margin-bottom:6px}
+.rec-ref{display:inline-flex;align-items:center;gap:6px;margin-top:4px}
+.rec-url{font-family:var(--mono);font-size:0.72rem;color:var(--muted);word-break:break-all}
 
 /* Gap list */
 .gap-list{list-style:none;padding:0;margin:24px 0}
-.gap-list li{padding:14px 18px;margin-bottom:8px;background:var(--bg-bad);border-left:3px solid var(--red);font-size:0.95rem;color:var(--ink)}
-
-/* Factor accordion */
-.factors{margin-top:20px}
-.factor-cat{margin-bottom:40px}
-.factor-cat-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding-bottom:10px;border-bottom:1.5px solid var(--ink);margin-bottom:0}
-.factor-cat-head h3{margin:0}
-.factor-cat-score{font-family:var(--mono);font-size:1rem;font-weight:500;font-variant-numeric:tabular-nums}
-details.factor{border-bottom:1px solid var(--rule)}
-details.factor[open]{background:var(--paper-2)}
-details.factor summary{list-style:none;cursor:pointer;padding:14px 16px 14px 4px;display:grid;grid-template-columns:28px 1fr auto;gap:14px;align-items:center;font-size:0.95rem}
-details.factor summary::-webkit-details-marker{display:none}
-details.factor summary:hover{background:var(--paper-2)}
-details.factor .status{font-family:var(--mono);font-size:1rem;text-align:center;width:28px;font-weight:600}
-details.factor .fname{font-weight:500;color:var(--ink)}
-details.factor .score-tag{font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
-details.factor[data-tier="good"] .status{color:var(--green)}
-details.factor[data-tier="warn"] .status{color:var(--amber)}
-details.factor[data-tier="bad"] .status{color:var(--red)}
-details.factor .note{padding:0 16px 18px 46px;font-size:0.95rem;color:var(--ink-2);line-height:1.6;max-width:70ch}
-details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-right:6px;font-weight:500}
+.gap-list li{padding:12px 18px;margin-bottom:8px;background:var(--bg-bad);border-left:3px solid var(--red);font-size:0.95rem;color:var(--ink)}
 
 /* Fan-out queries */
 .fan-list{list-style:none;padding:0;margin:20px 0}
@@ -153,17 +153,51 @@ details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font
 .fan-tag.missing{background:var(--bg-bad);color:var(--red)}
 .fan-gap{display:block;font-size:0.85rem;color:var(--muted);margin-top:4px;font-style:italic}
 
+/* Per-page audit card */
+.page-audit-card{margin-bottom:48px;padding:28px 28px 24px;border:1px solid var(--rule);border-radius:4px;background:#fff}
+.page-audit-card:hover{border-color:#C5C2BA;box-shadow:0 2px 10px rgba(0,0,0,0.04)}
+.pac-header{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.pac-meta{}
+.pac-title{font-family:var(--serif);font-size:1.15rem;font-weight:400;margin-bottom:6px;line-height:1.3}
+.pac-url{font-family:var(--mono);font-size:0.75rem;color:var(--muted);word-break:break-all}
+.pac-score-block{text-align:right;flex-shrink:0}
+.pac-score-num{font-family:var(--serif);font-size:2.8rem;font-weight:400;letter-spacing:-0.02em;line-height:0.9}
+.pac-score-sub{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-top:5px}
+.pac-summary-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(110px,1fr));gap:8px;margin:16px 0;padding:14px 0;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule)}
+.pac-stat{text-align:center}
+.pac-stat .sv{font-family:var(--mono);font-size:0.9rem;font-weight:500;color:var(--ink)}
+.pac-stat .sl{font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);display:block;margin-top:2px}
+
+/* Factor accordion */
+.factors{margin-top:16px}
+.factor-cat-head{display:flex;justify-content:space-between;align-items:baseline;gap:16px;padding-bottom:8px;border-bottom:1.5px solid var(--ink);margin-bottom:0}
+.factor-cat-head h3{margin:0;font-size:1rem;font-style:italic;color:var(--muted);font-family:var(--sans);font-weight:400}
+.factor-cat-score{font-family:var(--mono);font-size:1rem;font-weight:500;font-variant-numeric:tabular-nums}
+details.factor{border-bottom:1px solid var(--rule)}
+details.factor[open]{background:var(--paper-2)}
+details.factor summary{list-style:none;cursor:pointer;padding:13px 16px 13px 4px;display:grid;grid-template-columns:28px 1fr auto;gap:14px;align-items:center;font-size:0.92rem}
+details.factor summary::-webkit-details-marker{display:none}
+details.factor summary:hover{background:var(--paper-2)}
+details.factor .status{font-family:var(--mono);font-size:1rem;text-align:center;width:28px;font-weight:600}
+details.factor .fname{font-weight:500;color:var(--ink)}
+details.factor .score-tag{font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+details.factor[data-tier="good"] .status{color:var(--green)}
+details.factor[data-tier="warn"] .status{color:var(--amber)}
+details.factor[data-tier="bad"] .status{color:var(--red)}
+details.factor .note{padding:0 16px 16px 46px;font-size:0.92rem;color:var(--ink-2);line-height:1.6;max-width:68ch}
+details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-right:6px;font-weight:500}
+
+/* Tech section */
+.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:16px 0 20px}
+.tech-item{padding:12px 14px;background:var(--paper-2);border:1px solid var(--rule);border-radius:2px}
+.tech-item .lbl{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;margin-bottom:4px;display:block}
+.tech-item .val{font-size:0.88rem;color:var(--ink);font-weight:500}
+
 /* Bots */
-.bots-row{display:flex;flex-wrap:wrap;gap:8px;margin:16px 0 24px}
-.bot-badge{padding:5px 12px;border:1px solid var(--rule);border-radius:2px;font-family:var(--mono);font-size:0.76rem;letter-spacing:0.03em}
+.bots-row{display:flex;flex-wrap:wrap;gap:8px;margin:14px 0 20px}
+.bot-badge{padding:5px 12px;border:1px solid var(--rule);border-radius:2px;font-family:var(--mono);font-size:0.74rem;letter-spacing:0.03em}
 .bot-badge.ok{color:var(--green);border-color:#BBD9C3}
 .bot-badge.bad{color:var(--red);border-color:#E5B8B3;background:var(--bg-bad)}
-
-/* Tech grid */
-.tech-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin:16px 0 24px}
-.tech-item{padding:12px 14px;background:var(--paper-2);border:1px solid var(--rule);border-radius:2px}
-.tech-item .lbl{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;color:var(--muted);letter-spacing:0.08em;margin-bottom:4px;display:block}
-.tech-item .val{font-size:0.9rem;color:var(--ink);font-weight:500}
 
 /* Footnotes */
 .footnotes{margin-top:80px;padding-top:32px;border-top:1px solid var(--rule);font-size:0.85rem;color:var(--muted);line-height:1.6}
@@ -171,37 +205,33 @@ details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font
 .footnotes ol{padding-left:24px;margin-top:8px}
 .footnotes li{margin-bottom:8px}
 
-/* Colophon */
 .colophon{text-align:center;margin-top:40px;padding:32px 0 8px;font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted)}
 
 #results{display:none}
 
-/* Responsive */
 @media(max-width:720px){
   .page{padding:32px 20px}
   .score-grid{grid-template-columns:1fr}
-  .chart-wrap{order:-1;min-height:280px}
-  .verdict{grid-template-columns:1fr;text-align:left}
-  .form{padding:12px 14px}
+  .chart-wrap{order:-1;min-height:260px}
+  .verdict{grid-template-columns:1fr}
+  .score-tiles{grid-template-columns:1fr 1fr}
+  .pac-header{flex-direction:column}
+  .pac-score-block{text-align:left}
 }
 
-/* Print — research paper PDF */
 @media print{
   html,body{background:#fff!important}
   .landing,.form,#progress,.report-actions,.colophon,.btn{display:none!important}
   .page{max-width:100%;padding:0;margin:0}
-  .section{page-break-inside:avoid}
-  .factor-cat{page-break-inside:avoid}
+  .section,.page-audit-card,.factor-cat{page-break-inside:avoid}
   details.factor{break-inside:avoid}
   details.factor[open]{background:transparent}
+  details.factor>:not(summary){display:block!important}
   .rule,.rule-thick{border-color:#000}
   a{color:#000}
   h1,h2,h3,h4{page-break-after:avoid}
   .verdict-score{font-size:4.5rem}
-  details.factor summary{padding:10px 4px}
-  details.factor[open] summary+*{display:block!important}
-  details.factor:not([open])>:not(summary){display:block!important}
-  details.factor>:not(summary){display:block!important}
+  .page-audit-card{border:1px solid #ccc;box-shadow:none}
 }
 </style>
 </head>
@@ -209,7 +239,6 @@ details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font
 
 <main class="page">
 
-  <!-- LANDING -->
   <section class="landing" id="landing">
     <div class="meta-line">
       <span>AI SEO Audit</span>
@@ -217,14 +246,13 @@ details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font
       <span id="today"></span>
     </div>
     <h1>Audyt gotowości strony dla <em>crawlerów LLM</em>, ChatGPT &amp; Perplexity.</h1>
-    <p class="lede">Ocena E-E-A-T, Topical Authority, RAG Extractability, query fan-out coverage i technicznej dostępności dla GPTBot, PerplexityBot, ClaudeBot. Oparty na analizie 5 reprezentatywnych podstron wybranych przez Gemini z mapy witryny.</p>
+    <p class="lede">Analiza per podstrona z czynnikami dopasowanymi do typu (homepage, oferta, artykuł, o nas, kontakt). E-E-A-T, Topical Authority, RAG Extractability, query fan-out — oparty na Gemini + Firecrawl.</p>
     <form class="form" onsubmit="startAudit(event)">
       <input type="url" id="url-input" placeholder="https://twojastrona.pl" autocomplete="off" required>
       <button class="btn" id="audit-btn" type="submit">Uruchom audyt →</button>
     </form>
   </section>
 
-  <!-- PROGRESS -->
   <div id="progress">
     <div class="progress-head">
       <span class="eyebrow">Przebieg audytu</span>
@@ -234,15 +262,10 @@ details.factor .note::before{content:"Obserwacja: ";font-family:var(--mono);font
     <div class="progress-msg"><span class="dot"></span><span id="prog-msg">Inicjalizacja…</span></div>
   </div>
 
-  <!-- ERROR -->
   <div id="error" style="display:none"></div>
-
-  <!-- RESULTS -->
   <div id="results"></div>
 
-  <div class="colophon">
-    Powered by Firecrawl · Gemini · FastAPI
-  </div>
+  <div class="colophon">Powered by Firecrawl · Gemini · FastAPI</div>
 </main>
 
 <script>
@@ -251,10 +274,7 @@ const today = new Date().toLocaleDateString('pl-PL', {year:'numeric',month:'long
 $('today').textContent = today;
 
 $('url-input').addEventListener('keydown', e => {
-  if (e.key === 'Enter' && !e.shiftKey) {
-    e.preventDefault();
-    startAudit(e);
-  }
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); startAudit(e); }
 });
 
 function startAudit(ev) {
@@ -262,7 +282,6 @@ function startAudit(ev) {
   let url = $('url-input').value.trim();
   if (!url) { $('url-input').focus(); return; }
   if (!url.startsWith('http')) url = 'https://' + url;
-
   $('audit-btn').disabled = true;
   $('progress').style.display = 'block';
   $('results').style.display = 'none';
@@ -270,7 +289,6 @@ function startAudit(ev) {
   $('error').style.display = 'none';
   setProgress(5, 'Łączenie z Firecrawl…');
   $('progress').scrollIntoView({behavior:'smooth', block:'center'});
-
   const es = new EventSource(`/audit/stream?url=${encodeURIComponent(url)}`);
   es.onmessage = e => {
     const data = JSON.parse(e.data);
@@ -309,12 +327,9 @@ function escapeHtml(s) {
 }
 
 function tier(score) { return score >= 70 ? 'good' : score >= 45 ? 'warn' : 'bad'; }
+
 function verdictWord(score) {
-  return score >= 85 ? 'Advanced'
-    : score >= 70 ? 'Proficient'
-    : score >= 55 ? 'Developing'
-    : score >= 40 ? 'Emerging'
-    : 'Critical';
+  return score >= 85 ? 'Advanced' : score >= 70 ? 'Proficient' : score >= 55 ? 'Developing' : score >= 40 ? 'Emerging' : 'Critical';
 }
 function verdictPolish(score) {
   return score >= 85 ? 'Zaawansowana gotowość do cytowania przez LLM'
@@ -323,38 +338,56 @@ function verdictPolish(score) {
     : score >= 40 ? 'Wczesna faza — wymaga priorytetowej pracy nad strukturą i sygnałami'
     : 'Stan krytyczny — strona praktycznie niewidoczna dla crawlerów AI';
 }
+
 function factorLabel(k) {
-  return k.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  return k.replace(/_/g,' ').replace(/\b\w/g, c => c.toUpperCase());
 }
+
+function ptBadge(pt) {
+  const labels = {
+    homepage:'Strona główna', service:'Sprzedażowa', article:'Artykuł/Blog',
+    about:'O firmie', contact:'Kontakt', category:'Kategoria', other:'Inna'
+  };
+  return `<span class="pt-badge pt-${escapeHtml(pt)}">${escapeHtml(labels[pt] || pt)}</span>`;
+}
+
+function shortUrl(u) {
+  try {
+    const pu = new URL(u);
+    return (pu.pathname || '/').replace(/\/$/, '') || '/';
+  } catch { return u; }
+}
+
+// ---- MAIN RENDER ----
 
 function renderReport(r) {
   const sc = r.scores;
   const synth = r.synthesis || {};
-  const overallT = tier(sc.overall);
-  const verdictEn = verdictWord(sc.overall);
-  const verdictPl = verdictPolish(sc.overall);
+  const overall = sc.overall;
+  const verdictEn = verdictWord(overall);
+  const verdictPl = verdictPolish(overall);
+  const pages = r.page_audits || [];
 
   const html = `
     <article>
       ${renderHeader(r)}
-      ${renderVerdict(sc.overall, verdictEn, verdictPl, synth.overall_assessment)}
-      ${renderExecSummary(r, synth, sc)}
+      ${renderVerdict(overall, verdictEn, verdictPl, synth.overall_assessment)}
+      ${renderExecSummary(r, sc, pages)}
       <hr class="rule-thick">
-      ${renderScoreSection(sc)}
+      ${renderScoreSection(pages, sc)}
       ${renderRecommendations(synth.top_recommendations || [])}
       ${renderGaps(synth.content_gaps || [])}
       ${renderFanOut(r.fan_out)}
-      ${renderFactorCat('I', 'E-E-A-T / Wiarygodność', 'Sygnały Experience · Expertise · Authoritativeness · Trust — fundament cytowalności przez LLM', r.eeat, sc.eeat)}
-      ${renderFactorCat('II', 'Topical Authority', 'Głębia tematyczna, klastry treści, unikatowy punkt widzenia, pokrycie pod-intencji', r.topical_authority, sc.topical_authority)}
-      ${renderFactorCat('III', 'RAG Extractability', 'Strukturalna gotowość treści do wyodrębnienia przez systemy Retrieval-Augmented Generation', r.rag_extractability, sc.rag_extractability)}
-      ${renderTechnical(r)}
-      ${renderFootnotes(r)}
+      <hr class="rule">
+      ${renderPerPageAudits(pages)}
+      ${renderDomainTechnical(r.domain_technical)}
+      ${renderFootnotes(r, pages)}
     </article>`;
 
   $('results').innerHTML = html;
   $('results').style.display = 'block';
   $('results').scrollIntoView({behavior:'smooth', block:'start'});
-  setTimeout(() => drawRadar(sc), 50);
+  setTimeout(() => drawRadar(pages, sc), 80);
 }
 
 function renderHeader(r) {
@@ -386,66 +419,77 @@ function renderVerdict(overall, verdictEn, verdictPl, assessment) {
     </div>`;
 }
 
-function renderExecSummary(r, synth, sc) {
-  const crawled = r.crawled_urls || [];
+function renderExecSummary(r, sc, pages) {
   const src = r.discovery_source === 'sitemap' ? 'sitemap.xml' : 'Firecrawl /map';
-  const metaCount = crawled.length;
-  const tier5 = [
-    {k:'eeat', label:'E-E-A-T'},
-    {k:'topical_authority', label:'Topical'},
-    {k:'rag_extractability', label:'RAG'},
-    {k:'fan_out', label:'Fan-out'},
-    {k:'technical', label:'Techniczny'},
-  ];
-  const strongest = tier5.slice().sort((a,b) => sc[b.k]-sc[a.k])[0];
-  const weakest = tier5.slice().sort((a,b) => sc[a.k]-sc[b.k])[0];
+  const sorted = pages.slice().sort((a,b) => (b.combined_score||0) - (a.combined_score||0));
+  const best = sorted[0];
+  const worst = sorted[sorted.length-1];
+  const tiles = `
+    <div class="score-tiles">
+      <div class="score-tile">
+        <div class="score-tile tile-val ${tier(sc.page_average)}">${sc.page_average}</div>
+        <span class="tile-lbl">Śr. wynik stron</span>
+      </div>
+      <div class="score-tile">
+        <div class="score-tile tile-val ${tier(sc.domain_technical)}">${sc.domain_technical}</div>
+        <span class="tile-lbl">Tech. domena</span>
+      </div>
+      <div class="score-tile">
+        <div class="score-tile tile-val ${tier(sc.fan_out)}">${sc.fan_out}</div>
+        <span class="tile-lbl">Query fan-out</span>
+      </div>
+    </div>`;
 
   return `
     <section class="section">
       <div class="section-label"><span class="num">§ 0</span><h2>Streszczenie wykonawcze</h2></div>
       <div class="exec-summary">
-        <p>Audyt objął <strong>${metaCount}</strong> reprezentatywnych podstron domeny, wybranych przez Gemini z ${src}. Analiza obejmuje pięć wymiarów gotowości AI: E-E-A-T (${sc.eeat}%), Topical Authority (${sc.topical_authority}%), RAG Extractability (${sc.rag_extractability}%), pokrycie query fan-out (${sc.fan_out}%) oraz dostępność techniczna dla crawlerów AI (${sc.technical}%). Najsilniejszy obszar: <strong>${strongest.label}</strong>. Najpilniejszy: <strong>${weakest.label}</strong>.</p>
+        <p>Audyt objął <strong>${pages.length}</strong> podstron wybranych z ${src}. Dla każdej strony zastosowano czynniki dopasowane do jej typu — strona sprzedażowa nie jest penalizowana za brak dat publikacji, artykuł za brak testimoniali.${best ? ` Najwyżej oceniona: ${ptBadge(best.page_type)} <span class="mono" style="font-size:.82rem">${escapeHtml(shortUrl(best.url))}</span> (${best.combined_score}/100).` : ''}${worst && worst !== best ? ` Wymaga najpilniejszej uwagi: ${ptBadge(worst.page_type)} <span class="mono" style="font-size:.82rem">${escapeHtml(shortUrl(worst.url))}</span> (${worst.combined_score}/100).` : ''}</p>
       </div>
+      ${tiles}
     </section>`;
 }
 
-function renderScoreSection(sc) {
-  const axes = [
-    {k:'eeat', label:'E-E-A-T'},
-    {k:'topical_authority', label:'Topical Authority'},
-    {k:'rag_extractability', label:'RAG Extractability'},
-    {k:'fan_out', label:'Fan-out Coverage'},
-    {k:'technical', label:'Technical AI-Bot'},
-  ];
-  const rows = axes.map(a => {
-    const s = sc[a.k];
-    return `
-      <div class="score-axis" data-tier="${tier(s)}">
-        <div class="score-axis-label">${a.label}</div>
-        <div class="score-axis-bar"><div class="score-axis-bar-fill" style="width:${s}%"></div></div>
-        <div class="score-axis-val">${s}</div>
-      </div>`;
-  }).join('');
+function renderScoreSection(pages, sc) {
+  const axes = pages.map(pa => ({
+    label: shortUrl(pa.url),
+    pt: pa.page_type,
+    score: pa.combined_score || 0,
+  }));
+
+  const rows = axes.map(a => `
+    <div class="score-axis" data-tier="${tier(a.score)}">
+      <div class="score-axis-label">${ptBadge(a.pt)} <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;display:inline-block;vertical-align:middle">${escapeHtml(a.label)}</span></div>
+      <div class="score-axis-bar"><div class="score-axis-bar-fill" style="width:${a.score}%"></div></div>
+      <div class="score-axis-val">${a.score}</div>
+    </div>`).join('');
 
   return `
     <section class="section">
-      <div class="section-label"><span class="num">§ 1</span><h2>Wyniki według wymiaru</h2></div>
+      <div class="section-label"><span class="num">§ 1</span><h2>Wyniki per podstrona</h2></div>
       <div class="score-grid">
         <div class="score-axes">${rows}</div>
-        <div class="chart-wrap"><canvas id="radar" width="340" height="340"></canvas></div>
+        <div class="chart-wrap"><canvas id="radar" width="320" height="320"></canvas></div>
       </div>
     </section>`;
 }
 
 function renderRecommendations(recs) {
   if (!recs.length) return '';
+  const items = recs.map(r => {
+    const text = typeof r === 'string' ? r : (r.text || r);
+    const pageUrl = (typeof r === 'object') ? r.page_url : null;
+    const pt = (typeof r === 'object') ? r.page_type : null;
+    const refHtml = (pageUrl && pageUrl !== 'domain')
+      ? `<div class="rec-ref">${ptBadge(pt || 'other')}<span class="rec-url">${escapeHtml(shortUrl(pageUrl))}</span></div>`
+      : (pt === 'domain' ? `<div class="rec-ref"><span class="pt-badge pt-other">Domena</span></div>` : '');
+    return `<li><div class="rec-body"><span class="rec-text">${escapeHtml(text)}</span>${refHtml}</div></li>`;
+  }).join('');
   return `
     <section class="section">
       <div class="section-label"><span class="num">§ 2</span><h2>Rekomendacje priorytetowe</h2></div>
-      <p class="lede" style="margin-bottom:8px">Uporządkowane wg IMPACT × EASE. Zacznij od pozycji 01.</p>
-      <ol class="rec-list">
-        ${recs.map(r => `<li><span class="rec-text">${escapeHtml(r)}</span></li>`).join('')}
-      </ol>
+      <p class="lede" style="margin-bottom:8px">Uporządkowane wg IMPACT × EASE. Każda rekomendacja dotyczy konkretnej podstrony.</p>
+      <ol class="rec-list">${items}</ol>
     </section>`;
 }
 
@@ -453,43 +497,99 @@ function renderGaps(gaps) {
   if (!gaps.length) return '';
   return `
     <section class="section">
-      <div class="section-label"><span class="num">§ 3</span><h2>Luki w treści</h2></div>
-      <p class="lede" style="margin-bottom:8px">Konkretne tematy/kąty widzenia, których witryna nie pokrywa.</p>
-      <ul class="gap-list">
-        ${gaps.map(g => `<li>${escapeHtml(g)}</li>`).join('')}
-      </ul>
+      <div class="section-label"><span class="num">§ 3</span><h2>Luki w treści domeny</h2></div>
+      <p class="lede" style="margin-bottom:8px">Tematy nieobecne — zagrożenie utratą pozycji topical authority.</p>
+      <ul class="gap-list">${gaps.map(g => `<li>${escapeHtml(g)}</li>`).join('')}</ul>
     </section>`;
 }
 
 function renderFanOut(fan) {
   const queries = (fan && fan.queries) || [];
   if (!queries.length) return '';
+  const labels = {covered:'Pokryte', partial:'Częściowe', missing:'Brak'};
   return `
     <section class="section">
       <div class="section-label"><span class="num">§ 4</span><h2>Symulacja query fan-out</h2></div>
-      <p class="lede" style="margin-bottom:8px">Typowe pytania użytkowników ChatGPT/Perplexity w tej niszy i ocena pokrycia w treści.</p>
+      <p class="lede" style="margin-bottom:8px">Pytania użytkowników ChatGPT/Perplexity w tej niszy — ocena pokrycia przez całą domenę.</p>
       <ul class="fan-list">
         ${queries.map(q => {
           const c = q.coverage || 'missing';
-          const labels = {covered:'Pokryte', partial:'Częściowe', missing:'Brak'};
           return `<li>
             <span class="fan-tag ${c}">${labels[c] || c}</span>
-            <div>
-              ${escapeHtml(q.query || '')}
-              ${q.gap_note ? `<span class="fan-gap">→ ${escapeHtml(q.gap_note)}</span>` : ''}
-            </div>
+            <div>${escapeHtml(q.query || '')}${q.gap_note ? `<span class="fan-gap">→ ${escapeHtml(q.gap_note)}</span>` : ''}</div>
           </li>`;
         }).join('')}
       </ul>
     </section>`;
 }
 
-function renderFactorCat(num, title, desc, factors, score) {
-  if (!factors) return '';
-  const entries = Object.entries(factors).filter(([k,v]) => typeof v === 'object' && v && 'score' in v);
-  if (!entries.length) return '';
+// ---- PER PAGE AUDITS ----
 
-  const rows = entries.map(([k, v]) => {
+function renderPerPageAudits(pages) {
+  if (!pages.length) return '';
+  const sectionNum = 5;
+  const cards = pages.map((pa, i) => renderPageCard(pa, i)).join('');
+  return `
+    <section class="section">
+      <div class="section-label"><span class="num">§ ${sectionNum}</span><h2>Audyt per podstrona</h2></div>
+      <p class="lede" style="margin-bottom:28px">Czynniki oceny dobrane do typu każdej strony. Każda podstrona traktowana indywidualnie.</p>
+      ${cards}
+    </section>`;
+}
+
+function renderPageCard(pa, idx) {
+  const t = tier(pa.combined_score);
+  const hcs = pa.html_checks_summary || {};
+  const schemas = (hcs.schema_types || []).join(', ') || '—';
+  const images = hcs.images || {};
+  const techRows = renderPageTechFactors(pa.tech_scores || {}, hcs);
+  const factorRows = renderFactors(pa.factors || {});
+
+  return `
+    <div class="page-audit-card">
+      <div class="pac-header">
+        <div class="pac-meta">
+          <div style="margin-bottom:8px">${ptBadge(pa.page_type)}</div>
+          <div class="pac-title">${escapeHtml(pa.title || pa.url)}</div>
+          <div class="pac-url"><a href="${escapeHtml(pa.url)}" target="_blank">${escapeHtml(pa.url)}</a></div>
+        </div>
+        <div class="pac-score-block">
+          <div class="pac-score-num ${t}">${pa.combined_score}</div>
+          <div class="pac-score-sub">/100</div>
+        </div>
+      </div>
+
+      <div class="pac-summary-grid">
+        <div class="pac-stat"><span class="sv">${hcs.word_count || '—'}</span><span class="sl">Słów</span></div>
+        <div class="pac-stat"><span class="sv">${hcs.html_size_kb || '—'} KB</span><span class="sl">Rozmiar</span></div>
+        <div class="pac-stat"><span class="sv">${hcs.h1_count ?? '—'}</span><span class="sl">H1</span></div>
+        <div class="pac-stat"><span class="sv">${hcs.internal_links ?? '—'}</span><span class="sl">Linki wew.</span></div>
+        <div class="pac-stat"><span class="sv">${images.alt_coverage_pct ?? '—'}%</span><span class="sl">Alt img</span></div>
+        <div class="pac-stat"><span class="sv" style="font-size:.72rem;overflow:hidden;text-overflow:ellipsis;max-width:90px;white-space:nowrap">${escapeHtml(schemas)}</span><span class="sl">Schema</span></div>
+      </div>
+
+      <div style="margin-top:18px">
+        <div class="factor-cat-head">
+          <h3>Czynniki treści (${pa.page_type_label || pa.page_type})</h3>
+          <div class="factor-cat-score ${tier(pa.factor_score_pct)}">${pa.factor_score_pct} / 100</div>
+        </div>
+        <div class="factors">${factorRows}</div>
+      </div>
+
+      <div style="margin-top:24px">
+        <div class="factor-cat-head">
+          <h3>Techniczne czynniki strony</h3>
+          <div class="factor-cat-score ${tier(pa.tech_score_pct)}">${pa.tech_score_pct} / 100</div>
+        </div>
+        <div class="factors">${techRows}</div>
+      </div>
+    </div>`;
+}
+
+function renderFactors(factors) {
+  const entries = Object.entries(factors).filter(([k,v]) => typeof v === 'object' && v && 'score' in v);
+  if (!entries.length) return '<p style="color:var(--muted);font-size:.9rem;padding:12px 4px">Brak danych.</p>';
+  return entries.map(([k, v]) => {
     const s = v.score;
     const t = s === 2 ? 'good' : s === 1 ? 'warn' : 'bad';
     const icon = s === 2 ? '●' : s === 1 ? '◐' : '○';
@@ -504,33 +604,12 @@ function renderFactorCat(num, title, desc, factors, score) {
         <div class="note">${escapeHtml(v.note || '—')}</div>
       </details>`;
   }).join('');
-
-  const sectionNums = {'I':'§ 5', 'II':'§ 6', 'III':'§ 7'};
-  return `
-    <section class="section factor-cat">
-      <div class="section-label"><span class="num">${sectionNums[num] || '§'}</span><h2>${title}</h2></div>
-      <div class="factor-cat-head">
-        <h3 style="font-style:italic;color:var(--muted);font-size:1rem;font-family:var(--sans);font-weight:400">${desc}</h3>
-        <div class="factor-cat-score ${tier(score)}">${score} / 100</div>
-      </div>
-      <div class="factors">${rows}</div>
-    </section>`;
 }
 
-function renderTechnical(r) {
-  const hc = r.html_checks || {};
-  const robots = r.robots || {};
-  const sitemap = r.sitemap || {};
-  const llms = r.llms_txt || {};
-  const tech = r.tech_scores || {};
-  const sc = r.scores.technical;
-
-  const botsHtml = Object.entries(robots.bots || {}).map(([bot, info]) => {
-    const ok = info.allowed;
-    return `<span class="bot-badge ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} ${bot}</span>`;
-  }).join('') || '<span style="color:var(--muted);font-size:0.9rem">Brak dedykowanych reguł dla botów AI</span>';
-
-  const techRows = Object.entries(tech).map(([k, v]) => {
+function renderPageTechFactors(techScores, hcs) {
+  if (!Object.keys(techScores).length) return '<p style="color:var(--muted);font-size:.9rem;padding:12px 4px">Brak danych.</p>';
+  const notes = buildPageTechNotes(techScores, hcs);
+  return Object.entries(techScores).map(([k, v]) => {
     const t = v === 2 ? 'good' : v === 1 ? 'warn' : 'bad';
     const icon = v === 2 ? '●' : v === 1 ? '◐' : '○';
     const label = v === 2 ? 'OK' : v === 1 ? 'Częściowo' : 'Brak';
@@ -541,102 +620,130 @@ function renderTechnical(r) {
           <span class="fname">${factorLabel(k)}</span>
           <span class="score-tag">${label}</span>
         </summary>
-        <div class="note">${techNote(k, hc, robots, sitemap, llms)}</div>
+        <div class="note">${escapeHtml(notes[k] || '—')}</div>
+      </details>`;
+  }).join('');
+}
+
+function buildPageTechNotes(ts, hcs) {
+  const meta = hcs.meta || {};
+  const canonical = hcs.canonical;
+  const schemas = (hcs.schema_types || []).join(', ') || 'brak';
+  const images = hcs.images || {};
+  return {
+    meta_title_present: meta.title ? `Tytuł: "${escapeHtml((meta.title||'').slice(0,100))}"` : 'Brak tagu <title>.',
+    meta_description: meta.description ? `Meta description: "${(meta.description||'').slice(0,120)}..."` : 'Brak meta description.',
+    canonical_tag: canonical ? `Canonical: ${canonical}` : 'Brak tagu canonical.',
+    h1_single: `Znaleziono ${hcs.h1_count ?? '?'} znacznik(ów) <h1>.`,
+    heading_hierarchy: 'Hierarchia nagłówków h1→h2→h3.',
+    og_tags: 'Open Graph (og:title, og:description).',
+    viewport_meta: 'Meta viewport — wymagane dla mobile-friendly.',
+    lang_attribute: 'Atrybut lang= w <html>.',
+    image_alt_coverage: `${images.with_alt ?? 0} / ${images.total ?? 0} obrazów z atrybutem alt (${images.alt_coverage_pct ?? 0}%).`,
+    semantic_html5_tags: 'Semantic HTML5 (<main>, <article>, <section>).',
+    response_size_ok: `Rozmiar HTML: ${hcs.html_size_kb || 0} KB.`,
+    organization_schema: `Schema types: ${schemas}.`,
+    website_schema: `Schema types: ${schemas}.`,
+    any_schema: `Wykryte schema types: ${schemas}.`,
+    product_or_service_schema: `Schema types: ${schemas}. Szukane: Product, Service.`,
+    service_or_product_schema: `Schema types: ${schemas}.`,
+    faq_schema_bonus: `FAQPage schema ${schemas.toLowerCase().includes('faqpage') ? 'obecne' : 'brak'}.`,
+    breadcrumb_schema: `BreadcrumbList schema ${schemas.toLowerCase().includes('breadcrumblist') ? 'obecne' : 'brak'}.`,
+    article_schema: `Article/BlogPosting schema ${(schemas.toLowerCase().includes('article') || schemas.toLowerCase().includes('blogposting')) ? 'obecne' : 'brak'}.`,
+    schema_author_field: 'Pole "author" w Article/BlogPosting schema.',
+    schema_dates: 'datePublished + dateModified w schema.',
+    localbusiness_or_organization_schema: `LocalBusiness/Organization schema: ${schemas}.`,
+    tel_link_present: 'Link tel: (klikalny numer telefonu).',
+    mailto_link_present: 'Link mailto: (klikalny email).',
+    contact_form_present: 'Formularz kontaktowy (<form>).',
+    person_schema_team: `Person schema ${schemas.toLowerCase().includes('person') ? 'obecne' : 'brak'} — dla profili członków zespołu.`,
+    itemlist_schema: `ItemList schema ${schemas.toLowerCase().includes('itemlist') ? 'obecne' : 'brak'}.`,
+  };
+}
+
+// ---- DOMAIN TECHNICAL ----
+
+function renderDomainTechnical(domainTech) {
+  if (!domainTech) return '';
+  const sc = domainTech.score_pct || 0;
+  const scores = domainTech.scores || {};
+  const robots = domainTech.robots || {};
+  const sitemap = domainTech.sitemap || {};
+  const llms = domainTech.llms_txt || {};
+
+  const botsHtml = Object.entries(robots.bots || {}).map(([bot, info]) => {
+    const ok = info.allowed;
+    return `<span class="bot-badge ${ok ? 'ok' : 'bad'}">${ok ? '✓' : '✗'} ${escapeHtml(bot)}</span>`;
+  }).join('') || '<span style="color:var(--muted);font-size:.9rem">Brak dedykowanych reguł dla botów AI</span>';
+
+  const techRows = Object.entries(scores).map(([k, v]) => {
+    const t = v === 2 ? 'good' : v === 1 ? 'warn' : 'bad';
+    const icon = v === 2 ? '●' : v === 1 ? '◐' : '○';
+    const label = v === 2 ? 'OK' : v === 1 ? 'Częściowo' : 'Brak';
+    const note = domainTechNote(k, robots, sitemap, llms);
+    return `
+      <details class="factor" data-tier="${t}">
+        <summary><span class="status">${icon}</span><span class="fname">${factorLabel(k)}</span><span class="score-tag">${label}</span></summary>
+        <div class="note">${escapeHtml(note)}</div>
       </details>`;
   }).join('');
 
-  const schemaTypes = (hc.schema && hc.schema.types && hc.schema.types.length) ? hc.schema.types.join(', ') : '—';
-
   return `
-    <section class="section factor-cat">
-      <div class="section-label"><span class="num">§ 8</span><h2>Dostępność techniczna dla botów AI</h2></div>
+    <section class="section">
+      <div class="section-label"><span class="num">§ 6</span><h2>Dostępność techniczna domeny</h2></div>
       <div class="factor-cat-head">
-        <h3 style="font-style:italic;color:var(--muted);font-size:1rem;font-family:var(--sans);font-weight:400">robots.txt · sitemap · llms.txt · HTML · schema.org</h3>
+        <h3>robots.txt · sitemap · llms.txt · boty AI</h3>
         <div class="factor-cat-score ${tier(sc)}">${sc} / 100</div>
       </div>
 
-      <div class="tech-grid" style="margin-top:20px">
+      <div class="tech-grid" style="margin-top:18px">
         <div class="tech-item"><span class="lbl">robots.txt</span><span class="val">${robots.accessible ? 'Dostępny' : 'Niedostępny'}</span></div>
-        <div class="tech-item"><span class="lbl">Crawl-delay</span><span class="val">${robots.crawl_delay ? robots.crawl_delay + 's' : 'Nie ustawiono'}</span></div>
-        <div class="tech-item"><span class="lbl">Sitemap XML</span><span class="val">${sitemap.exists ? sitemap.size_kb + ' KB' : '—'}</span></div>
-        <div class="tech-item"><span class="lbl">llms.txt</span><span class="val">${llms.exists ? 'Obecny (' + llms.path + ')' : 'Brak'}</span></div>
-        <div class="tech-item"><span class="lbl">HTML size</span><span class="val">${hc.html_size_kb || '—'} KB</span></div>
-        <div class="tech-item"><span class="lbl">Word count (strona gł.)</span><span class="val">${(hc.content && hc.content.word_count) || '—'}</span></div>
-        <div class="tech-item"><span class="lbl">Alt coverage</span><span class="val">${(hc.images && hc.images.alt_coverage_pct) ?? '—'}%</span></div>
-        <div class="tech-item"><span class="lbl">Schema types</span><span class="val" style="font-size:.82rem">${escapeHtml(schemaTypes)}</span></div>
+        <div class="tech-item"><span class="lbl">Crawl-delay</span><span class="val">${robots.crawl_delay != null ? robots.crawl_delay + 's' : 'Nie ustawiono'}</span></div>
+        <div class="tech-item"><span class="lbl">Sitemap XML</span><span class="val">${sitemap.exists ? (sitemap.size_kb + ' KB') : '—'}</span></div>
+        <div class="tech-item"><span class="lbl">llms.txt</span><span class="val">${llms.exists ? 'Obecny (' + escapeHtml(llms.path) + ')' : 'Brak'}</span></div>
       </div>
 
-      <h4 style="font-family:var(--serif);font-style:italic;font-size:1.05rem;font-weight:400;margin:24px 0 10px">Dostęp botów AI</h4>
+      <h4 style="font-family:var(--serif);font-style:italic;font-size:1.05rem;font-weight:400;margin:20px 0 8px">Dostęp botów AI</h4>
       <div class="bots-row">${botsHtml}</div>
 
-      <h4 style="font-family:var(--serif);font-style:italic;font-size:1.05rem;font-weight:400;margin:24px 0 10px">Szczegóły czynników</h4>
+      <h4 style="font-family:var(--serif);font-style:italic;font-size:1.05rem;font-weight:400;margin:20px 0 8px">Szczegóły czynników</h4>
       <div class="factors">${techRows}</div>
     </section>`;
 }
 
-function techNote(k, hc, robots, sitemap, llms) {
-  const meta = hc.meta || {};
-  const schema = hc.schema || {};
-  const heads = hc.headings || {};
+function domainTechNote(k, robots, sitemap, llms) {
   const notes = {
-    robots_txt_accessible: robots.accessible ? 'Plik robots.txt dostępny pod /robots.txt.' : 'Brak robots.txt — boty AI nie mają jawnych reguł.',
-    gptbot_not_blocked: (robots.bots||{}).GPTBot?.allowed ? 'GPTBot ma dostęp do całej witryny.' : 'GPTBot jest blokowany — ChatGPT nie będzie indeksować treści.',
+    robots_txt_accessible: robots.accessible ? 'robots.txt dostępny pod /robots.txt.' : 'Brak robots.txt — boty AI nie mają jawnych reguł.',
+    gptbot_not_blocked: (robots.bots||{}).GPTBot?.allowed ? 'GPTBot ma dostęp — ChatGPT może indeksować.' : 'GPTBot zablokowany — ChatGPT nie indeksuje treści.',
     perplexitybot_not_blocked: (robots.bots||{}).PerplexityBot?.allowed ? 'PerplexityBot ma dostęp.' : 'PerplexityBot zablokowany.',
     claudebot_not_blocked: (robots.bots||{}).ClaudeBot?.allowed ? 'ClaudeBot ma dostęp.' : 'ClaudeBot zablokowany.',
-    crawl_delay_ok: robots.crawl_delay ? `Crawl-delay ustawiony na ${robots.crawl_delay}s.` : 'Brak crawl-delay — boty mogą swobodnie indeksować.',
-    sitemap_present: sitemap.exists ? `Sitemap znaleziona (${sitemap.size_kb} KB).` : 'Brak sitemapy — ograniczona nawigacja dla crawlerów.',
-    llms_txt_present: llms.exists ? `llms.txt obecny (${llms.path}) — plus pkt dla AI-first discoverability.` : 'Brak llms.txt — rosnący standard, warto dodać.',
-    https_enabled: 'HTTPS ' + (hc.https ? 'włączony.' : 'brak — wymóg podstawowy.'),
-    semantic_html5_tags: 'Semantic HTML5 tags: ' + Object.entries(hc.semantic_html5 || {}).filter(([,v])=>v).map(([k])=>k).join(', ') || 'brak.',
-    h1_single: `Znaleziono ${heads.h1_count || 0} znaczników <h1>.`,
-    heading_hierarchy: heads.hierarchy_ok ? 'Hierarchia nagłówków poprawna.' : 'Hierarchia h1→h2→h3 ma luki lub brak <h2>.',
-    meta_description: meta.description ? `Meta description: "${meta.description.slice(0, 140)}${meta.description.length > 140 ? '…' : ''}"` : 'Brak meta description.',
-    og_tags: (meta.og_title && meta.og_description) ? 'OG title + description obecne.' : 'Niekompletne tagi Open Graph.',
-    canonical_tag: meta.canonical ? `Canonical: ${meta.canonical}` : 'Brak tagu canonical.',
-    lang_attribute: meta.lang ? `<html lang="${meta.lang}"> ustawione.` : 'Brak atrybutu lang — problem dla multi-lang crawlerów.',
-    viewport_meta: meta.viewport ? 'Meta viewport ustawione.' : 'Brak meta viewport — problem mobile.',
-    image_alt_coverage: `${(hc.images||{}).with_alt||0} / ${(hc.images||{}).total||0} obrazów ma atrybut alt (${(hc.images||{}).alt_coverage_pct||0}%).`,
-    any_schema_markup: schema.any ? `Wykryte typy: ${(schema.types||[]).join(', ')}.` : 'Brak jakiegokolwiek JSON-LD schema.org.',
-    faq_schema: schema.faq ? 'FAQPage schema obecne — wspiera AI Overviews.' : 'Brak FAQPage schema.',
-    article_schema: schema.article ? 'Article/BlogPosting schema obecne.' : 'Brak Article schema — krytyczne dla treści blogowych.',
-    breadcrumb_schema: schema.breadcrumb ? 'BreadcrumbList obecne.' : 'Brak breadcrumb schema.',
-    organization_schema: schema.organization ? 'Organization/LocalBusiness obecne.' : 'Brak Organization schema — sygnał tożsamości podmiotu.',
-    schema_author_field: schema.has_author ? 'Pole "author" obecne w JSON-LD.' : 'Brak pola "author" w schemach.',
-    schema_dates: schema.has_datepublished && schema.has_datemodified ? 'datePublished + dateModified obecne.' : schema.has_datepublished ? 'Tylko datePublished (brak dateModified).' : 'Brak pól dat w schemach.',
-    response_size_ok: `Rozmiar HTML: ${hc.html_size_kb} KB.`,
+    google_extended_not_blocked: (robots.bots||{})['Google-Extended']?.allowed ? 'Google-Extended (AI Overviews) ma dostęp.' : 'Google-Extended zablokowany — wykluczone z AI Overviews.',
+    crawl_delay_ok: robots.crawl_delay != null ? `Crawl-delay: ${robots.crawl_delay}s.` : 'Brak crawl-delay — boty mogą swobodnie crawlować.',
+    sitemap_present: sitemap.exists ? `Sitemap znaleziona (${sitemap.size_kb} KB).` : 'Brak sitemapy — boty mają ograniczoną nawigację.',
+    sitemap_in_robots: robots.sitemap_in_robots ? 'Link do sitemaps w robots.txt obecny.' : 'Brak linku do sitemap w robots.txt.',
+    llms_txt_present: llms.exists ? `llms.txt obecny (${llms.path}) — standard AI-first discoverability.` : 'Brak llms.txt — rosnący standard, warto wdrożyć.',
+    https_enabled: 'HTTPS (sprawdzane per strona główna).',
+    hreflang_used: 'Tagi hreflang (multi-language).',
   };
-  return escapeHtml(notes[k] || '—');
+  return notes[k] || '—';
 }
 
-function renderFootnotes(r) {
-  return `
-    <footer class="footnotes">
-      <h4>Metodologia</h4>
-      <p>Audyt przeprowadzony metodą pięciu wymiarów. URL-e wybrane algorytmicznie: (1) parsowanie <span class="mono">sitemap.xml</span>, (2) fallback Firecrawl <span class="mono">/map</span>, (3) selekcja reprezentatywna przez Gemini. Scrapowanie: Firecrawl v1 (markdown + rawHtml). Analiza: BeautifulSoup (lxml) dla DOM, cztery wyspecjalizowane wywołania Gemini (E-E-A-T, Topical, RAG, query fan-out) plus synteza priorytetowa.</p>
-      <h4 style="margin-top:18px">Zakres</h4>
-      <ol>
-        <li>Audytowane podstrony: <code>${(r.crawled_urls || []).map(u => `<a href="${escapeHtml(u)}" target="_blank">${escapeHtml(u)}</a>`).join(', ')}</code></li>
-        <li>Źródło listy URL-i: <code>${r.discovery_source === 'sitemap' ? 'sitemap.xml' : 'Firecrawl /map'}</code></li>
-        <li>Model analizy: Gemini (konfigurowalny przez <code>GEMINI_MODEL</code>). Boty AI sprawdzane: GPTBot, PerplexityBot, OAI-SearchBot, ClaudeBot, anthropic-ai, Google-Extended.</li>
-        <li>Skala: 0 — brak/słaby · 1 — częściowy · 2 — pełny. Wynik wymiaru = Σ(score) / max × 100.</li>
-      </ol>
-      <h4 style="margin-top:18px">Zastrzeżenia</h4>
-      <p>Audyt nie zastępuje ręcznego przeglądu. Ocena opiera się na próbce 5 stron i snapshot'cie w czasie wykonania. Zalecane powtórzenie po wdrożeniu rekomendacji dla weryfikacji delty.</p>
-    </footer>`;
-}
+// ---- RADAR CHART (per-page scores) ----
 
-function drawRadar(sc) {
+function drawRadar(pages, sc) {
   const canvas = document.getElementById('radar');
-  if (!canvas || !window.Chart) return;
+  if (!canvas || !window.Chart || !pages.length) return;
   const ctx = canvas.getContext('2d');
+  const labels = pages.map(pa => shortUrl(pa.url));
+  const data = pages.map(pa => pa.combined_score || 0);
   new Chart(ctx, {
     type: 'radar',
     data: {
-      labels: ['E-E-A-T', 'Topical', 'RAG', 'Fan-out', 'Technical'],
+      labels,
       datasets: [{
-        data: [sc.eeat, sc.topical_authority, sc.rag_extractability, sc.fan_out, sc.technical],
-        backgroundColor: 'rgba(10,10,10,0.08)',
-        borderColor: 'rgba(10,10,10,0.85)',
+        data,
+        backgroundColor: 'rgba(10,10,10,0.07)',
+        borderColor: 'rgba(10,10,10,0.82)',
         borderWidth: 1.5,
         pointBackgroundColor: '#0A0A0A',
         pointBorderColor: '#FAFAF7',
@@ -655,11 +762,31 @@ function drawRadar(sc) {
           ticks: {display: false, stepSize: 25},
           grid: {color: '#D6D4CC', lineWidth: 0.7},
           angleLines: {color: '#D6D4CC', lineWidth: 0.7},
-          pointLabels: {font: {family: 'Inter', size: 11, weight: '500'}, color: '#2A2A28'},
+          pointLabels: {font: {family: 'Inter', size: 10, weight: '500'}, color: '#2A2A28'},
         }
       }
     }
   });
+}
+
+// ---- FOOTNOTES ----
+
+function renderFootnotes(r, pages) {
+  const urls = pages.map(pa => `<a href="${escapeHtml(pa.url)}" target="_blank">${escapeHtml(pa.url)}</a> ${ptBadge(pa.page_type)}`).join(', ');
+  return `
+    <footer class="footnotes">
+      <h4>Metodologia</h4>
+      <p>Audyt page-type-aware: każda podstrona oceniana czynnikami dopasowanymi do jej funkcji (sprzedażowa, edukacyjna, wizerunkowa, kontaktowa). URL-e wybrane: (1) parsowanie sitemap.xml, (2) fallback Firecrawl /map, (3) selekcja + klasyfikacja typów przez Gemini. Scrapowanie: Firecrawl v1 (markdown + rawHtml). Analiza: BeautifulSoup (lxml) per URL, Gemini per-page z wyspecjalizowanym factor setem, query fan-out global, synteza priorytetyzowana z przypisaniem URL.</p>
+      <h4 style="margin-top:18px">Zakres audytu</h4>
+      <ol>
+        <li>Audytowane podstrony: ${urls || '—'}</li>
+        <li>Źródło URL-i: <code>${r.discovery_source === 'sitemap' ? 'sitemap.xml' : 'Firecrawl /map'}</code></li>
+        <li>Model analizy: Gemini (<code>GEMINI_MODEL</code>). Boty sprawdzane: GPTBot, PerplexityBot, OAI-SearchBot, ClaudeBot, anthropic-ai, Google-Extended.</li>
+        <li>Skala czynników: 0 = brak/krytyczny · 1 = częściowy · 2 = pełny. Wynik strony = 60% czynniki + 40% tech. Overall = 60% średnia stron + 25% tech domena + 15% fan-out.</li>
+      </ol>
+      <h4 style="margin-top:18px">Zastrzeżenia</h4>
+      <p>Audyt oparty na próbce ${pages.length} stron. Nie zastępuje pełnego przeglądu manualnego. Zalecane powtórzenie po wdrożeniu rekomendacji dla weryfikacji delty. Data snapshotu: ${escapeHtml(r.timestamp)}.</p>
+    </footer>`;
 }
 
 function copyLink() {
