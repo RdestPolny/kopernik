@@ -247,14 +247,23 @@ button{font:inherit;cursor:pointer}
         <input type="url" id="urlInput" placeholder="https://twojadomena.pl" required>
         <button type="submit" class="btn" id="submitBtn">Uruchom audyt</button>
       </form>
-      <div id="ctaContainer" style="display:none; margin-top:16px; background:rgba(0,0,0,0.2); border:1px solid rgba(255,255,255,0.1); border-radius:4px; padding:20px;">
-        <div style="display:flex; align-items:center; gap:20px; flex-wrap:wrap;">
-          <img src="https://strategiczni.pl/wp-content/uploads/2022/01/dawid-300x300.png" alt="Dawid Kasprzyk" style="width:72px; height:72px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
+      <div id="ctaContainer" style="display:none; margin-top:24px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:6px; padding:24px;">
+        <div style="display:flex; align-items:center; gap:24px; flex-wrap:wrap; margin-bottom:20px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:20px;">
+          <div id="ctaScoreWrapper"></div>
           <div style="flex:1; min-width:200px;">
-            <h3 style="color:#fff; margin-bottom:4px; font-size:1.15rem; font-family:var(--sans);">Chcesz poprawić swój wynik?</h3>
-            <p style="color:#D8D8D5; font-size:0.95rem; margin-bottom:12px; line-height:1.4;">Porozmawiajmy o dedykowanej strategii AI SEO.</p>
-            <a href="https://strategiczni.pl/kontakt" target="_blank" class="btn" style="text-decoration:none; display:inline-block; font-size:0.75rem; padding:10px 20px;">Umów konsultację</a>
+            <h3 style="color:#fff; margin-bottom:6px; font-size:1.2rem; font-family:var(--sans);">Chcesz poprawić ten wynik?</h3>
+            <p style="color:#D8D8D5; font-size:0.95rem; line-height:1.5;">Umów się na konsultację i porozmawiajmy o dedykowanej strategii AI SEO dla Twojej firmy.</p>
           </div>
+        </div>
+        <div style="display:flex; align-items:center; justify-content:space-between; gap:20px; flex-wrap:wrap;">
+          <div style="display:flex; align-items:center; gap:14px;">
+            <img src="https://strategiczni.pl/wp-content/uploads/2022/02/dawid-kasprzyk-e1644931069495-300x300.jpg" alt="Dawid Kasprzyk" style="width:60px; height:60px; border-radius:50%; object-fit:cover; border:2px solid var(--gold);">
+            <div>
+              <div style="font-family:var(--sans); font-weight:600; font-size:0.95rem; color:#fff; line-height:1.2;">Dawid Kasprzyk</div>
+              <div style="font-family:var(--mono); font-size:0.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:0.05em; margin-top:4px;">CEO Strategiczni</div>
+            </div>
+          </div>
+          <a href="https://strategiczni.pl/kontakt" target="_blank" class="btn" style="text-decoration:none; display:inline-block; font-size:0.8rem; padding:12px 24px; color:#fff;">Umów konsultację</a>
         </div>
       </div>
       <div class="hint"></div>
@@ -421,15 +430,19 @@ function renderResult(r) {
   const cm = r.client_mode || {};
 
   const overallColor = overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b';
-  const heroScoreHtml = `
-    <div class="chart-wrap" style="width:340px; height:340px; margin:0 auto 24px;">
+  const heroChartHtml = `
+    <div class="chart-wrap" style="width:360px; height:360px; margin:0 auto;">
       <canvas id="radarChart"></canvas>
     </div>
-    <div class="score-big" style="color:${overallColor}; font-size:6rem; line-height:1; font-weight:700; font-family:var(--sans); letter-spacing:-0.04em;">
-      ${overall}<sub style="color:rgba(255,255,255,0.5); font-size:1.5rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</sub>
+  `;
+  document.getElementById('heroScoreContainer').innerHTML = heroChartHtml;
+  
+  const ctaScoreHtml = `
+    <div class="score-big" style="color:${overallColor}; font-size:4.8rem; line-height:1; font-weight:700; font-family:var(--sans); letter-spacing:-0.04em;">
+      ${overall}<sub style="color:rgba(255,255,255,0.5); font-size:1.2rem; font-weight:500; letter-spacing:0; margin-left:2px;">/100</sub>
     </div>
   `;
-  document.getElementById('heroScoreContainer').innerHTML = heroScoreHtml;
+  document.getElementById('ctaScoreWrapper').innerHTML = ctaScoreHtml;
   document.getElementById('heroScoreContainer').style.display = 'block';
   document.getElementById('auditForm').style.display = 'none';
   document.getElementById('ctaContainer').style.display = 'block';
