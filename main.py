@@ -555,24 +555,45 @@ def select_and_classify_urls(all_urls: list[str], homepage_url: str, base_url: s
 
     candidates = clean[:80]
 
-    prompt = f"""Jesteś ekspertem SEO. Wybierz {MAX_AUDIT_PAGES - 1} URL-i z listy i sklasyfikuj typ każdej strony.
+    prompt = f"""Jesteś ekspertem SEO. Przeprowadzasz audyt witryny i musisz wybrać {MAX_AUDIT_PAGES - 1} najbardziej wartościowych podstron do audytu.
 
-<kryteria_wyboru>
-- RÓŻNORODNOŚĆ typów: mieszanka service, article, about, contact, category
-- UNIKAJ: polityki prywatności, regulaminy, strony paginacji, tag pages, logowania, koszyka
-- PRIORYTET: strony reprezentatywne (najważniejsze sprzedażowe + flagowe artykuły + strony zaufania)
-</kryteria_wyboru>
+<cel_zadania>
+Wybierz strony, które NAJLEPIEJ reprezentują witrynę pod kątem SEO i biznesowym.
+Priorytetem są strony generujące ruch organiczny i konwersje — nie strony techniczne/systemowe.
+</cel_zadania>
+
+<priorytety_wyboru>
+1. NAJWYŻSZY — strony sprzedażowe/usługowe (oferta, usługi, produkty, cennik, landing page). Wybierz 1–2 jeśli dostępne.
+2. WYSOKI — artykuły blogowe/poradniki (wybierz flagowy — dłuższy slug, opisowa nazwa tematu). Wybierz 1–2 jeśli dostępne.
+3. ŚREDNI — strona "o nas" / "o firmie" / "zespół" (sygnał E-E-A-T). Wybierz 1 jeśli dostępna.
+4. NISKI — kontakt (tylko jeśli brakuje ważniejszych stron).
+</priorytety_wyboru>
+
+<obowiązkowe_wykluczenia>
+- polityka prywatności, regulamin, RODO, cookies, disclaimer
+- paginacja (/page/N, ?page=, /strona/N, /p/N)
+- tag pages, archive pages, strony wyników wyszukiwania
+- logowanie, rejestracja, koszyk, checkout, konto użytkownika
+- URL-e z tokenami sesji, parametrami śledzenia (?utm_*, ?fbclid=, itp.)
+- Strony błędów, testowe, staging
+</obowiązkowe_wykluczenia>
+
+<wskazówki_doboru>
+- Slug URL sugeruje ważność: "/uslugi/copywriting-seo" > "/uslugi"
+- Przy wielu artykułach wybierz ten z najbardziej opisową, szczegółową nazwą tematu
+- Unikaj stron bardzo podobnych tematycznie do siebie
+- Każda strona powinna reprezentować inny segment treści witryny
+- Strona główna ({homepage_url}) jest JUŻ WYBRANA — nie wliczaj jej
+</wskazówki_doboru>
 
 <typy_stron>
-- service: oferta/usługa/produkt/cennik (sprzedażowa)
+- service: oferta/usługa/produkt/cennik/landing (sprzedażowa)
 - article: artykuł blogowy/poradnik/case study/news (edukacyjna)
-- about: o nas/zespół/historia (wizerunkowa)
+- about: o nas/zespół/historia/misja (wizerunkowa)
 - contact: kontakt/formularz/NAP
 - category: kategoria/listing/archiwum
-- other: inne istotne (landing, portfolio, itp.)
+- other: inne istotne (portfolio, FAQ, referencje, itp.)
 </typy_stron>
-
-<homepage_już_wybrana_nie_wliczaj>{homepage_url}</homepage_już_wybrana_nie_wliczaj>
 
 <kandydaci>
 {chr(10).join(f"- {u}" for u in candidates)}
@@ -581,11 +602,11 @@ def select_and_classify_urls(all_urls: list[str], homepage_url: str, base_url: s
 Zwróć TYLKO JSON (bez markdown, bez komentarzy poza JSON):
 {{
   "selected": [
-    {{"url": "https://...", "page_type": "service|article|about|contact|category|other", "reason": "krótkie uzasadnienie po polsku"}}
+    {{"url": "https://...", "page_type": "service|article|about|contact|category|other", "reason": "krótkie uzasadnienie po polsku dlaczego ta strona jest wartościowa do audytu"}}
   ]
 }}
 
-Dokładnie {MAX_AUDIT_PAGES - 1} pozycji, każda z unikatowego segmentu jeśli to możliwe."""
+Dokładnie {MAX_AUDIT_PAGES - 1} pozycji. Każda z innego segmentu witryny."""
 
     try:
         text = _gemini_call(prompt, temperature=0.2, max_tokens=1536)
@@ -1078,30 +1099,34 @@ def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: 
     return _extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=3000))
 
 
-def generate_fan_out(homepage_url: str, title: str, content: str) -> dict:
-    prompt = f"""Jesteś ekspertem AI SEO. Symulujesz query fan-out — zestaw pytań, które użytkownicy zadają ChatGPT/Perplexity w niszy tej marki.
+def generate_fan_out(page_url: str, page_title: str, content: str) -> dict:
+    prompt = f"""Jesteś ekspertem AI SEO. Symulujesz query fan-out — zestaw pytań, które użytkownicy zadają ChatGPT/Perplexity w temacie tej konkretnej podstrony.
 
 <zadanie>
-1. Na podstawie treści (homepage + kluczowe podstrony) wygeneruj 12 realistycznych pytań użytkowników. Różne intencje: informacyjne, transakcyjne, porównawcze, problem-solving.
-2. Oceń każde pod kątem pokrycia przez treść witryny: "covered" | "partial" | "missing".
-3. Jeśli partial/missing — napisz co trzeba dodać.
+1. Na podstawie WYŁĄCZNIE tej jednej podstrony wygeneruj 12 realistycznych pytań, które użytkownicy wpisują w ChatGPT/Perplexity szukając tematu tej strony.
+   Różne intencje: informacyjne, transakcyjne, porównawcze, problem-solving.
+2. Oceń każde pytanie pod kątem pokrycia przez treść TEJ strony: "covered" | "partial" | "missing".
+3. Jeśli partial/missing — napisz konkretnie co trzeba dodać na tej stronie.
 </zadanie>
 
-<url>{homepage_url}</url>
-<title>{title}</title>
+<audytowana_podstrona>
+<url>{page_url}</url>
+<title>{page_title}</title>
+</audytowana_podstrona>
 
-<treść>
+<treść_podstrony>
 {content}
-</treść>
+</treść_podstrony>
 
-Zwróć TYLKO JSON (po polsku):
+Zwróć TYLKO JSON (po polsku). Wszystkie pytania muszą dotyczyć tematu strony {page_url}:
 {{
+  "audited_url": "{page_url}",
   "queries": [
-    {{"query": "pytanie użytkownika", "coverage": "covered|partial|missing", "gap_note": "co dodać (pusty jeśli covered)"}}
+    {{"query": "pytanie użytkownika", "coverage": "covered|partial|missing", "gap_note": "co dodać na tej stronie (pusty jeśli covered)"}}
   ]
 }}
 
-Dokładnie 12 pytań, różnorodne intencje."""
+Dokładnie 12 pytań, różnorodne intencje, wszystkie tematycznie związane z tą podstroną."""
     return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=3000))
 
 
@@ -1382,16 +1407,22 @@ def audit_stream(url: str):
                 u, factors = fut.result()
                 analysis_map[u] = factors
 
-        yield event("progress", {"message": "Symulacja query fan-out dla całej domeny (Gemini)...", "pct": 68})
+        yield event("progress", {"message": "Symulacja query fan-out dla wybranej podstrony (Gemini)...", "pct": 68})
 
-        # 6. Fan-out (global, on combined content)
-        combined_parts = []
-        for pd in page_data:
-            combined_parts.append(f"=== {pd['page_type'].upper()}: {pd['url']} ===\n{pd['markdown'][:3000]}")
-        combined_content = "\n\n".join(combined_parts)[:15000]
+        # 6. Fan-out on a single representative service or article page (not homepage)
+        _fan_out_page = next(
+            (pd for pd in page_data if pd["page_type"] == "service"),
+            next((pd for pd in page_data if pd["page_type"] == "article"), None),
+        )
+        if _fan_out_page is None:
+            _fan_out_page = next((pd for pd in page_data if pd["page_type"] != "homepage"), page_data[0])
         homepage_title = homepage_data["title"]
         try:
-            fan_out = generate_fan_out(url, homepage_title, combined_content)
+            fan_out = generate_fan_out(
+                _fan_out_page["url"],
+                _fan_out_page["title"] or homepage_title,
+                _fan_out_page["markdown"][:12000],
+            )
         except Exception as e:
             fan_out = {"queries": [], "error": str(e)}
 

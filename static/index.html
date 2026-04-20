@@ -476,7 +476,7 @@ function renderResult(r) {
 
         <section class="section" id="section-fanout">
           <div class="section-label"><span class="num">03</span><h2>Fan-out zapytań</h2></div>
-          <p class="lede" style="margin-bottom:20px">Jak LLM generuje podpytania do Twojej domeny i ile z nich Twoja treść pokrywa.</p>
+          <p class="lede" style="margin-bottom:20px">Symulacja pytań użytkowników w ChatGPT/Perplexity dla wybranej podstrony — ile z nich pokrywa jej treść.${r.fan_out?.audited_url ? ` <span style="font-family:var(--mono);font-size:0.8em;opacity:0.7">Audytowana: ${esc(r.fan_out.audited_url)}</span>` : ''}</p>
           <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
         </section>
 
