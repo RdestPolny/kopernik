@@ -193,90 +193,88 @@ PAGE_TYPE_FACTORS = {
 CATEGORY_LABELS = {
     "eeat": "E-E-A-T / Wiarygodność",
     "topical": "Topical Authority",
-    "rag": "RAG Extractability",
-    "conversion": "Konwersja / Sprzedaż",
-    "trust": "Zaufanie / Kontakt",
-    "tech": "Techniczne",
+    "geo": "GEO / RAG Extractability",
+    "accessibility": "Techniczne / Dostępność",
 }
 
 FACTOR_META = {
-    # HOMEPAGE
-    "clear_value_proposition_above_fold": {"label": "Jasna propozycja wartości w pierwszym ekranie", "category": "conversion"},
-    "primary_cta_visible": {"label": "Widoczne główne wezwanie do działania", "category": "conversion"},
-    "navigation_to_key_sections_clear": {"label": "Czytelna nawigacja do kluczowych sekcji", "category": "conversion"},
+    # HOMEPAGE — 4 eeat + 3 topical + 3 geo = 10
+    "clear_value_proposition_above_fold": {"label": "Jasna propozycja wartości w pierwszym ekranie", "category": "geo"},
+    "primary_cta_visible": {"label": "Widoczne główne wezwanie do działania", "category": "geo"},
+    "navigation_to_key_sections_clear": {"label": "Czytelna nawigacja do kluczowych sekcji", "category": "topical"},
     "trust_signals_logos_reviews_numbers": {"label": "Sygnały zaufania (logotypy klientów, opinie, liczby)", "category": "eeat"},
     "organization_entity_clearly_stated": {"label": "Jasno określona tożsamość firmy", "category": "eeat"},
-    "contact_info_accessible_from_home": {"label": "Dostęp do kontaktu ze strony głównej", "category": "trust"},
-    "brand_identity_consistent_and_unique": {"label": "Spójna i unikalna tożsamość marki", "category": "trust"},
+    "contact_info_accessible_from_home": {"label": "Dostęp do kontaktu ze strony głównej", "category": "geo"},
+    "brand_identity_consistent_and_unique": {"label": "Spójna i unikalna tożsamość marki", "category": "topical"},
     "no_generic_marketing_fluff": {"label": "Brak ogólnikowej marketingowej waty", "category": "eeat"},
     "internal_links_to_services_or_products": {"label": "Linki wewnętrzne do usług/produktów", "category": "topical"},
     "external_proof_social_press_awards": {"label": "Dowody zewnętrzne (social media, prasa, nagrody)", "category": "eeat"},
-    # SERVICE
-    "clear_offer_or_service_definition": {"label": "Jasna definicja oferty/usługi", "category": "conversion"},
-    "benefits_stated_explicitly_not_just_features": {"label": "Wyrażone wprost korzyści (nie tylko cechy)", "category": "conversion"},
-    "pricing_or_price_range_indication": {"label": "Cena lub przedział cenowy", "category": "conversion"},
-    "use_cases_or_target_customer_defined": {"label": "Scenariusze użycia / profil klienta", "category": "conversion"},
+    # SERVICE — 4 eeat + 3 topical + 3 geo = 10
+    "clear_offer_or_service_definition": {"label": "Jasna definicja oferty/usługi", "category": "topical"},
+    "benefits_stated_explicitly_not_just_features": {"label": "Wyrażone wprost korzyści (nie tylko cechy)", "category": "topical"},
+    "pricing_or_price_range_indication": {"label": "Cena lub przedział cenowy", "category": "geo"},
+    "use_cases_or_target_customer_defined": {"label": "Scenariusze użycia / profil klienta", "category": "topical"},
     "social_proof_testimonials_clients_case_studies": {"label": "Dowody społeczne (opinie, klienci, case study)", "category": "eeat"},
-    "faq_section_addressing_objections": {"label": "Sekcja FAQ odpowiadająca na obiekcje", "category": "rag"},
-    "clear_primary_cta_to_contact_or_buy": {"label": "Wyraźne CTA do kontaktu/zakupu", "category": "conversion"},
-    "differentiation_vs_competition": {"label": "Wyróżnienie się od konkurencji", "category": "topical"},
+    "faq_section_addressing_objections": {"label": "Sekcja FAQ odpowiadająca na obiekcje", "category": "geo"},
+    "clear_primary_cta_to_contact_or_buy": {"label": "Wyraźne CTA do kontaktu/zakupu", "category": "geo"},
+    "differentiation_vs_competition": {"label": "Wyróżnienie się od konkurencji", "category": "eeat"},
     "content_substance_over_fluff": {"label": "Konkret zamiast waty", "category": "eeat"},
-    "risk_reversal_guarantee_trial_or_process_clarity": {"label": "Ograniczenie ryzyka (gwarancja/test/przejrzysty proces)", "category": "conversion"},
-    # ARTICLE
+    "risk_reversal_guarantee_trial_or_process_clarity": {"label": "Ograniczenie ryzyka (gwarancja/test/przejrzysty proces)", "category": "eeat"},
+    # ARTICLE — 4 eeat + 3 topical + 3 geo = 10
     "author_bio_with_name_and_credentials": {"label": "Bio autora z imieniem i kwalifikacjami", "category": "eeat"},
-    "publication_date_visible_inline": {"label": "Widoczna data publikacji", "category": "eeat"},
-    "last_updated_date_visible": {"label": "Widoczna data ostatniej aktualizacji", "category": "eeat"},
+    "publication_date_visible_inline": {"label": "Widoczna data publikacji", "category": "geo"},
+    "last_updated_date_visible": {"label": "Widoczna data ostatniej aktualizacji", "category": "topical"},
     "external_authoritative_citations_with_links": {"label": "Cytowania autorytatywnych źródeł z linkami", "category": "eeat"},
     "firsthand_experience_or_original_data": {"label": "Doświadczenie z pierwszej ręki lub własne dane", "category": "eeat"},
-    "direct_answer_near_content_start": {"label": "Bezpośrednia odpowiedź na początku treści", "category": "rag"},
-    "scannable_structure_headings_lists_tables": {"label": "Skanowalna struktura (nagłówki, listy, tabele)", "category": "rag"},
+    "direct_answer_near_content_start": {"label": "Bezpośrednia odpowiedź na początku treści", "category": "geo"},
+    "scannable_structure_headings_lists_tables": {"label": "Skanowalna struktura (nagłówki, listy, tabele)", "category": "geo"},
     "unique_pov_not_generic_rehash": {"label": "Unikalny punkt widzenia (nie powielanie cudzego)", "category": "eeat"},
     "depth_comprehensive_treatment_of_topic": {"label": "Głębia i kompleksowość ujęcia tematu", "category": "topical"},
     "internal_links_to_related_content": {"label": "Linki wewnętrzne do powiązanych treści", "category": "topical"},
-    # ABOUT
+    # ABOUT — 4 eeat + 3 topical + 3 geo = 10
     "founder_or_team_profiles_with_names": {"label": "Profile założycieli/zespołu z imionami", "category": "eeat"},
     "credentials_certifications_or_qualifications": {"label": "Certyfikaty i kwalifikacje", "category": "eeat"},
     "company_history_mission_or_founding_story": {"label": "Historia firmy / misja / historia powstania", "category": "topical"},
     "external_validation_awards_partners_media": {"label": "Walidacja zewnętrzna (nagrody, partnerzy, media)", "category": "eeat"},
-    "office_location_or_physical_presence": {"label": "Lokalizacja biura / fizyczna obecność", "category": "trust"},
+    "office_location_or_physical_presence": {"label": "Lokalizacja biura / fizyczna obecność", "category": "eeat"},
     "values_or_real_differentiators": {"label": "Wartości i realne wyróżniki", "category": "topical"},
-    "links_to_linkedin_or_professional_profiles": {"label": "Linki do LinkedIn / profili zawodowych", "category": "eeat"},
-    "real_photos_not_stock_implied": {"label": "Prawdziwe zdjęcia (nie stockowe)", "category": "eeat"},
-    "clients_or_projects_showcased": {"label": "Prezentacja klientów / projektów", "category": "eeat"},
-    "contact_pathway_from_about": {"label": "Ścieżka do kontaktu z O nas", "category": "trust"},
-    # CONTACT
-    "nap_name_address_phone_complete_and_visible": {"label": "Pełny i widoczny NAP (nazwa/adres/telefon)", "category": "trust"},
-    "contact_form_present_and_clear": {"label": "Czytelny formularz kontaktowy", "category": "trust"},
-    "opening_hours_visible": {"label": "Widoczne godziny otwarcia", "category": "trust"},
-    "phone_clickable_tel_link": {"label": "Klikalny numer telefonu", "category": "trust"},
-    "email_clickable_mailto": {"label": "Klikalny e-mail", "category": "trust"},
-    "map_or_embedded_location": {"label": "Mapa lub osadzona lokalizacja", "category": "trust"},
-    "multiple_contact_channels": {"label": "Wiele kanałów kontaktu", "category": "trust"},
-    "department_or_role_specific_contacts": {"label": "Kontakty per dział / rola", "category": "trust"},
-    "response_time_expectation": {"label": "Informacja o czasie odpowiedzi", "category": "trust"},
+    "links_to_linkedin_or_professional_profiles": {"label": "Linki do LinkedIn / profili zawodowych", "category": "geo"},
+    "real_photos_not_stock_implied": {"label": "Prawdziwe zdjęcia (nie stockowe)", "category": "geo"},
+    "clients_or_projects_showcased": {"label": "Prezentacja klientów / projektów", "category": "topical"},
+    "contact_pathway_from_about": {"label": "Ścieżka do kontaktu z O nas", "category": "geo"},
+    # CONTACT — 4 eeat + 3 topical + 3 geo = 10
+    "nap_name_address_phone_complete_and_visible": {"label": "Pełny i widoczny NAP (nazwa/adres/telefon)", "category": "eeat"},
+    "contact_form_present_and_clear": {"label": "Czytelny formularz kontaktowy", "category": "topical"},
+    "opening_hours_visible": {"label": "Widoczne godziny otwarcia", "category": "topical"},
+    "phone_clickable_tel_link": {"label": "Klikalny numer telefonu", "category": "geo"},
+    "email_clickable_mailto": {"label": "Klikalny e-mail", "category": "geo"},
+    "map_or_embedded_location": {"label": "Mapa lub osadzona lokalizacja", "category": "geo"},
+    "multiple_contact_channels": {"label": "Wiele kanałów kontaktu", "category": "eeat"},
+    "department_or_role_specific_contacts": {"label": "Kontakty per dział / rola", "category": "topical"},
+    "response_time_expectation": {"label": "Informacja o czasie odpowiedzi", "category": "eeat"},
     "physical_office_photo_or_proof": {"label": "Zdjęcie biura / dowód fizycznej obecności", "category": "eeat"},
-    # CATEGORY
-    "meaningful_category_intro_copy_not_thin": {"label": "Sensowny wstęp kategorii (nie thin content)", "category": "topical"},
-    "unique_category_h1_and_title": {"label": "Unikalny H1 i title kategorii", "category": "topical"},
-    "category_specific_meta_description": {"label": "Meta description dedykowana kategorii", "category": "tech"},
+    # CATEGORY — 3 eeat + 4 topical + 3 geo = 10
+    "meaningful_category_intro_copy_not_thin": {"label": "Sensowny wstęp kategorii (nie thin content)", "category": "eeat"},
+    "unique_category_h1_and_title": {"label": "Unikalny H1 i title kategorii", "category": "eeat"},
+    "category_specific_meta_description": {"label": "Meta description dedykowana kategorii", "category": "geo"},
     "internal_links_to_items_with_context": {"label": "Linki wewnętrzne do elementów z kontekstem", "category": "topical"},
-    "filters_or_facets_if_applicable": {"label": "Filtry / fasety (jeśli zasadne)", "category": "conversion"},
-    "pagination_or_load_more_sensible": {"label": "Paginacja lub 'załaduj więcej' z sensem", "category": "tech"},
+    "filters_or_facets_if_applicable": {"label": "Filtry / fasety (jeśli zasadne)", "category": "topical"},
+    "pagination_or_load_more_sensible": {"label": "Paginacja lub 'załaduj więcej' z sensem", "category": "geo"},
     "subcategory_links_exposed": {"label": "Widoczne linki do podkategorii", "category": "topical"},
     "no_boilerplate_content_duplicated": {"label": "Brak powielanego szablonowego contentu", "category": "eeat"},
-    "visual_hierarchy_for_scannability": {"label": "Wizualna hierarchia ułatwiająca skanowanie", "category": "rag"},
+    "visual_hierarchy_for_scannability": {"label": "Wizualna hierarchia ułatwiająca skanowanie", "category": "geo"},
     "related_categories_linked": {"label": "Powiązane kategorie z linkami", "category": "topical"},
-    # OTHER
-    "clear_page_purpose_stated": {"label": "Jasno określony cel strony", "category": "conversion"},
-    "value_for_user_evident": {"label": "Widoczna wartość dla użytkownika", "category": "conversion"},
-    "heading_hierarchy_correct": {"label": "Poprawna hierarchia nagłówków", "category": "rag"},
-    "meta_description_descriptive_and_unique": {"label": "Opisowa i unikalna meta description", "category": "tech"},
-    "scannable_structure_lists_or_subheadings": {"label": "Skanowalna struktura (listy / podtytuły)", "category": "rag"},
-    "appropriate_schema_for_content_type": {"label": "Odpowiedni schema dla typu treści", "category": "tech"},
+    # OTHER — 3 eeat + 3 topical + 4 geo = 10
+    "clear_page_purpose_stated": {"label": "Jasno określony cel strony", "category": "topical"},
+    "value_for_user_evident": {"label": "Widoczna wartość dla użytkownika", "category": "eeat"},
+    "heading_hierarchy_correct": {"label": "Poprawna hierarchia nagłówków", "category": "topical"},
+    "meta_description_descriptive_and_unique": {"label": "Opisowa i unikalna meta description", "category": "geo"},
+    "scannable_structure_lists_or_subheadings": {"label": "Skanowalna struktura (listy / podtytuły)", "category": "geo"},
+    "appropriate_schema_for_content_type": {"label": "Odpowiedni schema dla typu treści", "category": "geo"},
     "internal_links_to_contextual_content": {"label": "Linki wewnętrzne do kontekstowych treści", "category": "topical"},
     "no_generic_ai_generated_content": {"label": "Brak generycznego AI contentu", "category": "eeat"},
     "external_sources_or_proof_where_relevant": {"label": "Zewnętrzne źródła / dowody gdzie zasadne", "category": "eeat"},
-    "clear_next_step_or_cta": {"label": "Jasny następny krok / CTA", "category": "conversion"},
+    "clear_next_step_or_cta": {"label": "Jasny następny krok / CTA", "category": "geo"},
 }
 
 TECH_FACTOR_META = {
@@ -1471,22 +1469,19 @@ def audit_stream(url: str):
         page_scores = [pa["combined_score"] for pa in page_audits] if page_audits else [0]
         avg_page = round(sum(page_scores) / len(page_scores))
 
-        # Category breakdowns (display only, unweighted averages per category)
-        _CAT_MAP = {"eeat": "eeat", "trust": "eeat", "topical": "topical", "rag": "rag", "conversion": "conversion"}
-        grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "rag", "conversion")}
+        # Category breakdowns for radar chart (eeat/topical/geo from AI factors, accessibility from domain tech)
+        grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "geo")}
         for pa in page_audits:
             for fk, v in (pa.get("factors") or {}).items():
                 cat = FACTOR_META.get(fk, {}).get("category", "")
-                g = _CAT_MAP.get(cat)
-                if g:
-                    grp[g]["max"] += 2
-                    grp[g]["val"] += (v.get("score", 0) if isinstance(v, dict) else 0)
+                if cat in grp:
+                    grp[cat]["max"] += 2
+                    grp[cat]["val"] += (v.get("score", 0) if isinstance(v, dict) else 0)
 
         def _grp_pct(g): return round(g["val"] / g["max"] * 100) if g["max"] else 0
         cat_eeat = _grp_pct(grp["eeat"])
         cat_topical = _grp_pct(grp["topical"])
-        cat_rag = _grp_pct(grp["rag"])
-        cat_conversion = _grp_pct(grp["conversion"])
+        cat_geo = _grp_pct(grp["geo"])
 
         # Base overall: page scores carry category weights (via factor_score_pct),
         # domain tech is weighted by DOMAIN_TECH_WEIGHTS, fan-out coverage last.
@@ -1505,8 +1500,8 @@ def audit_stream(url: str):
             "category": {
                 "eeat": cat_eeat,
                 "topical": cat_topical,
-                "rag": cat_rag,
-                "conversion": cat_conversion,
+                "geo": cat_geo,
+                "accessibility": domain_tech_pct,
             },
             "penalties": penalties,
             "page_average": avg_page,

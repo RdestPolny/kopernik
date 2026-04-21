@@ -304,9 +304,9 @@ let currentTab = 'eeat';
 let currentResult = null;
 
 function getGroupForCategory(cat) {
-  if (cat === 'eeat' || cat === 'trust') return 'eeat';
+  if (cat === 'eeat') return 'eeat';
   if (cat === 'topical') return 'topical';
-  if (cat === 'rag' || cat === 'conversion') return 'geo';
+  if (cat === 'geo') return 'geo';
   return 'accessibility';
 }
 
