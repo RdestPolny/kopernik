@@ -22,6 +22,8 @@ GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_SCRAPE = "https://api.firecrawl.dev/v1/scrape"
 FIRECRAWL_MAP = "https://api.firecrawl.dev/v1/map"
+PAGESPEED_KEY = os.getenv("PAGESPEED_KEY", "")
+PERPLEXITY_KEY = os.getenv("PERPLEXITY_KEY", "")
 
 AI_BOTS = ["GPTBot", "PerplexityBot", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "Google-Extended"]
 MAX_AUDIT_PAGES = 5
@@ -414,7 +416,10 @@ CLIENT_FACTOR_EXPLANATIONS = {
     "sitemap_in_robots": "Linkujemy od razu do mapy witryny we wspomnianym wyżej pliku 'robots.txt'.",
     "llms_txt_present": "Tworzymy specjalny plik tekstowy, ułatwiający botom AI zebranie wiedzy z całej naszej witryny.",
     "https_enabled": "Posiadamy bezpieczny certyfikat zabezpieczający całą domenę - kłódeczkę w przeglądarce.",
-    "hreflang_used": "Podajemy w kodzie do AI i Google języki, w których dostępna jest nasza firma."
+    "hreflang_used": "Podajemy w kodzie do AI i Google języki, w których dostępna jest nasza firma.",
+    "hsts_enabled": "Przeglądarka zawsze używa bezpiecznego połączenia – chroni użytkowników i wzmacnia zaufanie.",
+    "compression_enabled": "Pliki strony są kompresowane przed wysłaniem – szybsze ładowanie, mniejsze zużycie danych.",
+    "pagespeed_mobile_ok": "Strona szybko ładuje się na telefonach – kluczowe, bo większość użytkowników przegląda na mobile.",
 }
 
 DOMAIN_TECH_META = {
@@ -429,9 +434,12 @@ DOMAIN_TECH_META = {
     "llms_txt_present": {"label": "Plik llms.txt obecny", "category": "tech"},
     "https_enabled": {"label": "HTTPS włączone", "category": "tech"},
     "hreflang_used": {"label": "Tagi hreflang", "category": "tech"},
+    "hsts_enabled": {"label": "HSTS (Strict-Transport-Security)", "category": "tech"},
+    "compression_enabled": {"label": "Kompresja odpowiedzi (gzip/brotli)", "category": "tech"},
+    "pagespeed_mobile_ok": {"label": "PageSpeed Mobile (Core Web Vitals)", "category": "tech"},
 }
 
-# Domain tech factor weights (sum = 100). Critical AI-visibility factors dominate.
+# Domain tech factor weights. Normalized dynamically so sum doesn't need to equal 100.
 DOMAIN_TECH_WEIGHTS = {
     "llms_txt_present": 20,
     "gptbot_not_blocked": 15,
@@ -441,6 +449,9 @@ DOMAIN_TECH_WEIGHTS = {
     "robots_txt_accessible": 10,
     "sitemap_present": 8,
     "https_enabled": 7,
+    "pagespeed_mobile_ok": 7,
+    "hsts_enabled": 3,
+    "compression_enabled": 3,
     "crawl_delay_ok": 4,
     "sitemap_in_robots": 3,
     "hreflang_used": 1,
@@ -740,7 +751,55 @@ def check_llms_txt(base_url: str) -> dict:
     return {"exists": False}
 
 
-def build_domain_tech_scores(robots: dict, sitemap: dict, llms: dict, homepage_html_checks: dict) -> dict:
+def check_http_headers(base_url: str) -> dict:
+    result: dict = {"hsts": False, "compression": None, "cache_control": None, "x_robots_tag": None}
+    try:
+        r = requests.head(base_url, timeout=10, allow_redirects=True)
+        headers = {k.lower(): v for k, v in r.headers.items()}
+        result["hsts"] = "strict-transport-security" in headers
+        enc = headers.get("content-encoding", "")
+        result["compression"] = enc if enc else None
+        result["cache_control"] = headers.get("cache-control")
+        result["x_robots_tag"] = headers.get("x-robots-tag")
+    except Exception as e:
+        result["error"] = str(e)
+    return result
+
+
+def check_pagespeed(url: str) -> dict:
+    if not PAGESPEED_KEY:
+        return {"available": False}
+    try:
+        r = requests.get(
+            "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
+            params={"url": url, "strategy": "mobile", "key": PAGESPEED_KEY},
+            timeout=60,
+        )
+        r.raise_for_status()
+        data = r.json()
+        cats = data.get("lighthouseResult", {}).get("categories", {})
+        perf_score = round((cats.get("performance", {}).get("score") or 0) * 100)
+        audits = data.get("lighthouseResult", {}).get("audits", {})
+
+        def _ms(aid: str):
+            v = audits.get(aid, {}).get("numericValue")
+            return round(v) if v is not None else None
+
+        cls_raw = audits.get("cumulative-layout-shift", {}).get("numericValue")
+        return {
+            "available": True,
+            "performance_score": perf_score,
+            "lcp_ms": _ms("largest-contentful-paint"),
+            "fcp_ms": _ms("first-contentful-paint"),
+            "tbt_ms": _ms("total-blocking-time"),
+            "cls": round(cls_raw, 3) if cls_raw is not None else None,
+            "strategy": "mobile",
+        }
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+def build_domain_tech_scores(robots: dict, sitemap: dict, llms: dict, homepage_html_checks: dict, http_headers: dict = None, pagespeed: dict = None) -> dict:
     s = {}
     s["robots_txt_accessible"] = 2 if robots.get("accessible") else 0
     s["gptbot_not_blocked"] = 2 if robots.get("bots", {}).get("GPTBot", {}).get("allowed", True) else 0
@@ -755,6 +814,12 @@ def build_domain_tech_scores(robots: dict, sitemap: dict, llms: dict, homepage_h
     s["https_enabled"] = 2 if homepage_html_checks.get("https") else 0
     hreflang_count = homepage_html_checks.get("meta", {}).get("hreflang_count", 0)
     s["hreflang_used"] = 2 if hreflang_count > 0 else 1  # optional-ish — no penalty if single-lang
+    if http_headers:
+        s["hsts_enabled"] = 2 if http_headers.get("hsts") else 0
+        s["compression_enabled"] = 2 if http_headers.get("compression") else 0
+    if pagespeed and pagespeed.get("available"):
+        ps = pagespeed.get("performance_score", 0)
+        s["pagespeed_mobile_ok"] = 2 if ps >= 70 else (1 if ps >= 50 else 0)
     return s
 
 
@@ -821,6 +886,10 @@ def analyze_html_bs4(html: str, url: str, raw_html: str = "") -> dict:
     text = body_soup.get_text(separator=" ", strip=True)
     words = len(text.split()) if text else 0
 
+    dl_count = len(body_soup.find_all("dl"))
+    tables = body_soup.find_all("table")
+    th_scope_count = sum(1 for t in tables for th in t.find_all("th") if th.get("scope"))
+
     return {
         "semantic_html5": sem,
         "headings": {
@@ -836,6 +905,7 @@ def analyze_html_bs4(html: str, url: str, raw_html: str = "") -> dict:
         "schema": schema,
         "content": {"word_count": words},
         "contact_signals": {"tel": tel_links, "mailto": mailto_links, "forms": forms, "map": has_map},
+        "rag_signals": {"dl_count": dl_count, "th_scope_count": th_scope_count},
         "https": url.startswith("https://"),
         "html_size_kb": round(len(html.encode("utf-8")) / 1024, 1) if html else 0,
     }
@@ -1128,6 +1198,35 @@ Dokładnie 12 pytań, różnorodne intencje, wszystkie tematycznie związane z t
     return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=3000))
 
 
+def generate_ai_snippet_preview(url: str, title: str, content: str) -> dict:
+    if not PERPLEXITY_KEY:
+        return {"available": False}
+    try:
+        snippet_content = content[:4000]
+        prompt = (
+            f"Na podstawie poniższej strony internetowej odpowiedz na pytanie użytkownika: "
+            f"\"Czym zajmuje się {title} i co oferuje?\"\n\n"
+            f"Strona: {url}\nTreść:\n{snippet_content}\n\n"
+            f"Odpowiedz zwięźle (3-4 zdania), tak jak AI asystent odpowiadałby użytkownikowi."
+        )
+        r = requests.post(
+            "https://api.perplexity.ai/chat/completions",
+            headers={"Authorization": f"Bearer {PERPLEXITY_KEY}", "Content-Type": "application/json"},
+            json={
+                "model": "sonar-pro",
+                "messages": [{"role": "user", "content": prompt}],
+                "max_tokens": 400,
+            },
+            timeout=30,
+        )
+        r.raise_for_status()
+        data = r.json()
+        snippet = data["choices"][0]["message"]["content"]
+        return {"available": True, "snippet": snippet, "model": "sonar-pro"}
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
 def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_scores: dict, fan_out: dict, homepage_url: str, site_title: str, sitemap_urls: list[str] = None) -> dict:
     """Generate prioritized recommendations with URL + page_type refs."""
     weak_per_page: list[str] = []
@@ -1345,12 +1444,20 @@ def audit_stream(url: str):
         all_urls = [e["url"] for e in url_entries]
         scrape_results = scrape_pages_parallel(all_urls)
 
-        yield event("progress", {"message": "Analiza techniczna domeny (robots, sitemap, llms.txt) + HTML per strona...", "pct": 32})
+        yield event("progress", {"message": "Analiza techniczna domeny (robots, sitemap, llms.txt, headers, PageSpeed) + HTML per strona...", "pct": 32})
 
-        # 4. Domain-level checks
-        robots = check_robots_txt(base_url)
-        sitemap = check_sitemap(base_url)
-        llms = check_llms_txt(base_url)
+        # 4. Domain-level checks — run PageSpeed in parallel with other checks
+        with ThreadPoolExecutor(max_workers=4) as _tech_ex:
+            _robots_f = _tech_ex.submit(check_robots_txt, base_url)
+            _sitemap_f = _tech_ex.submit(check_sitemap, base_url)
+            _llms_f = _tech_ex.submit(check_llms_txt, base_url)
+            _headers_f = _tech_ex.submit(check_http_headers, base_url)
+            _pagespeed_f = _tech_ex.submit(check_pagespeed, url)
+            robots = _robots_f.result()
+            sitemap = _sitemap_f.result()
+            llms = _llms_f.result()
+            http_headers = _headers_f.result()
+            pagespeed = _pagespeed_f.result()
 
         # Per-page HTML analysis + tech scoring
         page_data: list[dict] = []
@@ -1385,7 +1492,7 @@ def audit_stream(url: str):
 
         # Domain tech scores (uses homepage html_checks for https/hreflang)
         homepage_data = next((p for p in page_data if p["page_type"] == "homepage"), page_data[0])
-        domain_tech_scores = build_domain_tech_scores(robots, sitemap, llms, homepage_data["html_checks"])
+        domain_tech_scores = build_domain_tech_scores(robots, sitemap, llms, homepage_data["html_checks"], http_headers, pagespeed)
 
         yield event("progress", {"message": "Per-URL analiza: każda strona z factor setem dopasowanym do typu (Gemini, parallel)...", "pct": 48})
 
@@ -1453,6 +1560,7 @@ def audit_stream(url: str):
                     "external_links": pd["html_checks"].get("links", {}).get("external", 0),
                     "images": pd["html_checks"].get("images", {}),
                     "canonical": pd["html_checks"].get("meta", {}).get("canonical"),
+                    "rag_signals": pd["html_checks"].get("rag_signals", {}),
                 },
             })
 
@@ -1509,6 +1617,20 @@ def audit_stream(url: str):
             "fan_out": fan_pct,
         }
 
+        yield event("progress", {"message": "Generowanie podglądu snippeta AI (Perplexity sonar-pro)...", "pct": 93})
+        _snippet_page = next(
+            (pd for pd in page_data if pd["page_type"] in ("homepage", "service")),
+            page_data[0],
+        )
+        try:
+            ai_snippet = generate_ai_snippet_preview(
+                _snippet_page["url"],
+                _snippet_page["title"] or homepage_title,
+                _snippet_page["markdown"][:4000],
+            )
+        except Exception as e:
+            ai_snippet = {"available": False, "error": str(e)}
+
         yield event("progress", {"message": "Tryb Klient: tłumaczenie wyników na prosty język (osobne zapytanie)...", "pct": 95})
         try:
             client_mode = translate_for_client_mode(page_audits, synth, scores_obj, fan_out, homepage_title)
@@ -1530,9 +1652,12 @@ def audit_stream(url: str):
                 "robots": {k: v for k, v in robots.items() if k != "raw"},
                 "sitemap": sitemap,
                 "llms_txt": llms,
+                "http_headers": http_headers,
+                "pagespeed": pagespeed,
             },
             "fan_out": fan_out,
             "synthesis": synth,
+            "ai_snippet_preview": ai_snippet,
             "client_mode": client_mode,
             "meta": {
                 "factor_meta": FACTOR_META,
