@@ -232,7 +232,7 @@ button{font:inherit;cursor:pointer}
 
 <!-- HERO -->
 <header class="hero" id="hero">
-  <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:center; flex-wrap:wrap;">
+  <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:stretch; flex-wrap:wrap;">
     <div class="hero-left" style="flex:1; min-width:300px; max-width:560px;">
       <div class="meta-line">
         <span>Perplexity · ChatGPT · Gemini</span>
@@ -264,7 +264,7 @@ button{font:inherit;cursor:pointer}
       </div>
       <div class="hint"></div>
     </div>
-    <div class="hero-right" id="heroScoreContainer" style="display:none; width:440px; background:rgba(0,0,0,0.25); border:1px solid rgba(255,255,255,0.1); border-radius:8px; padding:32px 24px; text-align:center;">
+    <div class="hero-right" id="heroScoreContainer" style="display:none; flex:1; min-width:360px; align-self:stretch; align-items:stretch; justify-content:center; text-align:center;">
     </div>
   </div>
 </header>
@@ -414,7 +414,7 @@ function renderResult(r) {
 
   const overallColor = overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b';
   const heroChartHtml = `
-    <div class="chart-wrap" style="width:360px; height:360px; margin:0 auto;">
+    <div class="chart-wrap" style="width:100%; max-width:520px; height:100%; min-height:480px; margin:0 auto;">
       <canvas id="radarChart"></canvas>
     </div>
   `;
@@ -427,7 +427,7 @@ function renderResult(r) {
     </div>
   `;
   document.getElementById('ctaScoreWrapper').innerHTML = ctaScoreHtml;
-  document.getElementById('heroScoreContainer').style.display = 'block';
+  document.getElementById('heroScoreContainer').style.display = 'flex';
   document.getElementById('auditForm').style.display = 'none';
   document.getElementById('ctaContainer').style.display = 'block';
 
@@ -536,10 +536,12 @@ function renderResult(r) {
         labels: ['EEAT', ['Topical', 'Authority'], 'GEO', 'Dostępność'],
         datasets: [{
           data: chartData,
-          backgroundColor: 'rgba(237, 217, 113, 0.25)',
+          backgroundColor: 'rgba(237, 217, 113, 0.18)',
           borderColor: '#edd971',
           pointBackgroundColor: '#edd971',
-          borderWidth: 2,
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          borderWidth: 2.5,
         }]
       },
       options: {
@@ -551,11 +553,12 @@ function renderResult(r) {
             min: 0,
             max: 100,
             ticks: { display: false },
-            grid: { color: 'rgba(255, 255, 255, 0.1)' },
-            angleLines: { color: 'rgba(255, 255, 255, 0.1)' },
+            grid: { color: 'rgba(255, 255, 255, 0.18)' },
+            angleLines: { color: 'rgba(255, 255, 255, 0.18)' },
             pointLabels: {
-              font: { family: "'Inter', sans-serif", size: 11, weight: '600' },
-              color: 'rgba(255, 255, 255, 0.75)'
+              font: { family: "'Inter', sans-serif", size: 13, weight: '700' },
+              color: 'rgba(255, 255, 255, 0.9)',
+              padding: 12
             }
           }
         }
@@ -563,7 +566,6 @@ function renderResult(r) {
     });
   }, 50);
 
-  results.scrollIntoView({behavior: 'smooth', block: 'start'});
 }
 
 function applyMode() {
