@@ -629,9 +629,36 @@ Dokładnie {MAX_AUDIT_PAGES - 1} pozycji. Każda z innego segmentu witryny."""
                 if pt not in PAGE_TYPE_FACTORS:
                     pt = "other"
                 picked.append({"url": u, "page_type": pt, "reason": item.get("reason", "")})
-        return picked[: MAX_AUDIT_PAGES - 1]
+        picked = picked[: MAX_AUDIT_PAGES - 1]
+        picked = _ensure_about_page(picked, candidates, base_url)
+        return picked
     except Exception:
         return _heuristic_pick_and_classify(candidates, base_url)
+
+
+def _ensure_about_page(picked: list[dict], candidates: list[str], base_url: str) -> list[dict]:
+    """Guarantee at least one about/team page is in the selection for E-E-A-T coverage."""
+    if any(p["page_type"] == "about" for p in picked):
+        return picked
+    # Find first about-type candidate not already picked
+    picked_urls = {p["url"] for p in picked}
+    about_url = next(
+        (u for u in candidates if u not in picked_urls and classify_page_type_heuristic(u, base_url) == "about"),
+        None,
+    )
+    if not about_url:
+        return picked
+    # Replace lowest-priority slot: prefer contact > other > category > article > service
+    replace_order = ["contact", "other", "category", "article", "service"]
+    for rtype in replace_order:
+        for i, p in enumerate(picked):
+            if p["page_type"] == rtype:
+                picked[i] = {"url": about_url, "page_type": "about", "reason": "wymuszona strona O nas / Zespół (sygnał E-E-A-T)"}
+                return picked
+    # All slots used by higher-priority types — replace last slot
+    if picked:
+        picked[-1] = {"url": about_url, "page_type": "about", "reason": "wymuszona strona O nas / Zespół (sygnał E-E-A-T)"}
+    return picked
 
 
 def _heuristic_pick_and_classify(urls: list[str], base_url: str) -> list[dict]:
