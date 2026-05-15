@@ -1,0 +1,1293 @@
+US012073187B2
+az) United States Patent (10) Patent No.: US 12,073,187 B2
+Freitag et al. (45) Date of Patent: Aug, 27, 2024
+(54) AUTOMATIC EVALUATION OF NATURAI. (58) Field of Classification Search
+LANGUAGE TEXT GENERATED BASED ON USPC vices MO47-10, 257
+STRUCTURED DATA See application file for complete search history.
+(71) Applicant GOOGLE LLC, Mountain View, CA (56) References Cited
+(us)
+U.S. PATENT DOCUMENTS
+(72) Inventors: Markus Freitag, Summyvale, CA (US);
+Howard Scott Roy, Palo Alto, CA (US) 2014/0207439 Al* 7/2014 Venkatapathy ....... GOQGF 40/274
+. 704/4
+(73) Assignee: GOOGLE LLC, Mountain View, CA 2DTSIOO32443 AVS W201 Karo ooo GOR ABS
+(US) 2019/0073997 AL*® 3/2019 Millon occu GLOL 15/16
+2019/0139541 Al 5/2019 Andersen et al.
+(*) Notice: Subject to any disclaimer, the term of this 2020/0349224 AL* 11/2020 Kurien 0.02.0... GO6F 40/274
+patent is extended or adjusted under 35
+USS.C. 154(b) by 285 days. OTHER PUBLICATIONS
+(21) Appl. No.: 17/608,616 Dusek, ©. et al., “Evaluating the State-of-the-Art of End-to-End
+. Natural Language Generation: The E2E NLG Challenge,” Com-
+(22) PCT Filed: Aug. 22, 2019 puter Speech & Language, retrieved from internet: https://arxiv.org/
+(86) PCT No. PCT/US2019/047719 pdf/1901.0793 Lvl: pp. 123-156; Jan. 23, 2019.
+(Continued)
+§ 371 (e)(L).
+(2) Date: Nov, 3, 2021 Primary Examiner — Leonard Saint-Cyr
+74) Attorney, Agent, Fi Gray Ice TTigd
+(87) PCT Pub. No: WO2020/231453 (74) Adorney, Agent, or Firm Gray Tee Migdon
+PCT Pub. Dato: Nov. 19, 2020 (57) ABSTRACT
+- . tos Techniques are disclosed for training and/or utilizing an
+(65) Prior Publication Data alignments and language model (“ALM”) in automatically
+US 2022/0215184 Al Jul. 7, 2022 determining an ALM score corresponding with natural lan-
+guage text generated using a natural language generation
+Related U.S. Application Data model. ‘The natural language text generated using the natural
+(60) Provisional application No. 62/847,078, tiled on May language generation model can be based on a set of struc-
+13, 2019. tured data. Additionally or alternatively, the ALM can
+include a fluency model portion and a semantics model
+(51) Int. C1. portion. The fluency model portion can be used in deter-
+GO6F 40/56 (2020.01) mining the fluency and/or grammar of the text. The seman-
+GO6F 40/226 (2020.01) tics model portion be used in evaluating the content of the
+GO6L 4030 (2020.01) natural language text with respect to the content of the
+(52) U.S. Ch structured data.
+CPC wn GOOF 40/36 (2020.01); GO6F 40/226
+(2020.01); GO6F 40/30 (2020.01) 20 Claims, 10 Drawing Sheets
+/ °
+DATAUSING A NATURALLANGUAGE GENERATION MODEL
+oR
+ALIGNMENTS ANG LANGUAGE MODEL (ALM) TO DETERMINE A
+FLUENCY ScORE
+704
+206
+(2) THE senaanmnics SCORE
+ma
+‘TEXT AND (2) THE ALM SCORE
+710
+
+US 12,073,187 B2
+Page 2
+(56) References Cited
+OTHER PUBLICATIONS
+Reed, T.. et al., “Can Neural Generators for Dialogue T.earn Sen-
+tence Planning and Discourse Structuring?;” Cornell LIniversity;
+arXiv.org; arXiv:1809.03014v1; LO pages; dated Sep. 9, 2018
+Reed, L. ct al., “Can Neural Generators for Dialogue Learn Sen-
+tence Planning and Discourse Structuring?;” Cornell University;
+arXiv.org; arXiv:1809.03015v2; 12 pages; dated Nov. 1, 2018.
+Smiley, C. et al., “The E2E NLG Challenge: A Tale of Two
+Systems;” Proceedings of the 11th International Conference on
+Natural Language Generation; pp. 472-477; Nov. §, 2018
+Belz, A. ct al., “Comparing Automatic and Human Evaluation of
+NLG Systems;” retrieved from internet: https://www.achweb.ore/
+anthology/E06-1040.pdf: 8 pages; 2006.
+European Patent Office; International Scarch Report and Written
+Opinion of Ser. No. PCT/US2019/047719, 15 pages; dated Jan. 22,
+2020.
+Hill, F. et al., “Learning Distributed Representations of Sentences
+from Unlabelled Data;” arXiv.org, arXiv: 1602.03483v1; 11 pages;
+dated Feb. 10, 2016
+Freitag, M. et al., “Unsupervised Natural T.anguage Generation with
+Denoising Autoencoders:” arXiv.org: arXiv: 1804.07899v2; 8 pages,
+dated Aug. 24, 2018.
+European Patent Office; Communication pursuant to Article 94(3)
+FPC issued in Application No. 19762658.3; 7 pages, dated Feb. 23,
+2023.
+Furopean Patent Office, Summons to Attend Oral Proceedings
+issued for Application No. 19762658.3, 33 pages, dated Teb. 5,
+2024.
+Turopean Patent Office, Brief Response issued for Application No.
+19762658.3, 9 pages, dated Jun. 20, 2024.
+* cited by examiner
+
+U.S. Patent Aug. 27, 2024 Sheet 1 of 10 US 12,073,187 B2
+o
+Oo
+el
+\ -
+5
+a
+=
+_l
+<
+an
+<8 [, g a
+rs og Ew e
+zw oe za 9 Zan
+ta) | tn |
+g25/$o8)|298 U)
+4
+9 z
+S< 2a '
+EN o<t¢agd ‘o
+beg Z29§ ag
+oc z=
+= Ww
+wn oO
+
+U.S. Patent Aug. 27, 2024 Sheet 2 of 10 US 12,073,187 B2
+/ 200
+ALIGNMENTS AND
+ALM ENGINE LANGUAGE MODEL
+204 210
+FLUENCY ENGINE FLUENCY MODEL
+206 212
+SEMANTICS ENGINE
+a 214
+ALM TRAINING ENGINE
+216
+TRAINING
+F | G 2 INSTANCES
+° 218
+
+U.S. Patent Aug. 27, 2024 Sheet 3 of 10 US 12,073,187 B2
+°
+3S
+m
+a
+\ =
+
+oa)
+
+Vv
+OO | | | oe | =
+
+Te)
+
+©
+
+a
+
+ol
+Oe | | | |
+
+7a)
+
+<=
+
+A
+
+cB)
+| | | | | ee —a~| &
+
+— cOE
+cL.
+LLL
+ee 8 cy)
+
+Cc
+
+c e
+RERRE BEBE \u)
+
+mm
+Li.
+OO | | | | ee
+ale
+c a|
+v5} a| v=
+= — SE
+st
+3°
+a
+
+U.S. Patent Aug. 27, 2024 Sheet 4 of 10 US 12,073,187 B2
+P=
+wz
+8 \
+tT
+\
+: 8
+\ ro [=
+2 ¢
+5 6S
+“
+t| 2/5 s s
+=| 8)'o Te) N
+wo Cc Sa N _
+Q\¢)2 00 Z
+<=
+00} ip] 1a < ° bo co
+gG=
+N
+o| & : + - 4 +
+w| 6| 2 —_ c .
+£\8/3| © +2 5290
+Aia|oql —™| Cc — c c —
+o/c; s| LL OC oO -= Oo LL
+LE] 8 o# OC
+2/0; 0 —_— & Pa
+| o} co wt o
+0|6| 6 c S
+=) mL << ~
+aa)
+Cc oO
+=
+WY jos
+c be
+-_ 2
+© r=
+° ,2
+Q e
+< ~
+<= c
+O =
+™ ©
+nd
+
+U.S. Patent Aug. 27, 2024 Sheet 5 of 10 US 12,073,187 B2
+3
+Ww
+3 wn , ®
+; 5
+v Ve fe)
+— ze) rd) —
+So S55 «
+= Ss $= &s
+ae}
+5 &£ wo cf
+= a. — c
+> vo dD —
+= t 3oOQ 38
+> >
+El ~ 22 &
+we] > = or roe
+. c« U ep
+= 2 < c
+a?) sc ©
+<@) c =
+8 o ¢€%4 324
+- Lo)
+=|=\ ef & S82 # LIA
+Te) “ a un ow
+e = ses .
+© e = nC = 9
+& “ Oo GC =
+o| 3|O ~ + 7
+P| 2) Lh s >2 ra
+~ fob) v =
+w © Y @ £
+‘ S _ oc £
+O 8 oo roe)
+rc oO ss 6
+2 - © 8)
+~ c ini = —
+2 S oy 8
+~ ae} vo
+oO —
+oO c © Po ©
+2 ~~ OY YL
+Cc _ ~
+x oO o (o)
+w YY on
+2 $2 8
+v < £& Q
+oO = >
+<— o =
+rE >
+x=
+
+U.S. Patent Aug. 27, 2024 Sheet 6 of 10 US 12,073,187 B2
+/ 600
+SELECT A NATURAL LANGAUGE TRAINING INSTANCE
+602
+UPDATE A FLUENCY MODEL PORTION OF AN ALIGNMENTS AND
+LANGUAGE MODEL (ALM) BY PROCESSING THE TRAINING INSTANCE
+604
+UPDATE A SEMANTICS MODEL PORTION OF THE ALM BY
+YES PROCESSING THE TRAINING INSTANCE
+
+606
+
+ADDITIONAL?
+608
+
+FIG. 6
+
+U.S. Patent Aug. 27, 2024 Sheet 7 of 10 US 12,073,187 B2
+/ 700
+RECEIVE TEXT GENERATED BY PROCESSING A SET OF STRUCTURED
+DATA USING A NATURAL LANGUAGE GENERATION MODEL
+702
+PROCESS THE TEXT USING A FLUENCY MODEL PORTION OF AN
+ALIGNMENTS AND LANGUAGE MODEL (ALM) TO DETERMINE A
+FLUENCY SCORE
+704
+PROCESS THE TEXT USING A SEMANTICS MODEL PORTION OF THE
+ALM TO DETERMINE A SEMANTICS SCORE
+706
+DETERMINE AN ALM SCORE BASED ON: (1) THE FLUENCY SCORE AND
+(2) THE SEMANTICS SCORE
+708
+CAUSE A CLIENT DEVICE TO PERFORM ACTION(S) BASED ON: (1) THE
+TEXT AND (2) THE ALM SCORE
+710
+FIG. 7
+
+U.S. Patent Aug. 27, 2024 Sheet 8 of 10 US 12,073,187 B2
+/ 800
+RECEIVE A PLURALITY OF INSTANCES OF TEXT BASED ON A SET OF
+STRUCTURED DATA, EACH INSTANCE GENERATED BY PROCESSING
+THE SET OF STRUCTURED DATA USING A NATURAL LANGUAGE
+GENERATION MODEL
+802
+SELECT AN INSTANCE OF TEXT FROM THE PLURALITY OF INSTANCES
+OF TEXT
+804
+PROCESS THE SELECTED INSTANCE OF TEXT TO DETERMINE A
+CORRESPONDING ALM SCORE
+806
+YES
+ADDITIONAL?
+808
+NO
+SELECT INSTANCE(S) OF TEXT BASED ON THE CORRESPONDING ALM
+SCORE(S)
+$10
+GENERATE AUDIO WAVEFORM(S) BASED ON THE SELECTED
+INSTANCE(s) OF TEXT
+812
+CAUSE A CLIENT DEVICE TO RENDER OUTPUT BASED ON THE AUDIO
+WAVEFORM(S)
+814
+FIG. 8
+
+U.S. Patent Aug. 27, 2024 Sheet 9 of 10 US 12,073,187 B2
+_——— ne
+CLIENT DEVICE 902
+| AUTOMATED |
+| || ASSISTANT CLIENT 904 |
+| |
+| |} [LOCAL ENGINE(S) 906 | 900
+| |
+| |
+| |
+|
+= 908
+| I
+| |
+| CLOUD-BASED AUTOMATED ASSISTANT |
+| COMPONENT(S) |
+| 910 |
+| |
+| |
+NATURAL LANGUAGE PROCESSOR
+| — |
+| |
+
+FIG. 9
+
+U.S. Patent Aug. 27, 2024 Sheet 10 of 10 US 12,073,187 B2
+~
+ce
+oS
+we
+WwW 4
+w ui
+Oo w «Vv
+exact oe i
+ou DY uA
+ed ae
+Few 2ZVe
+z 9 a.
+7 we
+o>
+23
+a
+nN
+3 c ©
+8 So
+ee
+e
+Lu
+Zee a4
+wo iri ew
+oa Ee Li
+2 8 a) zz
+— a n =
+wi
+>
+a S wo
+a
+29 | # = §
+w = “vn
+og z
+a2 a we
+fo) 2 9 fo)
+he “nm a
+“ > 2 —sy vw
+ec ew Lu
+nn (s) Y
+als 2
+ea wg a
+2a
+Oo wT
+2 5
+S a
+
+US 12,073,187 B2
+1 2
+AUTOMATIC EVALUATION OF NATURAL For example, a client device can include multiple natural
+LANGUAGE TEXT GENERATED BASED ON language generation models. Text generated using cach
+STRUCTURED DATA model can be processed with the ALM to generale corre-
+sponding ALM scores. In a variety of implementations, the
+BACKGROUND 3 ALM scores can be utilized to select text such as selecting
+the text with the corresponding ALM score thal is most
+Natural language processing involves interactions indicative of fluency and semantics, which can be the text
+between computing devices and human languages (.e., with the highest corresponding ALM score or the text with
+natural languages). A wide variety of natural language the lowest corresponding ALM score (depending on the
+problems exist including speech recognition, natural lan- 10 implementation and whether a higher score indicates greater
+guage understanding, natural language generation, etc. fluency and semantics), selecting instances of text with an
+Natural language generation models can be used to process ALM score above a threshold value ele. In many imple-
+structured dala using one or more compuling devices to 7 . ‘ . oe ; ie device c ee
+generale lext, speech, etc. For example, a nalural language mentations, one or more actions of ac rent levice can be
+generation system can generate the natural language text of 15 performed based on the selected text. For example, the
+“Five lights are currently tumed on in your kitchen” by action(s) can include generating an audio waveform based
+processing the sct of structured data “number of lights=5; on the selected text (e.g. using a text-to-speech model);
+room=kitchen” using a natural language generation model. rendering audio (via speaker(s)) based on the generated
+Natural language gencration models can use machine learn- audio waveform; rendering the selected text on a display;
+ing model(s) (such as artificial neural network(s)) to predict 20 Causing a networked device to perform one or more actions
+the likelihood of a sequence of words given a set of based on the selected text; and/or performing other action(s).
+structured data. Generated text evaluation can be divided into a variety of
+evaluation sub-tasks. In many implementations, AT.M pro-
+SUMMARY cesses can be divided into at least two evaluation sub-tasks:
+25 (1) Nuency evaluation and (2) semantics evaluation. lluency
+Implementations described herein are directed. towards evaluation can assess the Muency (Le., an indication of the
+automatically evaluating natural language text using an likelihood a human will perceive the text as natural) and/or
+alignments and language model (“ALM”), where the natural the grammar (i.e., an indication of the likelihood that the text
+language text is generated by processing structured data is grammatically correct) of natural language text. Addition-
+using a natural language generation model. In some imple- 30 ally or alternatively, semantics evaluation can assess the
+mentations, one or more instances of natural language text content of the text with respect to the structured data utilized
+can be generated based on the same set of structured data, in generating the text (i.e., penalizing content included in the
+utilizing one or more natural language generation model(s). structured data and missing from the text; penalizing content
+For example, “The thermostat is set to 72 degrees. It is 91 included in the structured data and repeated in the text;
+degrees right now in Touisville.”; “The exterior temperature 35 penalizing additional content included in the text that is not
+in Louisville is 91 degrees and. your thermostat is sel to 72 included in the siructured data, etc.).
+degrees”, and/or additional instances of text can each be Fluency can be evaluated by processing the generated
+generated based on a set of structured data of “thermostat natural language text using a fuency model portion of the
+temperature—72; location—Louisville; external tempera- ALM to generate a fluency score. In many implementations,
+ture—91". One of the generated instances of natural lan- 40 the fluency score is independent of the structured data used
+guage text can be selected based on its ALM score that is in generating the text. The fluency model portion of the
+generated utilizing the ALM. and the sclected instance ALM can be represented by a statistical language model
+visually rendered and/or corresponding synthesized speech such as an n-gram language model which is used as an
+generated and rendered. As described herein, the generated approximation of the underlying, language. This n-gram
+ALM score can be based on both a fluency score and a 45 language model can be trained based on unlabeled data.
+semantics score, and selecting the instance based on the Semantics can be evaluated by processing the generated
+ALM score can ensure the selected instance conveys under- natural language text as well as the structured data used in
+lying semantics of the structured data with language and generating (he text using a semantics model portion of the
+phrasing that resonates with a receiving user. This can make ALM. A first probability indicating the likelihood the gen-
+the overall duration of an interaction shorter than it would 50 erated text was generated using the structured. data can be
+otherwise need to be, thereby saving computational load. determined to check if all information in the structured data
+ALM processes can evaluate generated text by processing is present in the text. Similarly, a second probability can be
+the text using an ALM to generate an ALM score. This score determined indicating the likelihood the structured data was
+can be used to compare the natural language gencration used in generating the text, which can provide an indication
+model used in generating the text with additional and/or 55 if all information in the generated text can be aligned to
+alternative natural language generation meodel(s). For feature(s) in the structured data. A semantics score can be
+example, a first instance of text can be generated by pro- determined based on these two probabilities.
+cessing a sel of structured data using a first natural language In many implementations, ihe ALM score can be deter-
+generation model. A second instance of text can be generated mined based on both the fluency score and based on the
+by processing the same set of structured data using a second 60 semantics score. l‘or example, the ALM score can be deter-
+natural language generation model. The first instance of text mined. using the average and/or other combination of the
+can be processed using the ALM to generate a first ALM fluency score and the semantics score. In many implemen-
+score. Similarly, the second instance of text can be processed tations, natural language generation task specific weights
+using the same ALM to generate a second ALM score. In ean be utilized in determining the ALM score. In other
+many implementations, the first and second ALM scores can 65 words, semantics can be more important to some natural
+be utilized to evaluate the first natural language generation language generation tasks and/or fluency can be more
+model and/or the second natural language generation model. important to other natural language generation tasks.
+
+US 12,073,187 B2
+3 4
+
+Thus, the semantics score and the Muency score can be be visually and/or audibly rendered. Since the selected text
+weighted differently, in generating the AI.M score, in depen- has high fluency and/or semantics, it is more quickly ascer-
+dence on the natural language generation task for which an tainable by a user to which it is rendered. ‘his can prevent
+instance of natural language text (being evaluated) is gen- the user from needing to request the text again, wasting
+erated. For example, if the natural language generation task 5 computational resources, and/or can cnable the user to more
+is to gencrate natural language text from structured data that quickly provide further user interface input that is respon-
+specifics router settings for configuring a router, the scman- sive to the selected text, reducing computer/user interaction
+tics score can be weighted more heavily than the fluency duration and conserving computational resources.
+score to ensure structured data is included in the instance of The above description is provided only as an overview of
+natural language text—which can be critical to ensure 10 some implementations disclosed herein. These and other
+proper configuration of the router. As another example, if the implementations of the technology are disclosed in addi-
+natural language generation task is instead to generate tional detail below.
+natural language text from structured data that reflects It should be appreciated that all combinations of the
+details of a restaurant (¢.g., cuisine lype, cast, review(s), foregoing concepts and additional concepts described in
+then the fluency score can be weighted more heavily to 15 greater detail herein are contemplated as being part of the
+ensure (he natural language lext conveys the details using subject matter disclosed herein. For example, all combina-
+fanguage and phrasing which ints with a vith. as can tions of claimed subject matter appearing at the end of this
+make the overall duration of interaction with the user i ing j
+shorter, by preventing clarifying follow-up prompts by the disclos ected nae lated as being part of the subject
+user (as a result of the resonating natural language text), 20
+thereby saving computational load in a computing system BRIEF DESCRIPTION OF THE DRAWINGS
+hosting an automated assistant and/or other application(s)
+rendering the natural language text (and/or corresponding FIG. 1 illustrates an example of determining an align-
+generated audio data). In these and other manners, fluency ments and language score for an instance of natural language
+and. semantic scores can be dynamically weighted, in depen- 25 text in accordance with various implementations disclosed
+dence on the natural language generation task, to ensure herein.
+important structured data is conveyed in natural language FIG. 2 illustrates an example environment in which
+text for certain natural language generation tasks, while implementations disclosed herein can be implemented.
+promoting shorter duration of interactions for certain other FIG. 3 illustrates an cxample alignment between struc-
+natural language generation tasks. 30 tured data and natural language text generated based on the
+
+Accordingly, various implementations set forth tech- structured data in accordance with various implementations
+niques for automatically evaluating, natural language gen- disclosed herein.
+eration models and/or text generated using natural language FIGS. 4A and 4B illustrate a set of structured data and
+generation model processes using, an alignments and lan- natural language text generated based on the set of struc-
+guage model. Fvaluating natural language generation 35 tured data in accordance with various implementations dis-
+model(s) in a fully supervised manner can be resource closed herein.
+and/or labor intensive. For example, a natural language FIGS. 5A and 5B illustrate another set of structured data
+generation model can be evaluated by evaluating inslances and natural language (ext generated based on the set of
+of text generated using the model. In evaluating a single structured data in accordance with various implementations
+instance of text, relevant data (e.g., text generated using the 40 disclosed herein.
+natural language generation model, structured data used in FIG. 6 is a flowchart illustrating an example process in
+generating the text, ctc.) must be transmitted to a client —_ accordance with implementations disclosed herein.
+device of a human reviewer, resources of the client device FIG. 7 is a flowchart illustrating another example process
+utilized to enable the reviewer to provide an annotation, and in accordance with implementations disclosed herein.
+the annotation transmitted back for evaluation. Implemen- 45 — FIG. $ is a flowchart illustrating another example process
+tations disclosed herein utilize automatically generating an in accordance with implementations disclosed herein.
+ATM score, enabling systems to quickly evaluate a wide TG. 9 illustrates another example environment in which
+number natural language generation models — without trans- implementations disclosed. herein can be implemented.
+mission of data to client devices of reviewers and without FIG. 10 illustrates an example architecture of a computing
+ulilization of resources of those client devices in oblaining 50 device.
+reviewer provided annotations. Additionally or alternatively,
+different human reviewers can score the same instance on DETAILED DESCRIPTION
+natural language text differently. ALM scores generated by
+processing natural language text using an ALM can provide Evaluation is a crucial component of natural language
+a uniform scoring system, thus enabling a reproducible 55 processing. Without evaluation, it can be impossible to
+comparison of natural language generation models. For measure quality. One way to evaluate a natural language
+example, a current version of a natural language generation processing process is to recruit human subjects and ask them
+model can be compared with a previous version of the to assess system output along with some predetermined.
+natural language generation model by comparing, automati- criteria. Tlowever, human evaluation is expensive and time-
+cally generated ALM scare(s). 60 consuming. l'or developers who may need to rapidly lest
+
+As described herein, a client device can perform action(s) multiple system configurations, the time factor is a signifi-
+based on text selected based on the ALM score for the text. cant barrier. Due to these reasons, there is a huge demand to
+For example, multiple natural language generation medels develop methods of evaluation that can automatically pro-
+can be utilized in generating candidate text based on the vide results that are proxics for human judgement.
+same set of structured data. An instance of text can be 65 Implementations disclosed herein utilize an automatic
+selected from the candidate text based on the selected text’s inetrie that yields high correlation with human ratings on
+ALM score. In many implementations, the selected text can data-to-text generations. The data-to-text task can he for-
+
+US 12,073,187 B2
+5 6
+mulated as generating a natural language oulput conditioned implementations, the fluency model can be trained using
+on a table T (ie., structured data). The table T consists of natural language generation task specific training data. Fur-
+several field-value records and the natural language output thermore, in various implementations, the Nuency model
+should include all of the information present in the table. portion can be trained using subword units to overcome the
+ALM evaluation can include two core ideas: metrics for 5 problem of out-of-vocabulary words. ; ;
+different evaluation subtasks and reproducibility/simplicity. . In many implementations, semantics evaluation can
+Fyaluation subtasks can include a fluency evaluation include comparing the text generated using the natural
+subtask as well as a semantics evaluation subtask. The language generation model with the structured data used in
+evaluation sub-tasks can be evaluated separately utilizing generating the text (in contrast to comp aring, the generated
+different models. This has several advantages: First, evalu- '" text with an instance of “golden reference” text generated
+. . ae . using the same set of structured data). The generated output
+ation models can be detined that concentrate on the subtask im A . .
+. (Le., the generated text) can be aligned with the input
+problems. For example, fluency evaluation does not need to caniution ft yee a ot
+. . representation (i.e., the structured data). In many implemen-
+evaluate the content and van be rated without having access tations, it can be assumed Uhat when a semantics model only
+to the table information. Semantics evaluation, on the other aligns a lew words of an inpul/output pair, it is very likely
+hand, can concentrate on content words. Further, task- thal they are semantically diferent. In many implement-
+specific weights can be assigned to the importance of the tions, the alignment process of the semantics model is based
+sublasks. F or example, a much higher weight can be placed on the IBM-1 model from machine translation. For an flatten
+on semantic correctness. input representation s=s,,.... 8, of length N and a target
+Additionally or alternatively, ALM evaluation is repro- 39 sequence t=t,. ty; of length M and lexical probabilities
+ducible and simple. Different alignments and language pr(s,t;), the conditional probability p(sit) of t being gener-
+model implementations will yield the same ALM score ated by s with can be determined by:
+when running with the same tokenization and normalization.
+This makes it possible to compare scores between different
+groups and approaches. Further, ALM scores are easy LO 9.5 p= ne maxy<jeus prs, 13)
+understand. In a variety of implementations, neural network el “ ’
+models are avoided due to the challenge in interpreting the
+models as well as different neural network models not Additionally or alternatively, a NULL word can be uti-
+yielding the same ALM scores when trained by different lized to account for words that likely have no counterpart,
+groups. Additionally or alternatively, only natural language 39 such as a null word on the target side. In many implemen-
+task specific data is utilized in training and/or evaluating tations, word(s) without a proper target translation are
+ALMs to increase the reproducibility of the model as well as aligned to that NULL word.
+improve the model for domain specific words and phrases. In many implementations, lexical probabilities can be
+In a variety of implementations, there is no need to trained using the natural language generation task specific
+process the table information (i.c., the structure data) to 45 training data utilized in training the fluency model portion.
+evaluate the fluency of natural language text generated based For example, the open source toolkit fastAlign can be
+on the table information. Tn other words, fluency evaluation utilized for alignment calculation(s) where the precision
+sublask is independent of the actual content of the text. In parameter is sel to A=O.
+many implementations, fluency can be evaluated using a In a yariety of implementations, both the alignments
+statistical language model such as an n-gram language 49 scores p(si) and p(tls) can be determined in semantics
+model where each word depends only on the last n-1 words. evaluation. First, the probability if the generated text (i.e.,
+This Markov model can be utilized as an approximation of the text generated using the natural language generation
+the actual underlying language: model) has been produced by the table (ie., the structured
+data) with p(tls) to check if all information of the table is
+45 present in the text. Second, probability p(slt) can be deter-
+Pty oes fn) =| [EPG wey tet) mined to check if all information of the target sequence can
+- be aligned to some table features. Tn a variety of implemen-
+tations, the Mluency score is determined as the average of the
+Tn many implementations, using an n-gram language alignment scores in both directions by:
+model instead of, for example, a neural-network based <q
+language model increases the reproducibility of the fluency soms,\=Vapts)+'4p(s)
+model as retraining the slalistical language model on the Additionally or alternatively, for some natural language
+same data yields the same probabilities. In some implemen- veneration tasks, the semantics score can be determined
+tations, the fluency score of the sequence t),.... thy is based on the only p(sit) or p(tls).
+normalized by the number of words M in the sequence. 55° An ALM score in accordance with many implementations
+Resulting in the following equation: is based on a combination of the semantics score and the
+fluency score. For example:
+. Pity, ... 5 tu) ALM(s,)=10004sern(s.4)+4+fluency ()
+Nueney(t), ... £4.) —- ———————
+“ 60 Additionally or alternatively, the ALM score can be
+determined based on natural language generation task spe-
+In a yariety of implementations, the statistical language cific weights. For example, for some tasks semantics can be
+model (i.e., the uency model portion of the ALM) can be more important than fluency or fluency can be more impor-
+trained on a massive amount of unlabeled data in a repro- tant than semantics.
+ducible way. However, natural language task-specific terms 65 FIG. 1 illustrates an example of determining an ALM
+can be infrequent in other domains which results in language score by processing text and a corresponding set of struc-
+model scores that would penalize them. Therefore, in some tured data using an AIM model. In the illustrated example
+
+US 12,073,187 B2
+7 8
+
+100, siructured data 102 is processed using natural language systems. In some implementations, one or more aspecis of
+generation model 104 to generate text 106. Tor example, the engines 204, 206, 208, 216 may be combined in a single
+set of structured data 400 illustrated in V'1G. 4A indicating system and/or one or more aspects may be implemented on
+the birth date, birthplace, and occupation of John (birth the client device 202. For example, in some of those
+date—Aug. 26, 1942; birthplace—San Antonio: occupa- 5 implementations, aspects of ALM engine 204 may be com-
+tion—fighter pilot) can be processed using natural language bined with aspects of ALM training engine 216. Engines in
+generation model 104 to gencrate the instance of text 402 accordance with many implementations may cach be imple-
+illustrated in FIG. 4B of “John, born in San Antonio on 1942 mented in one or more computing devices that communi-
+Aug. 26, worked as a fighter pilot”. Additionally or alter- cate, for example, through a communications network. A
+natively, set of structured data 400 of FIG. 4A can be 16 communications network may include a wide area network
+processed using, an additional or alternative natural language such as the Internet, one or more local area networks
+generation model 104 to generate the instance of text 402 (“T.AN”s) such as Wi-Fi ILANs, mesh networks, etc., and/or
+illustrated in TIG. 4B of “John, a fighter pilot, was born on one or more bus subsystems. A communication network may
+Aug. 26, 1942 in San Antonio”. As a further example, the set oplionally utilize ene or more standard communication
+of structured data 500 illustrated in FIG. 5A describing 15 technologies, protocols, and/or inter-process communication
+Llypothetical Café of “name—llypothetical Caf—; type— techniques.
+restaurant; food—tIndian; family friendly—yes” can be pro- ALM engine 204 includes fluency engine 206, semantics
+cessed by natural language gencration model 102 to generate engine 208, and/or additional engine(s) (not depicted). In
+text 502 of “There is an Indian restaurant that is kids several implementations. ALM engine 204 can process
+friendly. It is Hypothetical Cafe.”; to generate text 504 of 20 structured data and or text generated based on the structured
+“Hypothetical Caté is a well-received restaurant with a wide data (c.g., the text can be generated by processing the
+range of delicious Indian food. It also delivers fantastic structured data using, a natural language generation model)
+service to young children”: to generate text 506 of “Hypo- using alignments and language model 210 to generate an
+thetical Café is a family friendly restaurant providing, Indian ALM score. ATM 210 can include a fluency model portion
+food”; and/or additional text generated based. on structured 25 212 us well as a semantics model portion 214. In many
+data 500. implementations, Nuency engine 206 can be process gener-
+
+‘Text 106 and structured data 102 can be processed using, ated text using fluency model portion 212 to generate a
+alignments and language model 108 to determine ALM fluency score. Additionally or alternatively, semantics
+score 114. In many implementations, alignments and lan- engine 208 can process generated text as well as structured
+guage model 108 can include a fluency model portion 110 30 data utilized in generating the text using semantics model
+and a semantics model portion 112. Fluency model portion portion 214 to gencrate a semantics score. ALM engine 204
+110 can be utilized to determine a fluency score by process- can determine an ATM score based on the fluency score and
+ing text 106. In many implementations, the fluency score the semantics score.
+provides an indication of the fluency and/or the grammar of In a variety of implementations, client device 202, utiliz-
+text 106 and can be independent of the content of the text. 35 ing ATM training engine 216. can train AI.M 210 including
+Additionally or alternatively, semantics model portion 112 the fuency model portion 212 and/or the semantics model
+can be ulilized to determine a semantics score by processing portion 214 using twining instances 218. In a variely of
+structured data 102 as well as text 106. In a variety of implementations, training instances 218 include unlabeled
+implementations, the semantics score can provide an evalu- data. Utilizing training instances to train ALM 210 is
+ation of the content of text 106 by aligning the text with 40 described with respect to process 600 of FIG. 6.
+feature(s) in the structured data. In a varicty of implemen- FIG, 3 illustrates an example alignment in accordance
+tations, the fluency score and the semantics score can be with implementations disclosed herein. Alignment 300 illus-
+used to determine ALM score 114. trates a mapping between structured data 302 of “name John
+
+FIG. 2 illustrates an example environment in which Doe, jr. height 1905 meter” and generated text 304 of “John
+implementations disclosed herein may be implemented. The 45 Doe jr is 1905 meters tall.”. In the illustrated example, an
+example environment 200 if FIG. 2 includes client device *X’ indicates a feature in the structured data corresponds
+202, AI.M engine 204, fluency engine 206, semantics engine with a feature in the generated text. Similarly, */ indicates a
+208, alignments and language model 210, fluency model feature in the structured data is not aligned with a feature in
+212, semantics mode! 214, ALM training engine 216, train- the generated text. Tor example, ‘John’ aligns with ‘John’,
+ing inslances 218, and/or additional engine(s) and/or so ‘Doe’ aligns with ‘Doe’, ‘jr’ aligns with ‘jr’, ‘1.905* aligns
+model(s) (not depicted). The client device 202 may be, for with ‘1.905’, ‘meters’ aligns with ‘meter’, and ‘tall’ aligns
+example, a standalone voice-activated speaker device, a with ‘height’. One or more features of generated text 304 do
+desktop computing device, a laptop computing device, a not align with feature(s) in structured data 302 including ‘is”
+tablet computing device, a mobile phone computing device, and ‘.”. In many implementations, portions of the generated
+a computing device in the vehicle of the user (e.g., an 55 text that do not align with the structured data can be aligned
+in-vehicle communications system, an in-vehicle entertain- to ‘NULL’. Additionally or alternatively, one or more fea-
+ment system, an in-vehicle navigation system), and/or a tures of structured data 302 are not aligned with any portion
+wearable apparatus of the user thal includes a computing of generated text 304 including ‘name’ and *,’. In some
+device (e.g., a watch having a computing device, glasses implementations, portion(s) of structured data which do not
+having a compuling device, a virtual or augmented reality 60 align with portion(s) of generated text can be additionally or
+compuling device, elc.). Additional and/or alternative client allernalively be aligned to ‘NULL’.
+devices may be provided. FIG. 6 is a flowchart illustrating a process 600 of training
+
+ALM engine 204, fluency engine 206, semantics engine an alignments and language model according to implemen-
+208. and ALM training engine 216 are cxample components tations disclosed herein. For convenience, the operations of
+in which techniques described herein may interface. The 65 the flowchart are described with reference to a system that
+operations performed by one or more engines 204, 206, 208, performs operations. This system may include various com-
+216 of FIG. 2 may be distributed across multiple computing ponents of various computer systems, such as one or more
+
+US 12,073,187 B2
+9 10
+components of client device 202 of T1G. 2. Moreover, while At block 706, the system processes the generated. text
+operations of process 600 are shown in a particular order, using a semantics model portion of the AI.M to determine a
+this is nol meant to be limiling. One or more operations may semantics score. In many implementations, the system can
+be reordered, omitted, and/or added. additionally process the corresponding set of structured data
+
+At block 602, the system selects a natural language 5 in addition to the generated text to determine the semantics
+(raining instance. In many implementations, the natural score. In a variety of implementations, both the alignments
+language training instance is an unlabeled instance of text. Scores p(sit) and pts) can be determined in semantics
+For example, an ALM can be trained for use in generating evaluation. First, the probability if the generated text (c.,
+ALM scores for instances of natural language text including the text gencrated using the natural language gencration
+a recommendation of a restaurant based on structured data '” model) has been produced by the table (.e., the structured
+correspondine with the restaurant. An unlabeled trainin data) with p(tls) to check if all information of the table is
+: P e re rn auning, present in the text. Second, probability p(slt) can be deter-
+instance can include sentence(s) describing a restaurant, ined to check if all informati the ts ; _
+
+yithout additional indication(s) describing the instance of mined! to cheek 11 all Mormalion of te targel Sequence can
+withou cat — . = . . be aligned to some table features. In a variety of implemen-
+text. Additionally or allernatively, the natural language Waim- 15 tations, the Quency score is determined as the average of the
+ing, instance can include a structured data portion, where the alignment scores in both directions by:
+text is based on the structured data.
+
+At block 604, the system updates a Nuency model portion sem(s,t) Mip(t}p(s)
+of the AI.M by processing the training instance. For Additionally or alternatively, for some natural language
+example, the system can process the natural language text to 2) generation tasks, the semantics score can be determined
+train a slalistical language model such as an n-gram lan- based on the only p(sit) or p(tls).
+guage mode such that the statistical language model pro- At block 708, the system determines an AI.M score based
+vides an approximation of the underlying language. on the fluency score determined at block 704 and based on
+
+At block 606, the system updates a semantics model the semantics score determined at block 706. Tor example,
+portion of the ATM by processing the training instance. For 25 the ALM score can be determined by giving the semantics
+exaniple, (he system can process the instance of text as well score and the fluency score equal weights in the ALM score:
+asa corresponding instance of structured data, and update ALM(s0) 100¢sem(s,2)+stlencyie)
+the semantics model based on the processing. ns .
+
+At block 608, the system determines whether to process _ While the fluency score and the semantics score are
+additional training instance(s). Tf so, the system proceeds 2° weighted equally in the illustrated example, the semantics
+back to block 602, selecis an additional unlabeled natural score and fluency score can be weighted such that the
+language training instance before proceeding to blocks 604 fluency score or the semantics score has a greater weight on
+and 606. Lf the system does not determine lo process any the ALM score (e.g., the fluency score is weighted by 0.75
+additional training instances, the process ends. and the semantics score is weighted by 0.25; the fluency
+
+FIG. 7 is a flowchart illustrating a process 700 of gener 35 Score is weighted by 0.25 and the semantics score is
+ating an ALM score using an ALM according to implemen- weighted by 0.75; the Quency score is weighted by 0.49 and
+tations disclosed herein. For convenience, the operations of the semantics score Is weighted by 0.51; and fluency scare
+the flowchart are described with reference to a system that and the semantics scores are weighted. by additional and/or
+performs operations. This system may include various com- alternative values). . .
+ponents of various computer systems, such as one or more 42 At block 710, the system causes a client device to perform
+components of client device 202 of FIG. 2. Moreover, while one or more actions based on the generated text and the
+operations of process 700 are shown in a particular order, ALM score. In many implementations, the system can
+this is not meant to be limiting. One or more operations may determine whether the ALM score satisfies a threshold
+be reordered, omitted, and/or added. value, and if so, can render output based on the generated
+
+At block 702. the system receives lext generated by 4 text. For example, a system can determine an ALM score of
+processing a set of structured. data using a natural language 90 for the generated text of “It is 75 degrees and sunny here
+generation model. Kor example, the system can receive today in Mountain View”. The system can determine
+instance of text 402 illustrated in FIG. 4B of “John, born in whether the ALM score satisfies a threshold value of 85. In
+San Antonio of 1942 Aug. 26, worked as a fighter pilot” response to determining the ALM score of 90 satisfies the
+based on structured data 400 illustrated in FIG. 4A describ- 5° threshold value of 85, the system determine an audio wave-
+ing John’s birth date (Aug. 26, 1942), birthplace (San form based on the generated text and cause the client device
+Antonio), and occupation (fighter pilot). to render the audio waveform. Additionally or alternatively,
+
+At block 704, the system processes the generated text the system can visually render the gencrated text via a
+using a fluency model portion of an AT.M to determine a display of the client device. Additional and/or alternative
+fluency score. For example, the generated text of “John, born >> determinations can be made whether to cause the client
+in San Antonio of 1942 Aug. 26, worked as a fighter pilot” device to render output based on the generated text. For
+can be processed. using the fluency model portion of the example, the system can determine whether to render output
+ALM to determine a fluency score. In some implementa- based on text with a corresponding ALM score of 25 which
+tions, the fluency score of the sequence ty, .. . . ty is satisfies a threshold value of 20, to not render output based
+normalized by the number of words M in the sequence. Lhe 60 on text with a corresponding ALM score of 25 which does
+fluency score can be determined by: not satisfy a threshold value of 75, to render output based on
+
+. three instances of text, each instance of text with a corre-
+sponding ALM score of 25 which salisfies a threshold value
+Ply ve stu) of 30, and/or to perform action(s) for an instance of text with
+fueneyt.-.. tu) = 7 65 an additional and/or alternative ALM score(s).
+FIG. 8 is a flowchart illustrating a process 800 of deter-
+mining an AI.M score for multiple instances of text and
+
+US 12,073,187 B2
+11 12
+selecting one or more instances of text based. on the deter- of text satisfies a threshold value and/or instance(s) of text
+mined ALM score according to implementations disclosed with a corresponding ATM score satisfying additional and/
+herein. For convenience, the operations of the flowchart are or alternative crileria.
+described with reference to a system that performs opera- At block 812, the system generates one or more audio
+tions. This system may include various components of 5 waveforms based on the one or more instances of text
+various computer systems, such as one or more components selected at block 810. . ;
+of client device 202 of FIG. 2. Moreover, while operations At block 814, the system Causes a client device to render
+of process 800 are shown in a particular order, this is not OWtput based on the audio waveform. ;
+meant lo be limiting. One or more operations may be Although process 800 of FIG. 8 is described with respect
+: : 10. to rendering audio waveform(s) based on generated text, the
+reordered, omitted, and/or added. . we ji : Lo
+At block 802, the system receives a plurality of instances system can perform additional and/or alternative actions
+° i P ° . based on the selected instance(s) of text including causing a
+of text based on a set of structured dala, each instance ‘ . °
+: ° : client device to render outpul based on the selected instance
+generated by processing the set of structured data using @ (s) of text via a display, causing a networked device to
+natural language generation model. In some implementa- 15 perform one or more actions based. on the selected. instance
+tions, the instances of text can be generated by processing, (s) of Lext, etc.
+the set of structured data using the same natural language ‘Turning to FIG. 9, an example environment in which
+generation model. l’or example, the system can process the implementations disclosed herein can be implemented. FIG.
+set of structured data multiple times using a natural language —_—_9 includes a client computing device 902, which executes an
+gencration model to gencrate multiple instances of text 20 instance of an automated assistant client 904. One or more
+based on the set of structure data. Additionally or alterna- cloud-based automated assistant components 910 can be
+tively, the system can process the set of structured data using implemented on one or more computing systems (collec-
+many distinct natural language gencration models, cach tively referred to as a “cloud” computing, system) that are
+model being used in generating a distinct instance of gen- communicatively coupled to client device 902 via one or
+erated text. Furthermore, instances of text can be generated 25 more local and/or wide area networks (¢.g., the Internet)
+using many natural language generation models, where indicated generally al 908. , ,
+some instances of text are generated using the same natural _An instance of an automated assistant client 904, by way
+language generation model and other instances of text are of ils interactions with one or more cloud-based. automated
+generaled using distinct natural language generation medels __ assistant components 910. may form what appears to be,
+based on the same set of structured data. For example, the 30 from the user's perspective, a logical instance of an auto-
+. - - . mated assistant 900 with which the user may engage in a
+system can process a set of structured data using a first
+; ‘ ee human-to-computer dialog. It thus should be understood that
+natural language generation model to generale instance of : . : .
+: in some implementations, a user that engages with an
+text A, the set of structured data using the first natural — A "att me .
+
+i" t . automated assistant client 904 executing on client device
+language generation model to generate instance of text B, 55 992 may. in effect, engage with his or her own logical
+the set of structured data using a second natural language instance of an automated assistant 900. For the sakes of
+generation model to generate instance of text C, the set of brevity and simplicity, the term “automated. assistant” as
+structured data using the second natural language generation used herein as “serving” a particular user will ofien refer to
+model to generate instance of text D, and a third natural the combination of an automated assistant client 904 execut-
+language generation model to generate instance of text E, 40 ing on a client device 902 operated by the user and one or
+where instance of text A, B, C, D, and E are distinct = more cloud-based automated assistant components 910
+instances of text. (which may be shared amongst multiple automated assistant
+
+At block 804, the system selects an instance of text from clicnts of multiple client computing devices). It should also
+the plurality of instances of text received at block 802. be understood that in some implementations, automated
+At block 806, the system processes the selected instance 45 assistant 900 may respond to a request from any user
+of text to determine a corresponding AI.M score. Tor regardless of whether the user is actually “served” by that
+example, the system can determine a fluency score as well particular instance of automated assistant 900.
+as a semantics score corresponding to the selected instance The client computing device 902 may be, for example: a
+of text. Additionally or alternatively, the system can deter- desktop computing device, a lapiop computing device, a
+mine an ALM score based on the determined fluency score 50 tablet compuling device, a mobile smartphone computing
+and semantics score. Determining an ALM score corre- device, a standalone interactive speaker, a smart appliance,
+sponding with an instance of text is described with respect and/or a wearable apparatus of the user that includes a
+to process 700 of FIG. 7. computing device (¢.g.. a watch of the user having a
+At block 808, the system determines whether any addi- computing device, glasses of the user having a computing
+tional instance(s) of text in the plurality of instances of text 55 device, a virtual or augmented reality computing device).
+are unscored. If so, the system proceeds back to block 804, Additional and/or alternative client computing devices may
+selects an additional unscored instance of text before pro- be provided. Additionally or alternatively, operations of
+ceeding to block 806 to determine an ALM score based on client computing device 902 may be distributed. between
+the additional instance of text. If the system determines all multiple computing, devices. For example, one or more
+instances of text in the plurality of instances of text have 60 operations of client compuling device 902 may be distrib-
+been scored, the system proceeds to block 810. uled between a mobile smartphone and a vehicle computing
+At block 810, the system selects one or more instances of device. Furthermore, operations of client computing device
+text based on the corresponding ALM score. In many 902 may be repeated. between multiple computing devices
+implementations, the system can select instance(s) of text (which in some cases may be communicatively coupled). As
+satisfying one or more criteria. For example, the system can 65 a further example, a mobile smartphone as well as a vehicle
+select the instance of text with the highest ALM score, the interface device may cach implement operations of auto-
+instance of text with the lowest ATM score, the instance(s) mated assistant 900, such as a mobile smartphone and a
+
+US 12,073,187 B2
+13 14
+
+vehicle interface device both including an invocation engine have limited functionality relative to any counterparts that
+(described below). In various implementations. the client are included in cloud-based automated assistant components
+computing device 902 may optionally operate one or more 910.
+other applications that are in additional to automated assis- Cloud-based automated assistant components 910 lever-
+tant cliont 904, such as a message oxchange client (¢.g., 5 age the virtually limitless resources of the cloud to perform
+SMS, MMS, online chat), a browser, and so Jorth. In some more robust and/or more accurate processing of audio data,
+of those various implementations, one or more of the other and/or other user interface input, relative to any counterparts
+applications can optionally interface (e.g. via an application Of the local engine(s) 906, Again, in various implementa-
+programming interface) with he automated assistant 904, or tions, the client device 902 can provide audio data and/or
+: ane note - 10 other data to the cloud-based automated assistant compo-
+include their own instance of an automated assistant appli- : i : : :
+
+: : a nents 910 in response to the invocation engine detecting a
+cation (that may also interface with the cloud-based. auto- : : . are
+
+i . spoken invocation phrase, or detecting some other explicit
+mated assistant component(s) 910). : a : ; eta
+: : invocation of the automated. assistant 900.
+
+. Automated assistant 900 engages 1n human-to-computer The illustrated cloud-based automated assisiant compo-
+dialog SEss1Ons wilh a user via User interlace input and |; yents 910 include a cloud-based ‘TTS module 912, a cloud-
+output devices of the client device (not pictured). To pre- based SIT module 914, and a natural language processor
+serve user privacy and/or to conserve resources, in many 916. In some implementations, one or more of the engines
+silualions a user must often explicitly invoke the automated and/or modules of automated assistant 900 may be omitted,
+assistant 900 before the automated assistant will fully pro- combined, and/or implemented in a component that is sepa-
+cess a spoken utterance. The explicit invocation of the 20 rate from automated assistant 900. Further, in some imple-
+automated assistant 900 can occur in response to cerlain user mentations automated assistant 900 can include additional
+interface input received at the client device 902. For and/or alternative engines and/or modules.
+example, user interface inputs that can invoke the automated Cloud-based STT module 914 can convert audio data into
+assistant 900 via the client device 902 can optionally include text, which may then be provided to natural language
+actuations of a hardware and/or virtual button of the client 25 processor 916. In various implementations, the cloud-based
+device 902. Moreover, the automated assistant client can STT module 914 can convert audio data into text based at
+include one or more local engines 906, such as an invocation least in part on indications of speaker labels and assignments
+engine that is operable to detect the presence of one or more thal are provided by an assignment engine (not illustrated).
+spoken invocation phrases. The invocalion engine can __ Cloud-based TTS module 912 can convert textual data
+invoke the automated assistant 900 in response to detection 30 (eg. natural language responses formulated by automated
+
+- - main inant assistant 900) into computer-generated speech output. In
+of one or more of the spoken invocation phrases. For . . *
+
+: as er ; some implementations, TTS module 912 may provide the
+example, the invocalion engine can invoke the automated . .
+. : : : : computer-generated speech output to client device 902 to be
+assistant 900 in response to detecting a spoken invocation . , _ . eres
+“ . a . . ; output directly, e.g., using one or more speakers. In other
+phrase such as Hey Assistant > “OK Assistant » and/or 5. implementations, textual data (e.g., natural language
+“Assistant - The invocation engine can continuously process responses) generated by aulomated. assistant 900 may be
+(e.g. if not in an “inactive” mode) a stream of audio data provided to one of the local engine(s) 906, which may then
+frames that are based on output from one or more micro- convert the textual dala into computer-generaled. speech that
+phones of the client device 902, to monitor for an occurrence is output locally.
+of a spoken invocation phrase. While monitoring for the 49 Natural language processor 916 of automated assistant
+occurrence of the spoken invocation phrase, the invocation 900 processes free form natural language input and gener-
+engine discards (e.g., after temporary storage in a buffer) any ates. based on the natural language input. annotated output
+audio data frames that do not include the spoken invocation for use by one or more other components of the automated
+phrase. However, when the invocation engine detects an assistant 900. For example, the natural language processor
+occurrence of a spoken invocation phrase in processed audio 45 916 can process natural language free-form input that is
+data frames, the invocation engine can invoke the automated textual input that is a conversion, by STT module 914, of
+assistant 900. As used herein, “invoking” the automated audio data provided by a user via client device 902. The
+assistant 900 can include causing one or more previously generated. annotated oulpul may include one or more anno-
+inactive functions of the aulomated assistant 900 lo be tations of the natural language input and. optionally one or
+activated. For example, invoking the aulomaled assistant 50 more (¢.g,, all) of the terms of the natural language input. In
+900 can include causing one or more local engines 906 some implementations, the natural language processor 916
+and/or cloud-based automated assistant components 910 to is configured to identify and annotate various types of
+further process audio data frames based on which the grammatical information in natural language input. For
+invocation phrase was detected, and/or one or more follow- example, the natural language processor 916 may include a
+ing audio data frames (whereas prior to invoking no further 55 part of speech tagger (not depicted) configured to annotate
+processing of audio data frames was occurring). terms with their grammatical reles. Also, for example, in
+The one or more local engine(s) 906 of automated assis- some implementations the natural language processor 916
+tant 904 can include, for example, the invocation engine may additionally and/or allernatively include a dependency
+described above, a local speech-to-text (‘STT”) engine (that parser (not depicted) configured to determine syntactic rela-
+converts captured audio to text), a local text-to-speech 60 tionships between terms in natural language inpul.
+(“TTS”) engine (that converts text to speech), a local natural In some implementations, the natural language processor
+language processor (that determines semantic meaning of 916 may additionally and/or alternatively include an entity
+audio and/or text converted Irom audio), an ALM engine tagger (not depicted) configured to annolale entity refer-
+(such as APE engine 204 in FIG. 2), and/or other local ences in one or more samples such as references to people
+components. Because the client device 902 is relatively 65 (including, for instance, literary characters, celebrities, pub-
+constrained in terms of computing resources (c.g., processor lic figures, etc.), organizations, locations (real and imagi-
+cycles, memory, battery, etc.), the local engines 906 may nary), and so forth. The entity tagger of the natural language
+
+US 12,073,187 B2
+15 16
+
+processor 916 may annolale references to an entily al a high “outpul device” is intended te include all pessible types of
+level of granularity (e.g., to enable identification of all devices and ways to output information from computing
+references lo an entity class such as people) and/or a lower device 1010 to the user or to another machine or computing
+level of granularity (e.g., to enable identification of all device.
+
+references to a particular entity such as a particular person). 5 Storage subsystem 1024 stores programming and data
+The entity tagger may rely on content ofthe natural language constructs that provide the functionality of some or all ofthe
+input to resolve a particular entity and/or may optionally modules described herein. For example, the storage subsys-
+communicate with a knowledge graph or other entity data- tem 1024 may include the logic to perform selected aspects
+base to resolve a particular entity. of one or more of the processes of FIG. 6, FIG. 7, and/or
+
+In some implementations, the natural language processor 10 FIG. 8, as well as to implement various components
+916 may additionally and/or alternatively include a coref- depicted in PIG. 2 and/or PIG. 9.
+erence resolver (not depicted) configured to group, or “clus- These software modules are generally executed by pro-
+ter,” references to the same enltily based. on one or more cessor 1014 alone or in combination with other processors.
+contextual cues. Por example, the coreference resolver may Memery 1025 used in the storage subsystem 1024 can
+be utilized to resolve the term “there” to “Hypothetical 15 include a number of memories including a main random
+Calé” in the natural language input “I liked Llypothetical access memory (“RAM”) 1030 lor storage of instructions
+Café last time we ate there.” and data during program execution and a read only memory
+
+In some implementations, one or more components of the (“ROM”) 1032 in which fixed instructions are stored. A file
+natural language processor 916 may rely on annotations storage subsystem 1026 can provide persistent storage for
+from one or more other components of the natural language 20 programs and data files, and may include a hard disk drive,
+processor 916. For example, in some implementations the a floppy disk drive along with associated removable media,
+named entity tagger may rely on annotations from the a CD-ROM drive, an optical drive, or removable media
+coreference resolver and/or dependency parser in annotating, cartridges. The modules implementing, the functionality of
+all mentions to a particular entity. Also, for example, in some certain implementations may be stored by file storage sub-
+implementations the corelerence resolver may rely on anno- 25 system 1026 in the storage subsystem 1024, or in other
+talions from the dependency parser in clustering references machines accessible by the processor(s) 1014.
+to the same entity. In some implementations, in processing Bus subsystem 1012 provides a mechanism for letting the
+a particular natural language inpul, one or more components various components and subsystems of computing device
+of the natural language processor 916 may use related prior 1010 communicate with cach other as intended. Although
+input and/or other related data outside of the particular 30 bus subsystem 1012 is shown schematically as a single bus,
+natural language input to determine one or more annota- alternative implementations of the bus subsystem may use
+tions. multiple busses.
+
+FIG. 10 is a block diagram of an example computing Computing device 1010 can be of varying types including
+device 1010 that may optionally be utilized to perform one a workstation, server, computing cluster, blade server, server
+or more aspects of techniques described herein. In some 35 farm, or any other data processing system or computing
+implementations, one or more of a client computing device, device. Due to the ever-changing nature of computers and
+and/or other component(s) may comprise one or more networks, the description of computing device 1010
+components of the example computing device 1010. depicted in 1G. 10 is intended only as a specific example lor
+
+Computing device 1010 typically includes at least one purposes of illustrating some implementations. Many other
+processor 1014 which communicates with a number of 40 configurations of computing device 1010 are possible hav-
+peripheral devices via bus subsystem 1012. These peripheral ing more or fewer components than the computing device
+devices may include a storage subsystem 1024, including, depicted in FIG. 10.
+for example, a memory subsystem 1025 and a file storage In situations in which the systems described herein collect
+subsystem 1026, user interface output devices 1020, user personal information about users (or as often referred to
+interface input devices 1022. and a network interface sub- 45 herein, “participants”), or may make use of personal infor-
+system 1016. The input and output devices allow user mation, the users may be provided with an opportunity to
+interaction with computing device 1010. Network interface control whether programs or features collect user informa-
+subsystem 1016 provides an interface to outside networks tion (e.g., information aboul a user’s social network, social
+and is coupled to corresponding interface devices im other aclions or aclivilies, profession, a user’s preferences, or a
+compuling devices. $0 user’s current geographic location), or to control whether
+
+User interface input devices 1022 may include a key- and/or how to receive content from the content server that
+board, pointing devices such as a mouse, trackball, touch- may be more relevant to the user. Also, certain data may be
+pad, or graphics tablet, a scanner, a touchsercen incorporated treated in one or more ways before it is stored or used, so that
+into the display, audio input devices such as voice recogni- personal identifiable information is removed. For example,
+tion systems, microphones, and/or other types of input 55 a user’s identity may be treated so that no personal identi-
+devices. In general, use of the term “input device” is fiable information can be determined tor the user, or a user’s
+intended to include all possible types of devices and ways to geographic location may be generalized where geographic
+input information into compuling device 1010 or onto a location information is obtained (such as to a city, ZIP code,
+communication network. or state level), so that a particular geographic location of a
+
+User interface oulpul devices 1020 may include a display 60 user cannot be determined. hus, the user may have control
+subsyslem, a printer, 4 fax machine, or non-visual displays ever how information is collected about the user and/or
+such as audio output devices. [he display subsystem may used.
+include a cathode ray tube (“CRIT”), a Mat-panel device such In various implementations, a method implemented by
+as a liquid crystal display (“LCD”), a projection device, or one or more processors is is provided that includes receiving
+some other mechanism for creating a visible image. The 65 an instance of natural language text gencrated by processing
+display subsystem may also provide non-visual display such a set of structured data using a natural language generation
+as via audio output devices. In general, use of the term model. The method further includes processing the instance
+
+US 12,073,187 B2
+17 18
+
+of natural language text and the set of structured data using the additional conditional probability. In some versions of
+an alignments and language model (AI.M) to automatically those implementations, determining the semantics score
+generale an ALM score. Processing the instance of natural based on the conditional probability and the additional
+language text and the set of structured data using the ALM conditional probability inclides determining the semantics
+includes processing the instance of natural language text 5 score by weighing the conditional probability and the addi-
+using a fluency model portion of the ALM to generate a tional conditional probability using corresponding weights,
+fluency score, wherein the fluency score is an evaluation of for the conditional probability and the additional conditional
+the fluency and the grammar of the instance of natural probability, that are specific to a natural language generation
+language text. The method further includes processing the task for which the instance of natural language text is
+instance of natural language text and the set of structured 10 generated.
+data using a semantics model portion of the AI.M to generate In various implementations, determining the AT.M score
+a semantics score, wherein the semantics score evaluates the based on the fluency score and the semantics score includes
+content of the inslance of natural language text based on the determining the ALM score by weighing the Muency score
+corresponding set of structured data. The method. furiher and Ube semantics score.
+includes determining the ALM score based on the fluency 15 — In various implementations, the method [urther includes
+score and the semantics score. ‘The method further includes receiving a plurality of additional instances of natural lan-
+causing a client device to perform one or more actions based guage text that are based on the set of structured data,
+on the instance of natural language text and based on the wherein cach of the additional instances of natural language
+ALM score. text is generated by processing the set of structured data
+
+These and other implementations of the technology dis- 20 using a corresponding distinct natural language generation
+closed herein can include one or more of the following model, of a plurality of disparate natural language genera-
+features. tion models. In some versions of those implementations, the
+
+In various implementations, causing the client device to method further includes processing each of the plurality of
+perform the one or more actions based on the instance of additional instances of natural language text, using the
+natural language text and based on the ALM score includes 25 ALM, to generate a plurality of corresponding ALM scores,
+determining whether the ALM score satisfies a threshold each of the plurality of corresponding ALM scores generated
+value. In various implementations, in response to determin- based on processing a corresponding one of the instances of
+ing the ALM score satisfies the threshold value, the method nalural language text, and corresponding lo the processed
+further includes generating an audio waveform based on the corresponding one of the instances of natural language text.
+instance of natural language text. In various implementa- 30 In some versions of those implementations, causing the
+tions, the method further includes causing the client device client device to perform the one or more actions based on the
+to render the audio waveform. instance of natural language text and based on the A.M
+
+In various implementations, causing the client device to score further includes selecting the instance of natural
+perform the one or more actions based on the instance of language text, in lieu of any of the additional instances of
+natural language text and based on the AIM score includes 35 natural language text, based on the AI.M score for the
+determining whether the ALM score satisfies a threshold instance of natural language of text and based on the
+value. In various implementations, in response to determin- corresponding ALM scores for the additional instances of
+ing the ALM score satisfies the threshold value, the method natural language lex. In some versions of those implemen-
+further includes determining one or more device actions of tations, selecting the instance of natural language text, in
+a device associated with the client device. In various imple- 40 lieu of any of the additional instances of natural language
+mentations, the method further includes causing the client text, based on the ALM score for the instance of natural
+device to perform the one or more device actions. language of text and based on the corresponding ALM
+
+In various implementations, the fluency model portion of scores for the additional instances of natural language text,
+the AI.M is an n-gram language model. includes determining that the AI.M score corresponding
+
+In various implementations, the fluency model portion of 45 with the instance of natural language text satisfies a thresh-
+the AIM is trained using a training, set of unlabeled training old value. In various implementations, in response to deter-
+data, wherein the training set of unlabeled training data mining, the AIM score corresponding with the instance of
+corresponds to a task of the natural language generation natural language lexl satisfies the threshold. value, selecting
+model. In some versions of those implementations, the the instance of natural language text. In some versions of
+semanlics model portion of the ALM is tained using the 50 those implementations, selecting the instance of natural
+training sct of unlabeled training data. In some versions of language text, in licu of any of the additional instances of
+those implementations. the the semantics model portion of natural language text, based on the ALM score for the
+the ALM is trained using the training sct of unlabeled instance of natural language of text and based on the
+training data as well as structured data corresponding to cach corresponding ALM scores for the additional instances of
+instance of unlabeled training data. 55 natural language text, includes determining that the ALM
+
+In various implementations, processing the instance of score corresponding with the instance of natural language
+natural language text and the set of structured data using the text is greater than the corresponding AIM scores for any of
+semantics model portion of he ALM to generate the seman- the additional instances of natural language text. In various
+tics score includes determining a conditional probability implementations, the method further includes selecting the
+indicating a likelihood that the instance of natural language 60 instance of natural language text based on determining that
+lext was generated using the sel of structured data. In various the ALM score corresponding with the instance of natural
+implementations, the method further includes determining language text is greater than the corresponding ALM scores
+an additional conditional probability indicating an additional for any of the additional instances of natural language text.
+likelihood that all information in the sct of structured data is In various implementations, a method implemented by
+aligned with the instance of natural language text. In various 65 one or more processors is provided that includes reeciving a
+implementations, the method further includes determining plurality of instances of natural language text based on a set
+the semantics score based on the conditional probability and of structured data, wherein each instance of natural language
+
+US 12,073,187 B2
+19 20
+text is generated by processing the set of structured data What is claimed is:
+using at least one natural language generation model. The 1. A method implemented by one or more processors, the
+method further includes processing the plurality of instances method. comprising:
+of natural language text using an alignments and language receiving an instance of natural language text generated
+model (ALM) to automatically generate a plurality of cor- 3 by processing a set of structured data using a natural
+responding ALM scores, wherein processing each instance language generation model;
+of natural language text using the AT.M includes processing, processing, the instance ot natural Janguage text and the
+the instance of natural language text using a fluency model set of structured data using an alignments and language
+portion of the ALM to generale a fluency score, wherein the model (ALM) toa utomatically generate an ALM score,
+fluency score is an evaluation of the fluency and the oram- wherein processing the instance of natural language
+¥ : Cy ane S text and the set of structured data using the A.M
+mar of the instance of natural language text. ‘he method _
+: : . comprises:
+further includes processing the instance of natural language ceed re carat Te . ae
+: : processing the instance of natural language text using a
+text and the set of structured data using a semantics model fluency model portion of the ALM lo generate a
+portion of the ALM to generate a semantics score, wherein |; fluency score, wherein the fluency score is an evalu-
+the semantics score evaluates the content of the instance of ation of the fluency and the grammar of the instance
+natural language text based on the corresponding set of of natural language text;
+structured data. ‘The method Lurther includes determining the processing the instance of natural language text and the
+corresponding AT.M score based on the fluency score and sct of structured data using a semantics madel por-
+the semantics score. The method further includes selecting 3) tion of the ALM to generate a semantics score,
+one or more instances of natural language text from the wherein the semantics score evaluates the content of
+plurality of instances of natural language text based on the the instance of natural language text based on the
+corresponding AI.M scores. For each of the one or more corresponding set of structured data:
+selected instances of natural language text, the method determining the AT.M score based on the fluency score
+further includes determining a corresponding audio wave- 25 and the semantics score;
+form based on the instance of natural language. The method causing a client device to perform one or more actions
+further includes causing a client device to render output based on the instance of natural language text and
+based on each of the corresponding audio waveforms cor- based on the ALM score; and
+responding to the one or more selected instances of natural receiving a plurality of additional instances of natural
+language text. 30 language text that are based on the set of structured
+In various implementations, a method implemented by data, wherein cach ofthe additional instances of natural
+one or more processors is provided that includes receiving a language text is generated by processing, the set of
+plurality of automatically generated training instances of structured data using a corresponding distinct natural
+unlabeled training data. For each instance of unlabeled language generation model, of a plurality of disparate
+training, data, the method further includes processing the 35 natural language generation models.
+unlabeled training data using a Muency model portion of an 2. The method. of claim 1, wherein causing the client
+alignments and language model (ALM) to update the fu- device to perform the ene or more actions based on the
+ency model portion of the ALM, wherein the ALM, when instance of natural language text and based. on the ALM
+trained, is used in generating an ALM score by processing score comprises:
+an instance of natural language text, wherein the fluency 40 determining whether the ALM score satisties a threshold
+model portion of the ALM, when trained, is used in gener- value;
+ating a fluency score by processing the instance of the in response to determining the ALM score satistics the
+natural language text, and wherein the fluency score is an threshold value,
+evaluation of the fluency and the grammar of the instance of generating an audio waveform based on the instance of
+natural language text. The method further includes process- 45 natural language text: and
+ing, the unlabeled training data using a semantics model causing, the client device to render the audio waveform.
+portion of the ATM to update the semantics model portion 3. The method of claim 1, wherein the fluency model
+of the ALM, wherein the semantics model portion of the portion of the ALM is an n-gram language model.
+ALM, when trained, is used in generating a semantics score 4. The method of claim 1, wherein the fluency model
+by processing the instance of the natural language text, 50 portion of the ALM is tained using a taining set of
+wherein the semantics score is an evaluation of the content unlabeled training data, whercin the training set of unlabeled
+of the natural language text based on a corresponding set of training data corresponds to a task of the natural language
+structured data, and wherein the natural language text is generation model.
+generated by processing the sct of structured data using a 5. The method of claim 4, wherein the semantics model
+natural language generation model. 55 portion of the ALM is trained using the training set of
+In addition, some implementations include one or more unlabeled training data.
+processors (e.g., central processing unit(s) (CPU(s)), graph- 6. The method of claim 5, wherein the semantics model
+ics processing unil(s) (GPU(s), and/or tensor processing pertion of the ALM is trained using the training set of
+unit(s) (TPU(s)) of one or more computing, devices, where unlabeled training data as well as structured data corre-
+the one or more processors are operable to execule insiruc- 60 sponding to each instance of unlabeled training data.
+Gions stored in associated memory, and where the instruc- 7. The method of claim 1, wherein processing the instance
+tions are configured to cause performance of any of the of natural language text and the set of structured data using
+methods described herein. Some implementations also the semantics model portion of the ALM to generate the
+include one or more transitory or non-transitory computer scmantics score comprises:
+readable storage media storing computer instructions 65 determining a conditional probability indicating a likeli-
+executable by one or more processors to perform any of the hood that the instance of natural language text was
+methods described herein. generated using the set of structured data:
+
+US 12,073,187 B2
+21 22
+determining an additional conditional probability indicat- corresponding ALM scores for any of the additional
+ing an additional likelihood that all information in the instances of natural language text.
+set of structured. data is aligned with the instance of 14. A method implemented by one or more processors, the
+natural language text; and method comprising:
+
+determining the semantics score based on the conditional 5 receiving a plurality of instances of natural language text
+
+probability and the additional conditional probability. based on a sel of structured. data, wherein each instance
+
+8. The method of claim 7, wherein determining the of natural language text is generated by processing the
+semantics score based on the conditional probability and the set of structured data using at least one natural language
+additional conditional probability comprises: , generation model;
+
+determining the semantics score by weighing the condi- 0 processing the plurality of instances of natural language
+
+tional probability and the additional conditional prob- text using an alignments and language model (ALM) to
+ability using corresponding weights, for the conditional automatically generale a plurality of corresponding
+probability and the additional conditional probability, ALM scores, wherein processing each instance of natu-
+that are specific to a natural language generation task |; ral language text using the ALM comprises:
+
+for which the instance of natural language text is processing the instance of natural language text using a
+generated. fluency model portion of the ALM to generate a
+
+9. The method of claim 1, wherein determining the ALM fluency score, wherein the Muency score is an evalu-
+score based on the fluency score and the semantics score ation of the fluency and the grammar of the instance
+comprises: 20 of natural language text;
+
+determining the ALM score by weighing the fluency score processing the instance of natural language text and. the
+
+and the semantics score. set of structured data using a semantics model por-
+
+10. The method of claim 1, further comprising: tion of the AI.M to generate a semantics score,
+
+processing each of the plurality of additional instances of wherein the semantics score evaluates the content of
+
+natural language text, using the ALM, lo generale a 25 the instance of natural language text based on the
+plurality of corresponding ALM scores, each of the corresponding set of structured data:
+
+plurality of corresponding ALM scores generated based. determining the corresponding ALM score based on the
+on processing u corresponding one of the instances of fluency score and the semantics score;
+
+natural language text, and corresponding to the pro- selecting onc or more instances of natural language text
+cessed corresponding one of the instances of natural 30 from the plurality of instances of natural language text
+language text. based on the corresponding ALM scores:
+
+11. The method of claim 10, wherein causing the client for each of the one or more selected instances of natural
+device to perform the one or more actions based on the language text, determining a corresponding audio
+instance of natural language text and based on the Al.M waveform based on the instance of natural language
+score further comprises: 35 text; and
+
+selecting the instance of natural language text, in lieu of causing a client device to render output based on each of
+
+any of the additional instances of natural language text, the corresponding audio wavelorms corresponding to
+based on the ALM score for the instance of natural the one or more selected instances of natural language
+language of text and based on the corresponding ALM text.
+
+scores for the additional instances of natural language 40 15. ‘The method of claim 14, wherein the fluency model
+text. portion of the ALM is an n-gram language model.
+
+12. The method of claim 11, wherein selecting the 16. The method of claim 14, wherein the fluency model
+instance of natural language text, in licu of any of the portion of the ALM is trained using a training set of
+additional instances of natural language text, based on the unlabeled training data, wherein the training set of unlabeled
+ALM score for the instance of natural language of text and 45 training data corresponds to a task of the natural language
+based on the corresponding AI.M scores for the additional generation model.
+instances of natural language text, comprises: 17. The method of claim 16, wherein the semantics model
+
+determining that the ALM score corresponding, with the pertion of the ALM is trained using the training set of
+
+instance of natural language text satisfies a threshold unlabeled training data.
+
+value; and 50 18. The method of claim 14, wherein determining the
+in response to determining the ALM score corresponding corresponding ALM score based on the fluency score and
+
+with the instance of natural language text satisfies the the semantics score comprises:
+
+threshold value, selecting the instance of natural lan- determining the corresponding ALM score by weighing
+
+guage text. the fluency score and the semantics score.
+
+13. The method of claim 11, wherein selecting the 55 19. The method of claim 14, wherein processing the
+instance of natural language text, in licu of any of the jnostance of natural language text and the set of structured
+additional instances of natural language text, based on the data using the semantics model portion of the AI.M to
+ALM score for the instance of natural language of text and generale the semantics score comprises:
+based on the corresponding AI.M scores for the additional determining, a conditional probability indicating a likeli-
+instances of natural language lext, comprises: 60 hood. that the instance of natural language text was
+
+determining that the ALM score corresponding, with the generaled. using the set of structured data;
+
+instance of natural language text is greater than the determining an additional conditional probability indicat-
+
+corresponding ALM scores lor any of the additional ing an additional likelihood. that all information in the
+
+instances of natural language text; and set of structured data is aligned with the instance of
+selecting the instance of natural language text based on 65 natural language text; and
+
+determining that the ALM score corresponding with the determining the semantics score based on the conditional
+
+instance of natural language text is greater than the probability and the additional conditional probability.
+
+US 12,073,187 B2
+23 24
+20. A system comprising: process the instance of natural language text and. the
+memory storing instructions; set of structured data using a semantics model
+one or more processors thal execute the instructions, portion of the ALM to generale a semantics score,
+stored in the memory, to: wherein the semantics score evaluates the content
+reecive a plurality of instances of natural language text 5 of the instance of natural language text based on
+based on a set of structured data, wherein each the COrresp onding sct ot structured data, ;
+: : determine the corresponding ALM score based on
+instance of natural language text is generated by the fluency score and the semantics score:
+processing the set of structured data using at least select one or more instances of natural language text
+one nalural language generation model; , from the plurality of instances of natural language
+process the plurality of instances of natural language "0 text based on the corresponding ALM scores;
+text using an alignments and language model (ALM) for each of the one or more selected instances of natural
+to automatically generate a plurality of correspond- language text, determine a corresponding audio
+ing AI.M scores, wherein processing, each instance waveform based on the instance of natural language
+of natural language text using the ALM comprises: |; text; and .
+process the instance of natural language text using a cause a client device to render output based on each of
+fluency model portion of the ALM to generate a the corresponding audio waveforms corresponding
+fluency score, wherein the fluency score is an to the one or more selected instances of natural
+evaluation of the fluency and the grammar of the language text.
+instance of natural language text; + oF Re

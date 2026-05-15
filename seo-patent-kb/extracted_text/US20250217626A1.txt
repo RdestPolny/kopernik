@@ -1,0 +1,2324 @@
+US 20250217626A1
+as) United States
+a2) Patent Application Publication (10) Pub. No.: US 2025/0217626 Al
+Martin et al. (43) Pub. Date: Jul. 3, 2025
+(54) GENERATING CONTENT VIA A Publication Classification
+MACTIINE-LEARNED MODEL BASED ON (51) Int. Cl
+SOURCE CONTENT SELECTED BY A USER GOON 3/0455 (2023.01)
+(71) Applicant: Google LLC, Mountain View, CA (US) COON 308 (2023.01)
+($2) U.S. Cl.
+(72) Inventors: Raiza Martin, Fremont, CA (US); CPC wc. GOON 3/0455 (2023.01); GO6N 3/08
+Adam Joshua Bignell, Mountain View, (2013.01)
+CA (US); Oliver Michael King,
+Mountain View, CA (US); Wesley (57) ABSTRACT
+Carrington Hutchins, Santa Clara, CA
+(US): Piyush Sharma, Sunnyvale, CA A computing device for generating content includes one or
+(US); Jason Samuel Spielman, Los more memorics to store instructions and one or more pro-
+Altos, CA (US); Steven Johnson, cessors to execute the instructions to perform operations, the
+Brooklyn, NY fa JS); Darryl James operations including: providing, in response to a selection of
+Murray, San Jose, CA (US); Stephen a plurality of items of content, a user interface including a
+Tlughes, Santa Clara, CA (US); first portion and a second portion, the first portion including
+Timothy Michael Gleason, Jersey City, a summury description generated. via one or more machine-
+NJ (US) . learned models based on the plurality of items of content and
+the second portion including a plurality of user interface
+(21) Appl. No.: 18/397.766 elements configured to perform an operation with respect to
+at least one of the summary description or the plurality of
+(22) Filed: Dee. 27, 2023 items of content.
+2008
+IMPLEMENT ONE OR MORE
+RECEIVE INPUT WO REPEL MODES: ORI INPUT T0 PERFORM ACTION IN
+SELECTING SOURCE WITH RESPECT TO SELECTED PERFORM ACTION WITH RESPONSE T0
+SOURCE CONTENT 70 RESPECT 10
+CONTENT RECEIVING INPUT
+9100 GENERATE A DOCUMENT GUIDE 2400
+— DOCUMENT GUIDE 2300 —
+2200
+
+Patent Application Publication Jul. 3, 2025 Sheet 1 of 18 US 2025/0217626 Al
+=<
+aren
+BES
+=
+E
+= al S
+= = s= =
+as) ——) =a
+re = S| od 2
+ya = =a
+Pd s =Oos
+— o a=
+A ee =
+Kank
+a
+bait
+wv
+—_ <<
+pre —
+= oo
+=>
+Sg |=
+—
+a
+= E
+=) S| 2s
+E>
+=
+S
+s| ba
+co
+Qo
+“D>
+—
+5
+i—]
+a.
+=e
+= Ss
+= =
+e =
+= S| Be
+— poe
+a.
+=
+S
+nae?
+
+Patent Application Publication Jul. 3, 2025 Sheet 2 of 18 US 2025/0217626 Al
+S| =
+BSle) lslelisls
+a | ete Safed EPFE
+SY liaglmialielSisis
+2 |ZISisiZheisis
+HS iSIS(SISlleizal=
+SAIS SIS llsi=/s
+SSeS leleliele
+oe Sis siz
+Sific a) re
+a |= ia | |
+a f=
+LL = a fe Ho
+= =zio1sS
+me =/ 4
+Ww
+=< cA
+oS oe 5 eel
+s Ss
+= &* _—
+= LL
+SLEIE
+3|| 18] led (Ro | o eal ew lls
+slelia| (SNe eslels aj}/ 31}/ 21]|2) =] =
+_— rm em Ee r——)) se ee | aay
+FS ISlSigl€llZiSisSliz sel Slee ele
+am b=) Ssisis = = [Ss
+Sey o = 13 || co le ee
+2IZIBSIGHTSISIS/ESNSSliSslisisls
+Zz iH << fi <r ao > bm Fle | pe
+EIB laelsleileicte 2S) Siz |iSictea
+S|= SBWoO Slenye =|/2/\= =>
+= ihe SVE SES lin —Ha}ois S
+oS = SElrouis Sha
+= SsToliz
+=o
+
+Patent Application Publication Jul. 3, 2025 Sheet 3 of 18 US 2025/0217626 Al
+=
+a
+=
+See
+eses
+of
+Sa ~
+oe =
+ott
+aoe
+Fara oe
+a.
+=
+of Led
+— = ="
+Bzop
+rels_
+=GEGEs
+wte
+=S=un=
+Dee 3D
+IS
+wo oe
+a a
+Lud
+_—
+Ss So
+LL
+AA
+Be oo
+eatGeo
+Sour s
+Saveg= >
+wHorrea
+S=@EoeoazS
+o os ha GN
+=
+=2a7eweis
+Ssvmgeoa
+a
+ar & ao
+(a aa)
+===
+o
+Ss
+Sor
+BZAZo
+wees
+we =
+seES™
+io
+ec
+wa
+
+Patent Application Publication Jul. 3, 2025 Sheet 4 of 18 US 2025/0217626 Al
+ea =
+Ladd we
+2 So E
+— ary 33s So
+S=a9s Sao 1
+s5= w= =S3
+S om = ams Ao
+ad m= ES =
+Oa = a oe Fr
+Ss a = a A
+o —
+I ws Ld
+S - =
+=
+—d
+a.
+=
+ac
+te wo
+> e =
+S = —
+== oa a) a
+= Z2zuw ma S
+— => a >
+So 2 Oo 2 oo
+= oOo 7 a —) Cc
+4 — Soa —_—
+—4 ——? a=: wa) .
+S =o MS we >
+Ss — = w = So
+c= > >
+= Ss S
+= “”
+|
+oa =
+o _ oy
+ol — Lad
+crs = _—
+Ss Ss Ss
+a —_ An
+= = =
+rey >
+— Qo
+co wm
+
+Patent Application Publication Jul. 3, 2025 Sheet 5 of 18 US 2025/0217626 Al
+4110 4100
+Welcome to NotehookLM
+RY Upload Sources ef Chat with an assistant 22 Get creative
+Fiche ccs you wont fo use from the HetebookLM cutomoticaly gives you But don't stop there NatebookLA con
+drive, ond NotebockLM wil use those the major themes and suggests questions np, ri ener, ey
+sources fo answer your questions, fo help you urderstond your sources, _intormation you give toi, So ask away!
+os
+FIG. 4A
+4200
+NotebookiM <—™ fe)
+4210
+FIG. 4B
+
+Patent Application Publication Jul. 3, 2025 Sheet 6 of 18 US 2025/0217626 Al
+4300
+i Upload from
+4312 & Drive
+4314 : O PDF
+4316 a 0 Copied text
+4318 cl Website
+Get started
+4310
+Upload sources ElAdd a comment
+FIG. 4C
+4400
+- =
+(= (OJ (OJ OI) ON ay
+44i4 —
+(O—— J (0-—=—— ) (0—— 3 (b-——— }
+4416
+FIG. 4D
+
+Patent Application Publication Jul. 3, 2025 Sheet 7 of 18 US 2025/0217626 Al
+OS aX
+gis 23\\3
+v 3 5 2
+
+2 eS // BS
+Ss == i bit}
+= o —_
+3 we,
+a
+go
+=s
+=
+Sa
+= oS —
++ Ba =
+=3/|¥
+g//s
+nN =o |=
+ia 2
++ 2
+eS\ |=
+=
+=e \ls
+"3
+== / |S
+e2//s
+=-— 3 =
+Zlliile
+2\ EVN
+sx >
+82\/28
+at »
+om =] latel
+= £ PS —
+= ile .
+a Se rae)
+2.5 Cc
+Py aS
+2 :
+=
+= Gj
+—
+no
+=
+——
+o
+2 =
+= 5
+= =
+sine, =)
+o oS
+3 =
+=
+=| :
+£ r=]
+25i= a=
+= - 2 2D
+s\2_6 ie
+2 | = gle 24
+o S Sl a oct
+Sa)i2 oOo =
+2/2s|5 5 g=2
+oO | #248 Se
+ta lt A > <t
+v
+ao ~ = MN
+_ —_ Nw NM
+w" ws u" Looe
++ + + +
+
+Patent Application Publication Jul. 3, 2025 Sheet 8 of 18 US 2025/0217626 Al
+oe os co =
+6S. 3 3
+— TT = =
+QO (ss
+2 | 3
+Ss “a
+ale
+c¢ S
+2
+[=7
+4 a |
+= =\ 3
+- = 4
+= By © 6)/25\|3
+2 e af se i\le
+= Ss Ss =
+= =¢2 a)\ B= /ié
+‘a = = == “A
+> Ss = 2 *% oS
+= 5 Zz AB
+= sa £25
+S x
+2|| £2 4 5S
+S| .f38 22 =s
+% oes = 5 33
+S32 =2 S
+5||228 22 23
+Sligcze 8 £2 /@
+oi/) >of s s 2 2
+SSS 228 By
+os = = bw
+BZi="es SE = 8 =
+SIiSEE =: eou/is
+elie 22 Bs = =
+Sle ee £28 ~
+— 2 S's a] [=]
+si EB= 25 =
+ssi <i B = = ~*~ 2
+=||/ S22 £6. s_. wa“o\ jst
+Si5t Fes 2 =e £S\f>i ow.
+[ispe2s28ift= 32 r=]
+c—] SEes8 = 2= 2s —T
+a earereeEe EF Ss S “——
+= = 52> 5 3 25 a= 2 [av]
+B2eee838 (FS zi) =
+See Bes a=]
+‘SFER © BE =
+ag 2273 28 2
+Be 2 2.£
+SP SseR 3 8S
+BS22 526 32
+sees 8 2= a=
+Ss. SAE a
+Seez=z z= ==
+cwEEBE£ 2% 2'E
+SZEeez z= 5
+S=fee £6 Ss
+sos co. a — 4
+= =
+ws
+= oo
+= i]
+—-—
+=
+3 5 ry
+= 3 Lit
+a. ie
+5 = = 2 me
+oj = | ua s >
+x > = = +S
+= ~ r— o wm
+= 2 = | 2 = =
+Oo & Bu. Su. por <
+> 2) ea o-=
++ FB Si = Ss a4
+x
+& S = a
+so oo ~~
+— — al
+
+Patent Application Publication Jul. 3, 2025 Sheet 9 of 18 US 2025/0217626 Al
+O(sS
+2 | 8
+os “ao
+= wn
+Fis
+ao
+oe
+_—4
+= oe a
+“oc oc “so
+<= 2°>\ 5
++ rio
+D == \|S
+howd
+== /|2
+=Be/ eS
+— i}
+=
+wv
+a oe
+i=3
+=s
+33
+—
+eo vo
+ah
+Ss
+s+ / |=
+a Ss
+—
+2
+wo s\ |=
+=5\/3//| «>
+= $5 |\2| —
+=s/|$|| =
+Z
+=
+2
+25
+a4
+oz
+-=
+bans re) i
+El —_ cc
+= = O 2
+gz ==
+ao Gt
+Eo =e
+25 =
+ES O; =
+EF Gi nN
+o~ & a al
+so 8 Q
+==
+“=
+s “o = |
+s Wad OE
+=
+=
+3 a a
+<= 3 Lad
+r= i 5S So o
+= z= z 5 =
+Ss > = = +°
+(= = = > ~”
+o & 5 3 <3) 2
+5 Eo ES ss
++ 3 <a, 4. is)
+
+Patent Application Publication Jul. 3, 2025 Sheet 10 of 18 US 2025/0217626 Al
+O(s aH BS
+Eis 23\\3
+= “ ~~ @
+el Ss iif
+
+2 == /|3
+S == bi
+= fa}
+a
+Sm
+= =o
+co ws
+— ws
+oS
+LO)
+MWA
+“— oe
+= =
+3/\é
+£2
+o\ |=
+a —
+2 =e \ls
+= = Ss
+x = 32/5
+co os o
++ =o =
+= O be, |
+Q 4
+a's $s
+=o 32\/2
+= — @ act -
+=> a4 O = oli s La a
+a J — oc
+oO eel O a ~~ .
+3| . = 5 E @
+=e : > ral
+=e 5
+Se | ="
+eal
+=| (xt
+co
+=—
+o
+<=
+Ss s
++ -s
+i—J
+2
+=
+—_ =}
+par oe
+‘net o
+2 I
+=
+o i 3
+Fis 5
+an a
+“= a. ao) © FD
+= = 2 Se
+2 |S gid} BS
+o ocaioal sc
+SBivrli3s
+2 | =Es/3) 2=
+o | #5\4,e2
+te | et) > <t
+v
+~~
+NI
+3
+—T
+
+Patent Application Publication Jul. 3, 2025 Sheet 11 of 18 US 2025/0217626 Al
+3
+O;s < 3
+g|3 2
+& |< g
+¥ | > SH Ill
+2 All ||| =
+2 we)
+=
+“=
+—_
+P
+3 8
+= =
+AB f/m
+S15
+we
+= 4 =
+2S \ gi ||
+ar —
+Se /|3
+>
+s =
+as
+= ma =
+5 2
+Ss =o |) ©
+Ze 33 SE
+E-S 3 way
+eS Na
+22 <<
+S| 25 = g “"
+ial Ss Q 32 ao
+32 Q) ES eo ft
+w = 2 — oa wn
+e | SEMI f SAT]
+S — a
+= os
+mn
+PN awed
+XN
+\ ’
+oY |
+SOG,
+=
+~™
+s
+| 2
+r=)
+cle 8 s= 2
+£ |= 52 2 <
+rT] = > oa = S —
+2|\25/3| =68 =
+a SF 5 = s
+O | BB 2s = =
+hd ese ~~ ..-/ HNYj]q—]|-»!—».Qn’n-.”.nn_.0.”.-...--.-.’—”_20.282N-”0-—”—“7*“*X“*X} ooo
+z S x
+ta is i
+
+Patent Application Publication Jul. 3, 2025 Sheet 12 of 18 US 2025/0217626 Al
+O s ~ =>
+g/3 23\\s
+a |< Be lis
+¥v | > 2] Sille
+
+2 a= / IS
+o =3 vay
+i—7 J
+= = Ss
+~
+Pe) =
+D 52
+= 2s
+ow 38
+Léa) uw
+0 22
+£3 |©
+= Sil
+E 32/|3
+o ~ = S/ 8
+Ss QO Ee 2
+R=] O by 2
+= =£5\\3
+2 Zs
+| [| S= /\z
+s Se /|2
+~ =o =
+w Se, —
+5 s) =
+3a 2 =
+3s sm
+E= se
+Ee =
+& s= O 5E eo
+5 5 ‘a =.2 ua
+S sé =
+—
+cM aay
+Ne
+SOG!
+Ss
+~
+s
+[>
+S\s
+s|2 8 s = 2
+2 | oid 52 m=) a
+2) se2 £2 = :
+= | ES 3 = = = 5
+O | BB ae a =
+¥ eee OO oma) $’™.e!}’>*+{+#*7#-"74-..w7V.00OOOOOOaaEE_——™™™™===I§.
+iJ
+aN
+ol
+Ww,
+
+Patent Application Publication Jul. 3,2025 Sheet 13 of 18 US 2025/0217626 Al
+$
+—s
+=
+=
+so
+= : * o
+=
+= £ 22 = ag
+“oO — as =
+Ss BSB =
+S.22 2 2
+estes = 3
+So EB 2S Ss zZ
+pdt — ae
+ee ao Se BS 3
+so Bese 'S a]
+Ses e2i322 Ss
+Hoos S S&S —
+re BSS Se
+$2822
+A s
+Oo ee _e * 4
+s>2EeeS
+eee222 if &
+22225 =
+$= 2o=s so
+5 .2ta Bae
+25 BS2 ss
+si =s35=s
+SsZeePe =
+Ss ~ —“=S - —
+Beezgizt (5 3 —<
+—= § = |= N s
+BS Ss z2e = ow a)
+3 == ES = 2
+5 —_—
+Nat
+= =
+© ag | “|(OF Fst, - if
+Sm 23 os 2) a 5
+Sse +B 522 5
+2 = Ss s Sa. 2
+= 22 = r= 2\s 2-2
+=< = = 5S 4288
+S Bos ae Ss SBE SS
+w 2 3 2 Bo ff) ss
+Sea Ze = =&s s|\s 22
+a — ety 2 B25 3\(s42 a
+225 s2ss S-2 Betz 2
+S2esSesz 35 2-8\2 5 =
+=tosz2ee al \22s e228 = =
+£eEeRs base BEE Ble=& EE =
+Ess sasSsee Bua = |r = J
+=. 2352 FSBSE Bl SZE a
+See2e¢ es sis >
+2S SB2@SsB* ZS GSB228s5 2
+~ s
+s\||(Oz Be .")fo = : ve
+— > saat =
+“oO =S £6. .. | : i
+3 £22 3 = =e = u
+2 2 -= =
+= Lets = Sesl\=_=
+= ste = x=Ese2c=2
+2 = S55 —) S22 B2 22
+25 »p»sb2= = 2B 2s =>
+BESsflx 5 BSS 2/2 2°
+S93 >s 2 = Be 2 |s2=
+=222 25 . = S28 Sass
+= @ = 2 2S one - 2
+2S l22Ze2ss SSasE2-6
+25 52 22 2s AS SS fs =
+a ory Ss get See
+3 =a ae 3 an
+
+Patent Application Publication Jul. 3, 2025 Sheet 14 of 18 US 2025/0217626 Al
+=
+=
+NN
+~o
+2 Ss
+o B22 =
+= a =
+= £2 =
+o B33 =
+2 82 ss
+Seo 2Z= Gu
+SS ER =
+voy 3S io
+B55 222 24
+Soe See
+BESSL2=2
+S58eSeeE
+YS fesse
+Vw OHS
+© fs228 3= =
+Seif isg o> = I
+e222 z= =
+4255S 1 = =
+ew SHS es = a a
+— S2Pt=s Ss = =
+— 22 ese 52 =
+a a — a oo 3 |
+=) 2DOSSH BS a > eB
+wl ees 3S 2>27 = = cA
+D> = sz se SS SS _—
+22re8e Ss Sie Ss BS 2s.
+Bs 3's zee Sets. =]
+nan 22258 —sB8e23 :
+aa Fs Ot S282 £2 ww
+—
+Lae
+> Ss eB .
+aa : *. 2 £2. .
+=2E = S #B8BE a
+2 S => 2
+a a =S 2 See =
+= BE = = Bes >
+= as = 5 = S$ a3
+Ss "S = a Ss 2s
+s 323 3 Bo ZEEE
+o “2 B SE2e5S22 a
+3S3.s2 8 £§ 5s 22
+226 seas See Betis
+2e222 Es SES5222
+“S See SS ES = = =
+2223223 BEEEBEEE
+= SEBS5 5 SSBs EZ =z
+i — le — nn es Aaa See
+SE&Res ae ako 3S 2=
+2S 62542 . SuiGa— S25 5
+~N
+= > 8 += *: £22 ‘.
+~o > 2 = = 2 2 ¢
+—= Ee z 7 =
+2 fjT32= z£ oS 228 =
+SI 2a = a = = st = =>
+= THe = S222 =
+= Ses 3 ~ 2S SEE
+s Bess = —=TSBPSBSE aS
+eat Sse = eS2ese£2 3
+2.98 = 2Zemwrtse SS
+= = Sr SBs Ht
+ae So= = S22 3 = 2 2
+Bevess = Ee} a —
+wee OS fe F = wevVress = S&S
+23 6 Es 2-3 2S 3 = Se SR es
+=s a Sas Hs = 2
+Sovpeeez ss S82 E8e25 2
+= 2 5
+gasntt se Toe Sf
+a =& ° * ° se ° — -e .
+
+Patent Application Publication Jul. 3, 2025 Sheet 15 of 18 US 2025/0217626 Al
+S
+™
+~
+~~
+~ :
+© |
+=< Fe
+N °
+2 a
+= LL
+s
+i>
+- 3
+=
+a
+=
+| 3
+=
+CT)
+Ss ao
+= —
+Ss ~
+2
+o
+=
+=
+
+Patent Application Publication Jul. 3, 2025 Sheet 16 of 18 US 2025/0217626 Al
+a Fra]
+| S Bl &
+Lad —
+a Ss = 3 elke
+A i Qidm a]
+ew [e 2 = =i =| Zhi
+= |Ge Sllia = | Si aye
+= SHzl<|El! 2 5 Sl iSisl6ll elle
+= | ox me = = Si i |=
+e& jt xi oc = ft} olla —t} ji
+= iY oa |= pre Sis eee
+Siz Sill = I= Si istis
+Sat
+folded —— ar]
+> = =
+Few = s
+a = a
+a a a
+i)
+— oc
+= BAmMnm F A ARR SS
+/
+C\ <<
+co ; . co
+= fan)
+; pamacalf
+Feces
+=] by Silt
+— Saat po od
+oo > oy heb
+3 ls wii| 2 ils
+2 =|) = hie
+eS lz So alli:
+= iS cf) eS is
+re ia EWS = wo
+> i => a
+& its 2 |e ss >
+= iS BB = | SS
+Siz =) 2 | |=
+ss =
+3 2\8
+=
+an
+an.
+= MN fF .o co (— a
+so = ED o fs
+ao coc co t~~] oo
+
+Patent Application Publication Jul. 3, 2025 Sheet 17 of 18 US 2025/0217626 Al
+Seo a |
+sa. | 25
+S #25 || 2s |
+= Se | | ~
+=| sos ||
+—<t
+e GB
+4 Lu §
+See | | (/ )
+239 || co
+= S32 CI ae
+ad
+2e7 | | |
+a ne
+= ne
+= i= =
+Ss
+J
+i—]
+i=)
+~~
+co
+
+Patent Application Publication Jul. 3, 2025 Sheet 18 of 18 US 2025/0217626 Al
+S| | | | a
+| by FP oPSa po BY
+sf 7S 1 po
+es rr ss i pi — i
+= S| | - |
+oS
+~ i
+i=]
+iJ
+so
+t~ =]
+
+US 2025/0217626 Al Jul. 3, 2025
+1
+GENERATING CONTENT VIA A [0009] In some implementations, the operations further
+MACHINE-LEARNED MODEL BASED ON comprise: in response to receiving a selection of the citation
+SOURCE CONTENT SELECTED BY A USER user interface element, providing, for display in a fourth
+portion of the user interface, content from one or more items
+FIFLD of content from among the plurality of items of content used
+[0001] The disclosure relates generally to generating con- to generate the response. . . .
+tent via one or more machine-learned models based on [0010] In some implementations, the third portion
+source content that is sclected (identified) by a user. For includes a note generation user interface element, and the
+example, the disclosure relates to methods and computing operations further comprise: in response to receiving a
+devices for generating content by implementing a notebook selection of the note generation user interface element,
+application to obtain the source content to assist the user in generating a note which includes content from the suggested
+managing content, organizing content, creating content, etc. query and the Tesponse, and storing the nole. .
+[0011] Tn some implementations, the plurality of user
+BACKGROUND interface elements include a first user interface element
+. . configured to generate a note, and the operations further
+[0002] According lo current computing systems, large comprise: providing the user interface a third portion which
+language models (LLMs) are capable of interacting with includes content [rom one or more items of content from
+textual content. For example, a user may copy and paste among the plurality of items of content; receiving a selection
+content from one document into a chat box to query the of a portion of the content from the one or more items of
+LLM about the content. The LLM may provide an output content from among the plurality of items of content;
+(e.g., a summary) regarding the content. receiving a selection of the first user interface element; and
+. in response to receiving the sclection of the portion of the
+SUMMARY content and the first user interface clement, generating, via
+[0003] Aspects and advantages of embodiments of the the one or more machine-learned models based on the
+disclosure will be set forth in part in the following descrip- portion of the content, the note which includes a summary
+tion, or can be learned from the description, or can be of the portion of the content.
+learned through practice of the example embodiments. [0012] In some implementations, the plurality of user
+[0004] In onc or more example embodiments, a computing interface clements include a first user interface element
+device for generating organizing, managing, and creating Configured to add content to an existing note, and the
+content is provided. For cxample, the computing device operations further comprise: providing the user interface a
+includes: one or more memories configured to store instruc- third portion which includes content from one or more items
+tions; and one or more processors configured to execute the of content from among the plurality of items of content;
+instructions to perform operations, the operations compris- receiving a selection ofa portion of the content from the one
+ing: providing, in response to a selection of a plurality of | Y More lems of content Irom among the plurality oF items
+items of content, a user interface including a first portion and of content; Tecelving, a selection of the first user interface
+a second portion, the first portion including a summary element, and i response to receiving the selection of the
+description generated via one or more machine-learned portion of the content and the first user interface clement,
+models based on the plurality of items of content and the adding the portion of the content to the cxisting note.
+second portion including a plurality of user interface ele- [0013] In some implementations, the lirst portion further
+ments configured to perform an operation with respect to at includes at least one key topic user interface element com-
+least one of the summary description or the plurality ofitems Prising at least one key topic relating to the summary
+of content. description of the plurality of ilems of content, and the
+[0005] In some implementations, the operations further operations further comprise receiving a selection of the at
+comprise: receiving a selection of the plurality of items of least one key topic user interface element; and implementing
+content; and implementing the one or more machine-learned the one or more machine-learned models to generate an
+models to gencrate the summary description based on the output relating to the at least one key topic based on at least
+plurality of items of content. one of the summary description or the plurality of items of
+[0006] In some implementations, the plurality of user content.
+interface elements include a first user interface element [0014] In some implementations, the operations further
+comprising a suggested query, and the operations further © Comprise providing the user interface a third portion to
+comprise: receiving a sclection of the first user interface provide for display a dialogue including the key topic and
+element; and implementing the one or more machine- the output relating to the at least one key topic.
+lcamed models to generate a response to the suggested query [0015] In some implementations, the operations further
+based on at least one of the summary description or the comprise: providing the user interface a third portion to
+plurality of items of content. provide tor display at least one note generated via the one or
+[0007] In some implementations, the operations further more machine-learned models based on the plurality of
+comprise providing the user interface a third portion to items of content.
+provide for display a dialogue including the suggested query [0016] In some implementations, the third portion
+and the response. includes a citation user interlace element which indicates a
+[0008] In some implementalions, the third portion number of items of content from among the plurality of
+includes a citation user interface clement which indicates a items of content referenced by the one or more machine-
+number of items of content from among the plurality of learned models to generate the at least one note.
+items of content referenced by the one or more machine- [0017] In some implementations, the operations further
+learned models to generate the response. comprise: in response to receiving, a selection of the citation
+
+US 2025/0217626 Al Jul. 3, 2025
+2
+
+user interface element, providing, for display in a fourth perform an operation with respect to at least one of the
+portion of the user interface, content from one or more items summary description or the plurality of items of content.
+of content from among the plurality of items of content used [0024] Tn one or more example embodiments, a computer-
+to generate the note. implemented method for organizing, managing, and creating
+[0018] In some implementations, the operations furiher content is provided. The computer-implemented method
+comprise: in response to receiving the selection of the comprises receiving, by a computing system, an input to
+cilalion user interface element, providing, for display in the creale a nolebook; receiving, by the compuling syslem, a
+fourth portion of the user interface, contextual content about selection of a plurality of items of content to add to the
+the content from the one or more items of content from notebook; in response to receiving the selection of the
+among the plurality of items of content used to generate the plurality of items of content. implementing. by the comput-
+note. ing system, one or more machine-learned models to generate
+[0019] In some implementations, the plurality of user a summary description based on the plurality of items of
+interface elements include a first user interface element content and at least one of a key topic user interface element
+configured to generate new content based on one or more indicative of a topic of the plurality of items of content or a
+notes, and the operations further comprise: providing the selectable user interface element indicative of a query relat-
+user interface a third portion to provide for display a ing to the plurality of items of content; and providing, by the
+plurality of notes generated via the one or more machine- compuling system, a user interface including a first portion
+learned models based on the plurality of items of content: and a second portion, the first portion including the summary
+receiving a selection of the plurality of notes; receiving a description and. the second portion including the selectable
+selection of the first user interface clement; and in response user interface clement.
+to receiving the sclection of the plurality of notes and the [0025] In one or more example embodiments, a computer-
+first user interface clement, generate the new content based readable medium (c.g., a non-transitory computer-readable
+on the plurality of notes. medium) which stores instructions that are executable by
+[9020] Tn some implementations, the operations further one or more processors of a computing, system is provided.
+comprise: generating, via the one or more machine-learned Th some implementations the computer-readable medium
+models, a graphical image representing the plurality of items stores instructions which may include instructions to cause
+of content; and providing a folder including the graphical the one or more processors to perform one or more opera-
+image, the folder storing the plurality of items of content and tions which are associated with any of the methods
+a project file including the summary description. described herein (¢.g., operations of the server computing
+[0021] In some implementations, the second portion system and/or operations of the computing device). The
+includes a text entry box to receive a query from a user, and computer-readable medium may store additional instruc-
+the operations further comprise: implementing the one or Hons to execute other aspects of the server computing
+more machine-learned models to generate a response to the system and computing device and corresponding methods of
+query based on at least one of the summary description or operation, as described herein.
+the plurality of items of content. [9026] These and other features, aspects, and advantages
+[0022] In one or more example embodiments, a computing of various embodiments of the disclosure will become better
+device for generaling organizing, managing, and crealing understood with reference bo the following description,
+content is provided. For example, the computing device drawings, and appended claims. The accompanying draw-
+includes: one or more memories configured to store instruc- ings, which are incorporated in and constitute a part of this
+tions; and one or more processors configured to execute the specification, illustrate example embodiments of the disclo-
+instructions to perform operations, the operations compris- sure and, together with the description, serve to explain the
+ing: receiving an input to create a notebook; receiving a related principles.
+selection of a plurality of items of content to add to the
+notebook; in response to receiving the selection of the BRIEF DESCRIPTION OF THE DRAWINGS
+plurality of items of content, implementing one or more [0027] Detailed discussion of example embodiments
+machine-learned models to generate a summary description directed to one of ordinary skill in the art is sct forth in the
+based on the plurality ofitems ol content and al least one of specification. which makes reference to the appended draw-
+a key topic user interface element indicative of a topic of the ings, in which:
+plurality of items of content or a selectable user interface am se :
+
+eg a : : vege [0028] FIGS. 1A-1B depict example systems according to
+element indicative of a query relating to the plurality of scording t le embodiments of the
+items of content; and providing a user interface including a accor me © one of more examp :
+. . - : ~ . disclosure;
+first portion and a second portion, the first portion including ; . .
+the summary description and the second portion including [0029] FIG. 2 illustrates a flow diagram of an example,
+the selectable user interface element. non-limiting, computer-implemented method, according to
+
+; . can one or more example embodiments of the disclosure;
+
+[0023] In one or more example embodiments, a compuler- "
+implemented method for organizing, managing, and creating, [0030] FIG. 3 depicts an example block diagram of a
+content is provided. The computer-implemented. method computing device, according to one or more example
+comprises providing, by a computing system and in embodiments of the disclosure;
+response to a selection of a plurality of items of content,a [0031] FIGS. 4A-4H illustrate example user interface
+user interface including a first portion and a second. portion, screens of a notebook application, according to one or more
+the first portion including a summary description generated example embodiments of the disclosure;
+via one or more machine-lcarned models based on the [0032] FIGS. 5A-5B illustrate example user interface
+plurality of items of content and the second portion includ- screens of a notebook application, according to one or more
+ing a plurality of user interface elements configured to example embodiments of the disclosure;
+
+US 2025/0217626 Al Jul. 3, 2025
+3
+[0033] FIGS. 6A-6B illustrate further example user inter- [0042] In addition, the scope of the expression or phrase
+face sereens of a notebook application, according to one or “at least one of A or B” is intended to include all of the
+more example embodiments of the disclosure: following: (1) at least one of A, (2) at least one of B, and (3)
+[0034] FIG. 7 illustrates example notebooks or projects at least one of A and at least one of B. Likewise, the scope
+which can be represented in a particular manner, according, of the expression or phrase “at least one of A, B, or C” is
+to one or more example embodiments of the disclosure; intended to include all of the following: (1) at least one of
+[0035] TIG. 8A depicts a block diagram of an example A, (2) at least one of B, (3) at least one of C, (4) at least one
+computing system for organizing, managing, and creating of A and at least one of B, (5) at least one of A and at least
+content by implementing one or more machine-learned one of C, (6) at least one of B and al least one of C, and (7)
+models with respect to source content sclected by a user, at least one of A, at Icast one of B, and at Icast one of C.
+according to one or more example embodiments of the [0043] According to current computing systems, large
+disclosure: language models (LLMs) are capable of interacting with
+[0036] FIG. 8B depicts a block diagram of an cxample textual content. However, current computing systems
+computing device for organizing, managing, and creating require significant effort to create a specific prompt for a
+content by implementing one or more machine-learned LLM to process. For example, a user may be required to
+models with respect to source content selected by a user, copy and paste content from one document into a chat box
+according o one or more example embodiments of the to query the LLM about the content. This switching between
+disclosure; multiple windows or applications results in significant
+[0037] VIG. &C depicts a block diagram of an example amounts of wasted computational time and resources (e.4.,
+computing device for organizing, managing. and creating processor cycles).
+content by implementing one or more machine-leammed [0044] According to examples of the disclosure, a com-
+models with respect to source content sclected by a user, puting system (computing platform, computing device) is
+according to one or more example embodiments of the configured to create a new type of output (e.g., an outline, a
+disclosure. report, a summary, etc.) via one or more machine-learned
+models, based on source content provided to the computing
+DETAILED DESCRIPTION system (e.g., by the user). For example, the computing
+[0038] Reference now will be made to embodiments of the system may be configured lo receive source content selected
+disclosure, one or more examples of which are illustrated in by a user and generale, via one or more machine-learned
+the drawings. wherein like reference characters denote like models, a summary of the source content including an
+elements. Each example is provided by way of explanation identification of one or more topics related to the source
+of the disclosure and is not intended to limit the disclosure. content.
+In fact, it will be apparent to those skilled in the art that [0045] As an cxample, a user may identity and sclect a
+various modifications and variations can be made to disclo- subset of documents (c.g., four documents) from a plurality
+sure without departing from the scope or spirit of the of documents (a large corpus of documents) relating to a
+disclosure. For instance, features illustrated or described as _ topic (e.g., modern American history in the 1990s) which are
+part of one embodiment can be used with another embodi- provided to the computing system. The computing system
+ment to yield a still further embodiment. Thus, it is intended may include one or more machine-leamed models config-
+that the disclosure covers such modifications and variations ured to receive as an input. the selected documents and to
+as come within the scope of the appended claims and their provide as an oulput a summary (or a reporl, a paper, an
+equivalents. outline, etc.) relating to the selected documents and an
+[0039] Terms used herein are used to deseribe the example identification of key topics (e.g., via a document guide).
+embodiments and are not intended to limit and/or restrict the [0046] In some implementations, the computing system is
+disclosure. The singular forms “a,” “an” and “the” are configured to implement a semantic retrieval method. (e.g.,
+intended to include the plural forms as well, unless the clustering) and one or more machine-learned models (e.g.,
+context clearly indicates otherwise. In this disclosure, terms one or more LLMs) to generate a summary, key topics, and
+such as “including”, “having”, “comprising”, and the like suggested querics (c.g.. questions) to produce a document
+are used to specily leatures, numbers, sleps, operations, guide for content identified or indicated by the user (c.g.,
+elements, components, or combinations thereof, but do not based on a body of text found in the content).
+preclude the presence or addition of one or more of the [0047] For example, in some implementations the com-
+features, clements. steps, operations, clements, components, puting system may be configured to receive source content
+or combinations thereof. from the user. For example, the user may upload source
+[0040] Lt will be understood. that, although the terms first, content (e.g., documents, imagery, sound files, websites,
+second, third, elc., may be used herein to describe various vidoos, presentations, PDFs, ctc.). In some implementations,
+elements, the elements are not limited by these terms. the computing system may be configured to, in response to
+Instead, these terms are used to distinguish one element from the user uploading source content, automatically generale
+another clement. For cxample, without departing from the information including a summary of the source content,
+scope of the disclosure, a first element may be termed as a generate lop themes found in the source content, generale
+second clement, and a second element may be termed as a suggested lopics and questions to help the user explore the
+first element. source content further, etc. ‘The information may be pre-
+[0041] ‘The term “and/or” includes a combination of a sented via a user interface. lhe user interlace may be
+plurality of related listed items or any item of the plurality configured to receive an input from the user (c.g., via a
+of related listed items. For example, the scope of the touch-input, mouse-click, ete.) on a user interface clement
+expression or phrase “A and/or B” includes the item “A”, the corresponding to a theme. question, etc., In response to
+item “B”, and the combination of items “A and B”. receiving the input from the user, the computing system may
+
+US 2025/0217626 Al Jul. 3, 2025
+4
+be configured to respond to the input, for example, by input may be in the form of a question (e.g., “What did
+providing an answer via one or more machine-learned Nixon say in his speech about automobile use’). For
+models to the question or theme query, based on the source example, the user input may be in the form of a theme or idea
+content. (e.g., “Nixon automobile crisis” or “What is this document
+[0048] In some implementations, the computing system about?”).
+may be configured to, in response to the user uploading [0054] The computing, system may be configured to, via
+source content, automatically generate information includ- one or more machine-learned models, provide a response to
+ing a report, an outline, or a rewrite of the original content, the user input based on the selected source content. In some
+so as to generate new content based on the source content implementations, the computing system is configured to
+identified (selected) by the user. For example, the user may indicate the number of sources (citations) thal was relied
+request that the computing system identity a specified num- upon for providing the response. In some implementations,
+ber of themes from one or more documents, to summarize the computing system is configured to provide for presen-
+client interactions occurring over a specified duration of tation a source (citation) which was relied upon for a
+time (e.g., the least two weeks), to penerate a specified particular passage in the response. In some implementations,
+number of ideas based on a source document, etc. the computing system is configured to provide additional
+[0049] In some implementations, the source content thal is context regarding the source (citation) which was relied
+relied upon or referenced by the LLMs may be selected (e.g., upon for the particular passage in the response. For example,
+curated) by the user. For example, the user may consider or the computing system may indicate the passage (e.g., a
+indicate that the selected source content is trustworthy (e.g., sentence or paragraph) from the source for which a portion
+trusted source content, authoritative source content, cte.) or of the response was based on and may further indicate a
+has a higher priority compared to other content which docs preceding and/or subsequent passage from the source to
+not have such a designation. Therefore, the one or more provide further context concerning the particular passage.
+machine-learned models are configured to generate summa- [0055] In some implementations, the computing system
+ries of content, or generate new content, based on trusted may be configured to store one or more passages (e.2.,
+source content, improving the accuracy and reliability of snippets) from a generated response (answer) lo a query
+information and data provided to the user. Further, the one (question) input by the user. For example, the one or more
+or more machine-learned models are configured to answer passages may be stored in a specified area of a notepad
+questions about the source content based on the trusted application. ‘he specified area may be referred to as a
+source content, improving the accuracy and reliability of scratchpad and each item of information stored in the
+information and data provided as answers to questions posed scratchpad may be referred to as a note. The one or more
+by the user. passages may be selected by the user for storing as a first
+[0050] In some implementations, the computing system note in the scratchpad. In some implementations, citations
+can be configured to discover, add, or remove source con- can be stored in the scratchpad as a second note. In some
+tent. For example, the user may add or remove source implementations, the user can select (e.g., highlight) a
+content. for example, the user may provide an input request- particular passage from a citation (source content) for stor-
+ing, the computing system to discover source content (e.g, ing in the scratchpad as a third note. In some implementa-
+by conducting a search for scholarly articles regarding a tions, the user can store their own passage or comments as
+cerlain topic) and. the user may add. the discovered source a written note (fourth note).
+content as part of the selected source content which is [0056] According to examples of the disclosure, the com-
+deemed. trustworthy by the user (and/or the compuling puting system may be configured. to provide a notepad
+system). application which is configured to generate an output (e.g.,
+[0051] In some implementations, the computing system an outline, a report, a summury, etc.) via one or more
+may be configured to receive an additional source content by machine-learned models, based on source content provided
+the user creating a new note, by the user uploading the to the notebook application (e.g., by the user). he notebook
+source content to the computing system, by adding the application may be configured to allow a user to create
+source content via a website, etc. The computing system various projects to complete various tasks. Each project may
+may be configured lo generale or receive metudala concern- be configured to act in a manner similar to a folder by which
+ing the added source content. For example, the metadata a user can store various information to cach project. In some
+may include one or more of a title, an author, a date of implementations, an individual scratchpad may correspond
+upload, a date associated with the crealion of the source to or be dedicated to a particular project. In some imple-
+content, a uniform resource location (URL) associated with mentations, the notebook application may be configured to
+the source content, etc. receive (he source content as specified by the user. The
+[0052] In some implementations, the computing system notebook application may be configured te add, delete, or
+may be configured to delete or remove a source content by modily projects according to an impul received [rom a user.
+the user selecting the source content and providing an input Lach project may be provided a default name, a name
+requesting, that the source content be deleted (e.g., from the provided by the user, or a name generated by the notebook
+notepad application). In some implementations, the source application (e.g., via one or more machine-learned models)
+content may be deleted as a source relied upon for gener- based on the information stored in the project (c.g., based on
+aling sumnuaries, key topics, elc., in the notepad application, the source content).
+but an original copy of the source content may be maintained [0057] In some implementations, in response to source
+elsewhere. content being provided to the notebook application, the
+[0053] In some implementations, the computing system notebook application may be configured to automatically
+can be configured to receive a user input via a text entry box generate (c.g., using one or more machine-learned models,
+(e.g., an open-ended text entry box). For example, the user one or more generative machine-learned models, etc.), a
+
+US 2025/0217626 Al Jul. 3, 2025
+5
+graphical image (e.g., an emoji, an icon, etc.) or graphical external computing device 200, a server computing system
+animation which corresponds to or represents the source 300, and external content 500, which may be in communi-
+content. In some implementations, the graphical image or cation with one another over a network 400. For example,
+graphical animation may be overlaid on a folder which is the computing device 100 and the external computing device
+provided as a user interface element that, when selected, 200 can include any of a personal computer, a smartphone,
+causes the folder to open and display the contents of the a tablet computer, a global positioning service device, a
+folder to the user. In addition, or alternatively, in some smartwatch, and the like. The network 400 may include any
+implementations, in response to the source content being type of communications network including a wired or wire-
+provided to the notebook application, the notebook appli- Jess network, or a combination thereof. ‘he network 400
+cation may be configured to automatically generate (c.g., may include a local area network (LAN), wireless local area
+using one or more machine-learned models, one or more network (WLAN), wide area network (WAN), personal area
+generative machine-learned models, ctc.}, a textual descrip- network (PAN), virtual private network (VPN), or the like.
+tion (mame) which corresponds to or represents the source For example, wireless communication between elements of
+content. The textual description may be overlaid on the the example embodiments may be performed via a wireless
+folder which is provided as a user interface element that, LAN, Wi-Ti, Bluetooth, Zighee, Wi-Ti direct (WED), ultra
+when selected, causes the folder to open and display the wideband (UWB), infrared data association (IrDA), Blu-
+contents of the folder to the user. etooth low energy (BLE), near field communication (NIC),
+[0058] One or more technical benefits of the disclosure a radio frequency (RF) signal, and the like. For example,
+include generating content via one or more machine-learmed wired communication between elements of the example
+models, based on particular items of content sclected by a embodiments may be performed via a pair cable. a coaxial
+user. Current methods for a large language model (LLM) to cable, an optical fiber cable, an Ethernet cable, and the like.
+generate an output require a user to copy and paste content Communication over the network 400 can use a wide variety
+from one document into a chat box to query the LLM about of communication protocols (c.g., TCP/IP. HTTP, SMTP,
+the content. Switching between multiple windows or appli- FTP), encodings or formats (e.g., HTML, XML), and/or
+cations results in significant amounts of wasted computa- protection schemes (e.g., VPN, secure HTTP, SSI).
+tional time and resources (e.g., processor cycles). Tn contrast [0063] As will be cxplained in more detail below, in some
+to current methods, a summary regarding user-selected mpl tati th tine device 100 and/ ;
+items of content (e.g., source content) can be automatically eee eae ie eee eee ee ny oor Server
+. ; or computing system 300 may form part of an application
+generated via a notebook application and one or more . ict ide a toal f sers ti
+machine-learned models, in response to a user uploading the system whieh can provide a tool tor users To manage or
+. ; - : 7 organize information (e.g., documents, imagery, etc.), for
+items of content. ‘Therefore, a user need not switch between . :
+er : . . example, via one or more machine-learned models.
+applications or windows, or provide a prompt.
+[0059] Another technical benctit of the disclosure includes [0064] In some cxample embodiments, the server comput-
+one or more machine-learned models providing suggested ing system 300 may obtain data from one or more of a souree
+querics based on items of content selected by the user, content data store 350, a user data store 360, and a machine-
+suggested key topics based on items of content selected by learned model data store 370, to implement various opera-
+the user, selectable chips based on an output of a response, tions and aspects of the application system as disclosed
+and the like. A user can select a suggested query and the one herein. The source content data store 350, user data store
+or more machine-learned models may be configured to 360, and machine-learned. model data store 370 may be
+provide a response lo the query based on the items of content integrally provided with the server computing system 300
+selected by the user. Providing the suggested query auto- (e.g., as part of the one or more memory devices 320 of the
+matically saves compuling resources (e.g., networking server conipuling system 300) or may be separately (e.g.,
+resources including bandwidth, processor cycles, ctc.) by remotely) provided. Further, source content data store 350,
+not requiring the user to input the suggested query). user data store 360, and machine-learned model data store
+[0060] Another technical benefit of the disclosure includes 370 can be combined as a single data store (database), or
+one or more machine-learned models generating content may include a plurality of respective data stores. Data stored
+based on items of content selected by the user and/or based in one data store (c.g., the source content data store 350) may
+on notes selected by the user. Generation of the content can overlap with some data stored in another data stor: e (e.g., the
+save lime and. compuling resources by nol requiring a user user data store 360). In some implementations, one data
+to cul and paste content from multiple sources to generate store (e.g., the machine-learned model data store 370) may
+new content (e.g., an outline, an essay, a report, etc.) which reference data that is stored in another data store (e.g., the
+is based on a plurality of items of content. user dala slore 360).
+[0061] Another technical benefit of the disclosure includes [0065] In some examples, the source content data store
+one or more machine-leamed models generating a graphical 350 can store any kind of information or content. For
+image or animation to display in an overlaid manner on a example, the source content dala store 350 can include
+folder to indicate content which is saved in the folder. ‘The books, product manuals, legal opinions, academic papers,
+graphical image or animation can improve search capabili- proprietary data files, patent documents, web pages, emails,
+tics and save computing resources that may otherwise be forum posts, social media posts, videos, images, geographic
+expended by a user opening and closing folders which do not information, or any other type or manner of content which
+contain content that the user is actually looking for. may be stored or accessed in digital form (¢.g., ima database,
+[0062] Referring now to the drawings, FIG. 14 is an memory device, ctc.). In some implementations, information
+example system according to one or more example embodi- may be stored in the source content data store 350 by the
+ments of the disclosure. FIG. 1A illustrates an example of a user selecting certain documents, images, or other content to
+system 1000 which includes a computing, device 100, an store in the source content data store 350.
+
+US 2025/0217626 Al Jul. 3, 2025
+6
+[0066] In some examples, the user data store 360 can (e.g., the Bidirectional Encoder Representations from Trans-
+include information regarding one or more user profiles, formers (BERT) large language model) and. general, multi-
+including, a variety of user data such as user preference data, modal models (e.2., Gemini). The machine-learned models
+user demographic data, user calendar data, user social net- may include generative artificial intelligence (AI) models
+work data, user historical travel data, and the like. Tor (e.g., Bard) which may implement generative adversarial
+example, the user data store 360 can include, but is not networks (GANs), transformers, varialional auloencoders
+limited. to, email data including textual content, images, (VAL's), neural radiance fields (NeRI's), and the like.
+email-associated calendar information, or contact informa-
+ion; secial media data including comments, reviews, check- [0069] . External content 500 can be any form of external
+ins, likes, invitations, contacts, or reservations: calendar content including, news articles, webpages, video files, audio
+application data including dates, times, events, description, files, wrillen descriptions, ralings, game content, social
+ot other content; virtual wallet data including purchases, media content, photographs, commercial offers, transporta-
+clectranic tickets, coupons, or deals; scheduling data: loca- tion method, weather conditions, sensor dala obtained by
+tion data: SMS data: or other suitable data associated with a various sensors, or other suitable external content. Lhe
+user account. According to one or more examples of the computing device 100, external computing device 200, and
+disclosure, the data can be analyzed to determine prefer- server computing system 300 can access external content
+ences of the user with respect to generating, managing, 500 over network 400. External content 500 can be searched
+and/or organizing content, for example, to automatically by computing device 100, external computing device 200,
+generale a summary of a document in a particular manner or and server computing system 300 according to known
+style, automatically provide customized features with searching, methods and search results can be ranked accord-
+respect to content, to provide suggestions, recommenda- ing to relevance, Popularity, or other suitable attributes,
+tions, and/or questions relating to certain content identified including location-specific filtering or promotion.
+by the user as source content, ctc. [0070] Referring now to FIG. 1B, example block diagrams
+[0067] The user data store 360 is provided to illustrate of a computing device and server computing system accord-
+potential data that could be analyzed, in some embodiments, ing to one or more example embodiments of the disclosure
+by the computing, device 100 and/or server computing will now be described. Although computing device 100 is
+system 300 to identily user prelerences, to make recommen- represented in PIG. 1B, features of the computing device
+dations, to generate, manage, and/or organize content, etc., 100 described herein are also applicable to the external
+However, such user data may not be collected, used, or compuling device 200.
+analyzed unless the user has consented atter being informed [0071] The computing device 100 may include one or
+of what data is collected and how such data 1s used. Further, more processors 110, one or mare memory devices 120, an
+mm some embodiments, the user can be provided with a tool application system 130, a position determination device 140,
+(eg. ina notebook application or via a Uscr account) to an input device 150, a display device 160, an output device
+revoke or modity the scope of per missions. Tn addition, 170, and.a cupture device 180. ‘The server computing system
+certain information or data can be treated in one or more 300 may include one or more processors 310, one or more
+ways before it is stored or used, so that personally identi- memory devices 320, and an application system 330.
+fiable information is removed or stored. in an encrypted
+fashion. Thus, particular user information stored in the user [0072] For example, the one or more processors 110, 310
+data store 360 may or may not be accessible to the com- can be any suilable processing device thal can be included
+puting device 100 and/or server computing system 300 in a compuling device 100 or server computing system 300.
+based on permissions given by the user, or such data may not For example, the one or more processors 110, 310 may
+be stored in the user data store 360 at all. include one or more of ‘4 processor, processor cores, a
+[0068] Machine-learned model data store 370 can store controller and an arithmetic logic unit, a central processing
+machine-learned models which can be retrieved and imple- unit (CPU), a graphics processing unit (GPU), a digital
+mented by the server computing system 300 for generating signal processor (DSP), an image P Tocessor, @ Mcrocom-
+distilled. or fine-tuned machine-learned models (e.g., dis- puter, a field programmable array, @ progr ammable logic
+Uilled or fine-tuned generative machine-learned models) that, unt, an application-s pecifie integrated eireurt (ASIC), a
+in some implomentations, can also be provided to the microprocessor, a microcontroller, etc., and combinations
+computing device 100. Machine-learned model data store thereof, including any other device capable of responding to
+370 can also store distilled or finc-tuncd machine-learned and executing instructions in a defined manner. The one or
+models (c.g., distilled or fine-tuned generative machine- more P POCESSOFS 110, uo can be a single processor ora
+leamed models) which can be retrieved and implemented by plurality of processors that are operalively connected, for
+the computing device 100. In some implementations, the example jn parallel.
+computing, device 100 can retrieve and implement machine- [0073] The one or more memory devices 120, 320 can
+learned models which are large parameter models that have include one or more non-transilory computer-readable stor-
+not been fine-tuned or distilled. The machine-learned mod- age mediums, including a Read Only Memory (ROM),
+els Gncluding large parameter models and distilled or fine- Programmable Read Only Memory (PROM), Lrasable Pro-
+tuned. models) stored at the machine-learned model data grammable Read Only Memery (EPROM), and flash
+store 370 can include generative machine-learned models memory, a USB drive, a volatile memory device including
+respectively associated with dillerent types of content (e.g., a Random Access Memory (RAM), a hard disk, Doppy
+different genres or subjects. different kinds of content disks, a blue-ray disk, or optical media such as CD ROM
+including imagery, videos, and text, different styles of con- discs and DVDs, and combinations thereof. However,
+tent including outlines, reports, spreadshects, ctc.). The examples of the one or more memory devices 120, 320 are
+machine-learned models may include large language models not limited to the above description, and the one or more
+
+US 2025/0217626 Al Jul. 3, 2025
+7
+memory devices 120, 320 may be realized by other various organize, manage, create, and interact with content, in
+devices and structures as would be understood by those response to reeciving an input from a user.
+skilled in the art. . [0079] According to examples of the disclosure, the docu-
+[0074] For example, the one or more memory devices 120 ment application 134 may be executed by the computing
+can also include data 122 and instructions 124 thal can be device 100 to provide a user of the computing device 100 a
+retrieved, manipulated, created, or stored. by the one or more way organize, manage, create, and interact with content,
+processors 110. In some example embodiments, such data particularly with content that is curated or selected by the
+can be accessed and used as input to implement notebook user, The document application 134 can be any kind of
+application 132, and to execute the instructions to perform application that pertains to documents (e.g., in a textual or
+operations including: providing a user interface including a visual format), and can include word processing applica-
+first portion and a second portion, wherein the first portion tions, spreadsheet applications, presentation applications,
+includes a textual summary generated via one or more visual applications, portable document format file applica-
+machine-learned models based on a plurality of documents lions, etc. In some implementations, the notebook applica-
+selected by auser and the second portion includes a plur. ality tion 132 and document application 134 may interact with
+of user interface elements to perform an operation with each other. For example, content from a document that is
+respect to the textual summary, as described according to created via document application 334 may be uploaded or
+examples of the disclosure. stored for use with notebook application 132. In some
+[0075] For example, the one or more memory devices 320 implementations, notebook application 132 may be config-
+can also include data 322 and instructions 324 that can be ured to generate a document (e.g., a report. an outline. a
+retrieved, manipulated, created, or stored by the one or more presentation, a spreadshect) which can be compatible with
+processors 310. In some cxample embodiments. such data (opened by or exported to) the document application 134.
+can be accessed and used as input to implement notebook as
+application 332, and to execute the instructions to perform 10080] In some examples > the document application 134
+operations including; providing a user interface including a can be a dedicated application specilicully designed to
+first portion and a second portion, wherein the first portion provide a Particular service. In other cxamples, the docu-
+includes a textual summary generated via one or more ment application 134 can be a general application (CBs a
+machine-leamed models based on a plurality of documents web browser) and can provide access to a variety of different
+selected by a user and the second portion includes a plurality services via the network 400.
+of user interlace elements to perform an operation with [0081] In some example embodiments, the computing
+respect to the textual summary, as described according to device 100 includes a position determination device 140.
+examples of the disclosure. Position determination device 140 can determine a current
+[0076] In some cxample embodiments, the computing geographic location of the computing device 100 and com-
+device 100 includes an application system 130. For example, municate such geographic location to server computing
+the application system 130 may include the notebook appli- system 300 over network 400. The position determination
+cation 132 and a document application 134 (e.g., a word device 140 can be any device or circuitry for analyzing the
+processing application, a spreadsheet application, a presen- position of the computing device 100. For example, the
+tation application, an imagery application, etc.). The appli- position determination device 140 can determine actual or
+calion system 130 can include various other applications relative position by using a satellite navigation positioning
+including text messaging applications, email applications, system (e.g. a GPS system, a Gulileo posilioning system, the
+dictation applications, virtual keyboard applications, GLObal Navigation satellite system (GLONASS), the Bei-
+browser applications, map applications, social media appli- Dou Satellite Navigation and Positioning system), an inertial
+cations, navigation applications, ctc. navigation system, a dead reckoning system, based on IP
+[0077] According to examples of the disclosure, the nole- —_- 44dress, by using triangulation and/or proximity to cellular
+book application 132 may be executed by the computing —_ towers or WiFi hotspots, and/or other suitable techniques tor
+device 100 to provide a user of the computing device 100 a determining a position of the computing device 100.
+way to organize, manage, create, and interact with content, [0082] The computing device 100 may include an input
+particularly with content that is curated or selected by the device 150 configured to receive an input [rom a user and
+user. In some implementations, the notebook application may include. for example, one or more of a keyboard (c.g.,
+132 may be part of document application 134, or may he a a physical keyboard, virtual keyboard, etc.), a mouse, a
+standalone application. The notebook application 132 may —_ joystick, a button, a switch, an electronic pen or stylus, a
+be configured to be dynamically interactive according, to gesture recognition sensor (¢.g., to recognize gestures of a
+various user inputs. Example implementations of the nole- user including movements of a body part), an input sound
+book application 132 are described herein, however the device or speech recognition sensor (e.g., a microphone to
+disclosure is nol limited to these examples as various receive a voice input such as a voice command or a voice
+modilicalions may be made to the embodiments described query), a track ball, a remote controller, a portable (e.g., a
+herein. cellular or smart) phone, a tablet PC, a pedal or footswitch,
+[0078] In some examples, one or more aspects of the a virlual-realily device, and so on. ‘The input device 150 may
+notebook application 132 may be implemented by the nole- also be embodied by a touch-sensitive display having a
+book application 332 of the server computing system 300 touchscreen capability, for example. For example, the input
+which may be remotely located, to organize, manage, creale, device 150 may be configured to receive an inpul from a user
+and interact with content, in response to receiving an input associated with the input device 150 for selecting content
+from a user. In some examples, one or more aspects of the that is to be organized or managed, for selecting queries or
+notebook application 332 may be implemented by the note- actions with respect to content that is curated or selected by
+book application 132 of the computing device 100, to the user, etc.
+
+US 2025/0217626 Al Jul. 3, 2025
+8
+[0083] The computing device 100 may include a display while the computing device 100 may be configured to
+device 160 which displays information viewable by the user perform a second action (c.g., generate suggested actions,
+(e.g., a user interface screen). For example. the display generate an outline or study guide based on a plurality of
+device 160 may be a non-touch sensitive display or a notes saved to a scratchpad). For example, a particular
+touch-sensitive display. The display device 160 may include action to be performed by the application system 330 may
+a liquid crystal display (T.CD), a light emitting diode (I.FID>) vary according to a network status (e.g., an available band-
+display, an organic light emitting diode (OLED) display, widib, a channel utilization status, a latency status, a
+active matrix organic light emitting diode (AMOLED), throughput rate, etc.). In some implementations, one or more
+flexible display, 3D display, a plasma display panel (PDP), machine-learned models associated with the application
+a cathode ray tube (CRT) display. and the like. for cxample. system 330 may be configured to process a user input to
+However, the disclosure is not limited to these example generate information (e.g., semantic information) which can
+displays and may include other types of displays. The then be provided as an input to one or more other machine-
+display device 160 can be used by the application system learned models (c.g., generative machine-learned models,
+130 provided at the computing device 100 to display infor- large language models, etc.) associated with the application
+mation to a user relating to an input (e.g., information system 330, to generate the content to be utilized with
+relating to a document. to a note, to a project, etc.. a user respect to a project for the notebook application 132 and/or
+interface screen having user interface elements which are notebook application 332.
+selectable by the user, etc.). [0088] Examples of the disclosure are also directed to
+[0084] The computing device 100 may include an output computer implemented methods for providing a user inter-
+device 170 to provide an output to the user and may include, face for organizing, managing, and creating content by
+for example, one or more of an audio device (e.g., one or implementing one or more machine-learned models with
+more speakers), a haplic device to provide haptic feedback respect lo source content selected by a user. PIG. 2 illustrates
+to a user (¢.g., a vibration device), a light source (e.g., one a flow diagram of an example, non-limitmg computer-
+or more light sources such as LEDs which provide visual implemented method, according to one er more example
+feedback to a user), a thermal feedback system. and the like. embodiments of the disclosure. FIG. 3 illustrates a block
+[0085] The computing device 100 may include a capture diagram of a notebook application, according to one or more
+device 180 that is capable of capturing media content, example cmbodiments of the disclosure.
+according to various examples of the disclosure. For [0089] ‘The flow diagram of FIG. 2 illustrates a method
+example, the capture device 180 can include an image 2000 for providing a user interface for organizing, manag-
+capturer 182 (c.g., a camera) which is configured to capture ing, and creating content by implementing one or more
+images (c.g., photos, video, and the like). For example. the machine-learned models with respect to source content
+capture device 180 can include a sound capturer 184 (c.g., selected by a user. Although shown in a particular sequence
+a microphone) which is configured to capture sound or audio or order, unless otherwise specified, the order of the pro-
+(e.g., an audio recording) of a location. The media content cesses can be modified. Thus, the illustrated embodiments
+captured by the capture device 180 may be transmitted to should be understood only as examples, and the illustrated
+one or more of the server computing system 300, source processes can be performed in a different order, and some
+content data slore 350, user data store 360, and machine- processes can be performed in parallel. Additionally, one or
+learned model data store 370, for example, via network 400. more processes can be omilled in various embodiments.
+For example, in some implementations, media content ‘Thus, not all processes are required in every embodiment.
+which is captured by the capture device 180 may be selected Other process flows are possible.
+as source content by a user for use in creating a note with [0090] Referring to FG. 2, at operation 2100 the method
+respect to a project. The media content can be provided as 2000 includes a computing device receiving an input from a
+an input to onc or more machine-learned models to generate user relating to the selection of source content. As described.
+a note, for example. herein, the computing device may be embodied as comput-
+[0086] In accordance with example embodiments of the ing device 100, server computing system 300, or combina-
+disclosure, the server computing system 300 can include one tions thereof. For example. the input may be provided by the
+or more processors 310 and one or more memory devices user via input device 150. For example, the input may be
+320 as described herein. The server computing system 300 provided by selecting particular files or documents which
+may also include an application system 330 which is similar are uploaded to the computing, device for use by the note-
+to the application system 130 described herein. book application 132. In some implementations, the content
+[0087] For cxample, the application system 330 may can be uploaded from a local memory, from another appli-
+include a notebook application 332 which performs func- calion (¢y., a portable document file application), from
+tions similar to those discussed above with respect to copied text, or from a website. The selected files, text,
+notebook application 132. In some implementations, one or documents, elc. may be referred to as source content. In
+more machine-learned models (e.g., generative muachine- some implementations, the source content may be a subset
+learned models, large language models, etc.) associated with of a larger corpus of content. ‘The input may be provided or
+the application system 330 may be configured. to organize, input to notebook application 132 or notebook application
+manage, creale, and. interact with content based on source 332, for cxample.
+content that is curated or selected by a user. For example, [0091] In some implementations, a response to the input
+one or more machine-leamed models (e.g., generative selecting the source content may be processed al computing
+machine-learned models, large language models, etc.) asso- device 100 without involving the server computing system
+ciated with the application system 330 may be configured to 300. In some implementations, the input selecting the source
+perform a first action (c.g.. generate a summary or document content may be transmitted from computing device 100 to
+guide with respect to source content selected by a user), server computing system 300 and at least part of the
+
+US 2025/0217626 Al Jul. 3, 2025
+9
+response to the input may be processed by the server conditions associated with content to be generated which
+compuling system 300. ‘or example, the input relating to the relates al least in part to the input 3200 and. source content
+selection of the source content may be provided at the 3400 selected by the user.
+computing device 100 and the server computing system 300 [0096] For cxample, source content 3400 can include any
+may’ be configured lo perform an operation im response to kind of document (e.g.. in digital form) and may include
+receiving an indication of the input. books, product manuals, legal opinions, academic papers,
+[0092] At operation 2200, the computing device may be proprietary data files, patent documents, web pages, emails,
+configured to implement one or more machine-learned mod- forum posts, social media posts, videos, images, geographic
+els with respect to the selected source content to generate a information, or any other type or manner of content which
+document guide. In some implementations, the document may be stored or accessed in digital form (@.g., ima database,
+guide (source guide) generated by the one or more machine- memory device, etc.). In some implementations, source
+leamed models may include a summary of the source content 3400 may be stored in the source content dala store
+content and key topics relating to the source content. In ov by the user selecting certain documents, ore 350 In
+some implementations, the document guide may further other content to store in the source content data store 350.
+include one or more suggested queries (e.p., questions) that nt the imp Fementations, * 100. content 3400 uth be stored
+may be provided in the form of a selectable user interface 3 00 © computing: cevice or server computing, System
+element. .
+[0093] For example. the computing device can obtain 10097] To generate the conditioning parammelers. the con-
+: Riperernen et © elon a ditioning parameters generator 3110 may be configured to
+information indicating that the user has selected source retrieve values for the one or more conditions associated
+content. The computing device can process the source “ith th . LF -ample. to 2 tc th, . iti .
+content with one or more machine-leamed models (¢.g., one wil ie th : snditionig = ° a tore 2 c tor} 1 10 ning
+or more large language models) to obtain a language output. te confinn 4 conan net th P vale we a he or may
+The computing device can then use the one or more pe “it eu “ te ret en values tor the hide ne more
+machine-leamed models (¢.g., one or more large language cone’ mans vom : th input. T he Input may mNeh ‘ m orm
+models) to generate a summarization output. In particular, a Hon in wative ° ue user s Intent or requirements. In some
+machine-leamed large language model can be trained to immprementations, the conditioning parameters 0
+process a varicty of outputs to generate a language output. ane (or the one or ae Scns oe 4 130 © sore
+For example, the machine-learned large language model can or ie ead or more rat ation fi moe the . ) may be
+process an embedding generated by a machine-learned con igure’ to extract information from the input 3200 to
+embedding generation model, portions of the source content identity values for the one or ees: and the
+identified using the embedding generation model, language conditioning ae ones Eenerator om cod ane
+outputs generated using the machine-learned large language fo generate the conditioning parameters based on the
+model or some other model, etc. extracted values. For cxample, the input itself may identity
+, a color to be used for headings in a gencrated document
+[0094] At operation 2300, the computing device may be (e.g., “blue font for the title”) or an attribute or feature (e.2.,
+configured to receive an input to perform an action with “circle bullet points”) that can be used to generate the
+respect to the document guide. At operation 2400 the com- conditioning, parameters for generating, a document related
+puting device may be configured to perform the action in to the source content.
+response to receiving the input. Tor example, the inpul may wpe
+be the selection of a suggested query and the action may 10098] To eee the conditioning parameters, the stte
+include providing an answer (to the question by implement- emoning, pafame’ ers penerator - may 2 eon ured’ to
+ing the one or more machine-learned models with respect to infer the values for the one OF more © conditions from the
+the source content. Kor example, the input may be a text input. The input may include information indicative of the
+input asking a question and the action may include providing user’s intent or requirements. Tn some implementations, the
+an answer to the question by implementin, @ the one or more condilioning, parameters generalor 3110 (or the one er more
+machine-learned models with respect to the source content. sequence processing models 3120 or the one OF more large
+: - : : language models 3130) may be configured to infer informa-
+For example, the input may be a selection of a portion of the tion from the input 3200 to identify values for the one or
+summary and the action may include providing an output more conditions a d the conditionin varameters cenerator
+indicating particular sources from among the source content 3110 may b nti dito r pare ditioni - .
+which were relied upon for generating the text associated may be configured to generate the conditioning param-
+with the selection of the portion of the summary. eters based on the inferred values. For example, the input
+may include a reference to a length (“short,” “long,” etc.) of
+[0095] Referring to FIG. 3, notebook application 3100 the summary to be generated or of another document to be
+(which may correspond to notebook application 132 and/or generated based on the source content, and the conditioning
+notebook application 332) may include a conditioning parameters generator 3110 (or ihe one or more sequence
+parameters generator 3110, one or more sequence process- processing models 3120 or the one or more large language
+ing models 3120, one or more large language models 3130, models 3130) may be configured to infer a value based on
+and one or more generalive machine-learned models 3140. the input. For example, an inpul requesting the notebook
+‘The notebook application 3100 may receive an input 3200 application 3000 to generate a “short” essay may inter a
+from a user as discussed above with respect lo operation value of about 500 words while a “long” essay may be
+2100 and operation 2300 of FIG. 2. Conditioning parameters associated with a value of about 2000 words. For example,
+gencrator 3110 may be configured to generate conditioning the notebook application 3100 may be configured to ascer-
+parameters based at least in part on the input, wherein the tain an inferred value based on information via external
+conditioning parameters provide values for one or more content 3300.
+
+US 2025/0217626 Al Jul. 3, 2025
+10
+[0099] In some implementations, the conditioning param- implementations, the computing device may be configured
+eters generator 3110 may be configured to infer the values to retrieve, from among the one or more generative machine-
+for the one or more conditions from the input by providing, learned models 3140, a generative machine-learned model
+the input to one or more sequence processing, models 3120, associated with a particular type of content relating, to the
+wherein the one or more sequence processing, models 3120 input.
+are configured to output the values for the one or more [0103] In some implementations, the one or more genera-
+conditions in response to or based on the query. The one or live machine-leamed models 3140 may be trained on a large
+more sequence processing models 3120 may include one or dataset of content (e.g., a large corpus of language training
+more machine-learned models which are configured. to pro- data) with corresponding information about the conditions
+cess and analyze sequential data and to handle data that —_ associated with the content. During training, the one or more
+occurs in a specific order or sequence, including time series generative machine-learned models 3140 learn relationships
+data, natural language text, or any other data with a temporal between clements in an output (c.g., content) and conditions
+or sequential structure. that influence them. This may involve the computing device
+[0100] The one or more sequence processing models 3120 adjusting each generative machine-learned model’s internal
+may receive an input including text and tokenize the input by parameters to generate realistic or accurate content (e.g.,
+breaking down the sequence of lext into small units (tokens) grammatically correct content, coherent content, etc.) based
+to provide a structured representation of the input sequence. on the training dala. The one or more generative machine-
+‘The one or more sequence processing models 3120 may learned models 3140 may be trained on one or more training
+represent the tokens as vectors in a continuous vector space datasets including a plurality of reference images of the
+by mapping cach token to a high-dimensional vector, where location. The one or more training datascts may include
+the relationships between tokens (words) are reflected in the values for the one or more conditions.
+geometric relationships between their corresponding vector. [0104] In some implementations, the one or more genera-
+For example, the one or more sequence processing models tive machine-learned models 3140 are configured to gener-
+3120 may receive an input including the text “How did the ate the document guide 3500 in response to receiving the
+Cold War end?” and tokenize the input by breaking down the selection of source content 3400 and/or to generate respon-
+sequence of text into small units (tokens) (e.g.. “How,” sive content 3600 which corresponds to content that is
+“Cold War,” and. “end”), (hereby providing a structured generated in response to the inpul to perform an action with
+representation of the input sequence. In a word embedding, respect to the document guide, etc., based on the condition-
+semanlically similar words are closer together in the vector ing parameters (and corresponding values for the one or
+space. For example. the vectors for “war” and “battle” might more conditions) to make decisions for generating content.
+be close to each other because of their semantic relationship, [0105] In some implementations, the server computing
+while the vectors for “war” and “peace” may be far apart —_ system 300 may provide (transmit) content or a portion of
+compared to the vectors for “war” and “battle”. the generated content to computing device 100 or the server
+[0101] The one or more large language models 3130 can computing system 300 may provide access to the generated
+be, or otherwise include, a model that has been trained on a content to the computing device 100. For example, the
+large corpus of language training data in a manner that document guide 3500 may be generated at the server com-
+provides the one or more large language models 3130 with puling system 300 and stored al one or more compuling
+the capability to perform multiple language tasks. For devices (e.g., one or more of computing device 100, external
+example, the one or more large language models 3130 can compuling device 200, server computing system 300, exter-
+be trained to perform summarization tasks, conversational nal content 500, source content data store 350, user data
+tasks. simplification tasks, oppositional viewpoint tasks, ctc. stare 360, etc.).
+In particular, the one or more large language models 3130 [0106] In some implementations, after a document guide
+can be trained to process a varicty of outputs to generate a is generated and/or after an action is performed with respect
+language output. For example, the one or more large lan- to the document guide, the user can provide feedback or a
+guage models 3130 can process an embedding generated by further input relating to the content which is generated based
+a machine-learned embedding generation model, portions of on the source content provided and/or a query provided via
+source content (¢.g., document chunk(s)) identified using an the user, and one or more of the operations 2100 through
+embedding generation model, language outpuls generated 2400 can be repeated.
+using the one or more large language models 3130 or some [0107] Examples of the disclosure are also directed to
+other model, etc. user-facing aspects by which a uscr can manage content,
+[0102] The one or more generative machine-learned mod- organize content, create content, cte., via a notebook appli-
+els 3140 may include a deep neural network or a generative cation which is configured to implement one or more
+adversarial network (GAN), variational autoencoders, stable machine-learned models with respect to source content
+diffusion machine-learned models, visual transformers, neu- selected by the user. For example. FIGS. 4A through 4H
+ral radiance fields (NeRI's), etc., lo generale content (e.g., a illustrate examples of actions which can be implemented for
+summary, response to a query, etc.) with values for condi- a project in which a document guide is generated via one or
+lions associated with one or more features. or example, the more machine-leamed models based on source content
+compuling device may include a database (¢.g., machine- selected by a user, according to one or more example
+learned model data store 370) which is configured to storea embodiments of the disclosure.
+plurality of generative machine-leammed. models respectively [0108] For example, FIG. 4A illustrates a first user inter-
+associated with a plurality of diffcrent types of content (c.g., face screen (c.g. a startup user interface screen, a startup
+different genres or subjects, different kinds of content graphical user interface, ctc.) of a notebook application,
+including imagery. videos, and text, different styles of con- according to one or more example embodiments of the
+tent including outlines, reports, spreadsheets, etc.). In some disclosure.
+
+US 2025/0217626 Al Jul. 3, 2025
+11
+[0109] In FIG. 4A, first user interface screen 4100 depicts includes a summary section 4512 and a key topics section
+a user interface (c.g., a launch screen) which provides 4514. The notebook application 3100 may be configured to
+information about the notebook application 3100. In par- generate the content (e.g., a textual description) associated
+ticular, notebook application 3100 is configured to present with the summary section 4512 by implementing one or
+for display the first user interface screen 4100 which more machine-learned models as described herein with
+includes various information 4110 regarding features which respect to FIG. 3, based on the selected source content (e.g.,
+are available in the notebook application 3100. as described with respect to FIG. 4D). For example, the
+[0110] As illustrated in FIG. 4B, the notebook application | summary section 4512 may provide a brief summary asso-
+3100 is further configured to present for display a second ciated with one or more of the items of content which
+user interface screen 4200 which includes a first user inter- comprise the selected source content. Likewise, the note-
+face clement 4210. For example, the first uscr interface book application 3100 may be configured to generate the
+element 4210 is associated with enabling a user to create a content (¢.g., a textual description) associated with the key
+new notebook (a new project) by which a user can manage —_ topics scction 4514 by implementing one or more machinc-
+content, organize content, create content, etc., based on learned models as described herein with respect to FIG, 3,
+source content which the user can select or curate. based on the selected source content (e.g.. as described with
+[0111] As illustrated in FIG. 4C, the notebook application respect to FIG. 4D). For example, the key topics section
+3100 is further configured to present for display a third user 4314 may include one or more user interface elements which
+interface screen 4300 in response to a user providing an identify themes or important topics associated with one or
+input to create a new notebook (e.g., via the selection of the more of the items of content which comprise the selected
+first user interface clement 4210). The third user interface source content. Further, the notebook application 3100 may
+sercon 4300 includes a first portion 4310 having a plurality be configured to generate an output in response to a selection
+of selectable user interface elements that correspond to of one of the user interface clements in the key topics section
+locations where the source content can be uploaded from. 4314. The output may be a text summary or text explanation
+For example, first user interface element 4312 corresponds regarding the key topic corresponding to the sclected user
+to a storage space which may be associated with a local interface clement, for example. The output may be provided
+computing device or a remote server system (e.g., a cloud in a separate user interface screen or provided in another
+server), or another storage device (e.g., a portable storage portion of the fifth user interface screen which the notebook
+device). Tor example, second. user interface element 4314 application 3100 is configured to generate in response to the
+corresponds to a portable document lormat file, third user selection of one of the user interface elements in the key
+interface clement 4316 corresponds to copied text, and lopics section 4514.
+fourth user interface element 4318 corresponds to content [0115] For example, the second portion 4520 corresponds
+which can be uploaded from a particular website or URL. to a souree content section (c.g., a context window) which
+[0112] As illustrated in FIG. 4D, the notebook application includes information 4522 from at least a portion of an item
+3100 is further configured to present for display a fourth user of content from the source content. The notebook applica-
+interface screen 4400 in response to the selection of one of tion 3100 may be configured to reproduce at least a portion
+the plurality of selectable user interface elements that cor- of an item of content from the source content in the second
+respond to locations where the source conlent can be portion 4520. In some implementations, the content in the
+uploaded from, described with respect to FIG. 4C. The source content section may correspond to a portion of an
+fourth user interface screen 4400 includes a first portion item of content which was relied upon lor generating the
+4410 having a plurality of selectable items of source content summary section 4512.
+(e.g., a plurality of documents, images, videos, etc.). For [0116] For cxample, the third portion 4530 corresponds to
+example, first user interface clement 4412 corresponds to a a notes section (¢.g., a scratchpad) which can include one or
+first selected document, sccond user interface clement 4414 more notes that may be generated via various methods as
+corresponds to a second selected document (e.g., a portable described herein (e.g., automatically generated by the note-
+document format file), and third user interface clement 4416 book application 3100, manually entered by a user, auto-
+corresponds to a third selected document. FIG. 4D illustrates matically generated by the notebook application 3100 in
+that tbe user can curate or select particular items of source response to the selection of a user interface element which
+content which can be used for creating, a notebook or project corresponds lo an action to be performed, etc.).
+and which can be relied upon by one or more machine- [0117] For example, the fourth portion 4540 corresponds
+learned models as input data for organizing content, man- to a query section which can include one or more user
+aging content, creating content, etc. interface clements for submitting or providing a query to the
+[0113] As illustrated in FIG. 4E, the notebook application notebook application 3100 with respect to the source con-
+3100 is further configured to present for display a fifih user tent. For example, the fourth portion 4540 includes a plu-
+interface screen 4500 in response to the selection of one or rality of user interface elements 4542 which correspond to
+more items of content [rom the plurality of items of source suggested questions or actions that are related to the source
+content, described with respect to FIG. 4D. ‘he fifth user content. Tor example, the notebook application 3100 may be
+interface screen 4500 includes a first portion 4510, a second configured to generale the suggested questions or actions
+portion 4520, a third portion 4530, and a fourth portion based on information included in the source content. For
+4540. Each portion of the fifth user interface screen 4500 example, the notebook application 3100 may be configured
+may correspond to a section or panel of the fourth user to generate the suggested questions or actions based. addi-
+interface screen 4400 and can be associated with a different tionally on dialoguc history (c.g., prior questions or queries),
+functionality. user data (¢.g.. preferences of the user, user attributes, ctc.),
+[0114] For example, the first portion 4510 corresponds to and other contextual information. The fourth portion 4540
+a document guide (also referred to as a source guide) which may further include a text entry box 4544 by which a user
+
+US 2025/0217626 Al Jul. 3, 2025
+12
+can provide an input (e.g., via a keyboard, via a voice input, which are relied upon by the one or more machine-learned
+etc.) to query the notebook application 3100. The fourth models for generating the response. In some implementa-
+portion 4540 may further include a user interface element tions, the notebook application 3100 may be configured to
+4546 which indicates the number of items of content which dynamically modify or re-generate a response in the
+comprise the source content. Tor example, in FIG. 47, user response area 4614, in response to receiving an additional
+interface element 4546 indicates three sources were relied item of content to be added as source content via the user
+upon by the notebook application 3100 to generate the interface element 4624. In addition, or alternatively, in some
+summary section 4512. implementations, the notebook application 3100 may be
+[0118] Referring to FIG. 4F, an example user interface configured to dynamically modily or re-generale a response
+screen illustrates an input question and output response in the response arca 4614, in response to recciving a
+relating to the source content. For example, in FIG. 4F the deselection of an item of content from the list of items of
+notebook application 3100 is further configured to present content in the second portion 4620 via the user interface
+for display a sixth user interface screen 4600 in response to clement 4626 (c.g., by unchecking the checkbox for one or
+receiving a query (e.g., a text query input via the text entry more of the items of content in the second portion 4620).
+box 4544 of FIG. 4E). For example, sixth user interface [0122] Relerring to TIG. 4G, an example user interface
+screen 4600 includes a first portion 4610 which corresponds screen includes an example notes section (scratchpad) for a
+to a dialogue section, a second portion 4620 which corre- project, according to examples of the disclosure. Lor
+sponds to a sources section, and a third portion 430 which example, in FIG. 4G the notebook application 3100 is
+corresponds to a notes section (e.g.. a scratchpad). further configured to present for display a seventh user
+[0119] For example, the first portion 4610 includes a interface screen 4700 in response to receiving a selection of
+prompt area 4612 that corresponds to the text query and a the second user interface clement 4618 (c.g.. as shown in
+response area 4614 that corresponds to the response to the FIG, 4F) that, when selected, causes the response to be saved
+text query. In some implementations, the notebook applica- as a note 4712 to the third portion 4710 which corresponds
+tion 3100 is configured to generate the response by imple- to the notes section (e.g., a scratchpad) which can include
+menting one or more machine-learned models in response to one or more notes that may be generated via various
+receiving the text query as an input and with reference to the methods as described herein (e.g., automatically generated
+source content 3400. Vor example, if user inputs a question by the notebook application 3100 in response to the selec-
+(e.g.. “How did the Cold War affect American foreign tion of second user interface element 4618, etc.). nTIG. 4G,
+policy?) via the text entry box 4544 as described with user interface element 4714 indicates the number of items of
+respect to FIG. 4E, the notebook application 3100 may be content the one or more machine-learned models relied upon
+configured to provide the sixth user interface screen 4600 to generate the response for note 4712. Further, user inter-
+and to generate a response as indicated in the response area face clement 4714 may be contigured to be selectable such
+4614. As indicated in the response arca 4614, the number of — that in response to user interface clement 4714 being
+references (items of source content) relied upon by the one selected, a list of the items of content (citations) from the
+or more machine-learned models to generate the response souree content used for generating the response can be
+may be indicated by a first user interface element 4616. In provided for display.
+the example of TIG. 41", three references were used to [0123] Relerring to VIG. 411, an example user interface
+generale the response. The response area 4614 furiher screen includes a notes section (scratchpad) for a project,
+includes a selectable second user interface element 4618 according to examples of the disclosure. For example, in
+that, when selected, causes the response to be saved as a note FIG. 4H the notebook application 3100 is further configured
+to the third portion 4630 which corresponds to the notes to present for display an cighth user interface screen 4800 in
+section (¢.g., a scratchpad) which can include one or more response to receiving a selection of an item 4816 of content
+notes that may be generated via various methods as from a list 4814 of items of content (citations) from the
+described herein (e.g., automatically generated by the note- source content used by the one or more machine-learned
+book application 3100 in response to the selection of second models for generating the response saved in the note 4812
+user interface element 4618, etc.). which is provided for display in the first portion 4810. The
+[0120] In some implementations, one or more portions of eighth user interface screen 4800 further includes a second
+the response area may include information which is select- portion 4820 which corresponds to a sources section. In FIG.
+able that, when selected, can cause additional information to 4H, the notebook application 3100 is configured to provide
+be displayed relating to the selected information. For for display in the second portion 4820 inlormation 4822
+example, in FIG. 4F the text “policy of containment” may be relating to the selected item 4816, in response to receiving
+highlighted, bolded, underlined, or be displayed. in some the selection of the item 4816 of content from the list 4814
+visually distinct manner to indicate that the text is selectable of items of content (citations) from the source content used
+(e.g., a clickable chip) and additional information relaling to by the one or more machine-learned models for generating
+the text is available. ‘he notebook application 3100 may be the response saved in the note 4812.
+configured to provide the additional information (e.g., by [0124] In some implementations the information 4822
+implementing one or more machine-learned models based may include inlormation [rom the item 4816 of content that
+on the selected source content) to provide additional intfor- was used to generate the response. For example, the note-
+mation relating to the text, in response to the selection of the book application 3100 may be configured to reference
+text. metadata associated with the response to refer back to the
+[0121] The second portion 4620 may correspond to a information 4822. The metadata may indicate a location of
+source section and include the items of content 4622 which information from an item of content used to generate the
+comprise the source content. In some implementations, the response. Further, the information 4822 may correspond to
+items of content 4622 may correspond to items of content or include a particular passage that was relied upon from the
+
+US 2025/0217626 Al Jul. 3, 2025
+13
+item of content for generating the response. For example, the one or more machine-learned models for generating the
+notebook application 3100 may be configured to cause the inlormation included in the one or more notes 5112). In
+particular passage to be displayed in the second portion 4820 some implementations, the notebook application 3100 may
+in a visually distinctive manner (e.g., in a highlighted be configured to generate a note which is saved to the first
+manner, a bold manner, an enlarged font size, an underlined portion 5110 as a note based. on a selection of at least a
+manner, an italicized manner, etc.). For example, the note- portion of the information from an item of content which is
+book application 3100 may be configured to cause additional provided in the second portion 5120. l'er example, FIG. 5A
+passages which appear before and/or after the particular _ illustrates selected text 5124 (e.g., highlighted text) that has
+passage to be displayed in the second portion 4820. ‘This been selected by a user.
+additional information may provide further context for the : :
+user regarding the ‘information that was relied upon for [0129] Vor example, the third portion $130 corresponds to
+generating the response. For example, the notebook appli- a query Section which can include one or more user interlace
+cation 3100 may be contigured to mark particular items of elements for submitting or providing a query to the notebook
+content relied upon for generating the response in the note application 3100 with respect to the source content. Vor
+4812 as well as mark particular passages from the particular example, the third portion 5130 includes a plurality of user
+items of content relied upon for generating the response in interface elements 5132 which correspond to suggested
+ihe nole 4812, Therefore, a user can easily and visually questions or actions that arc related to the source content.
+discern where support for a response can be found in an item Por example, the notebook application 3100 may be con-
+of content. figured to generate the suggested questions or actions based
+[0125] Tn some implementations, the information 4822 on information included in the source content and/or based
+from the selected item 4816 of content that was used to on the information displayed in the second portion 5120.
+De The third portion 5130 may further include a text entry box
+
+generale the response may be truncated or shown in ils 5134 by which a user can provide an input (eg, via a
+entirety. For example, when the information 4822 is less k vb ard, via a voice inpul. ele nal
+
+: . eyboard, via a voice inpul, ele.) to query the notebook
+than a threshold value, the entire text from the selected item lication 3100. The third portion $130 ’ further includ
+4816 of content can be shown in the second portion 4820 application ne an Porton ly or iene
+and can be used by the one or more machine-learned models a user interface element 3136 which indicates the number of
+for generating aresponse (eg.. toa text query). For example items of content which comprise the source content. For
+when the information 4822 is more than the threshold value, example, in FIG. 5A. user interface element 5136 indicates
+the notebook application 3100 may be configured to imple- ure fo oene vo tt relied upon by the notebook application
+ment a semantic retrieval method to determine particular 7 © generate Me one or More Noles .
+passages from the entirety of the selected item 4816 of [0130] In some implementations, the plurality of user
+content which are relevant to a user query (e.g., a text interface clements $132 may be configured to dynamically
+query). In this example, the relevant passages (rather than change based on actions with respect to the first user
+the entirety of the information from the item of content) is interface screen 5100. For example, the notebook applica-
+relied upon by the one or more machine-learned. models for tion 3100 may be configured to dynamically change, modify,
+generating a response to the user query (e.g., the text query). delete, or add user interface elements in the third portion
+[0126] Lxamples of the disclosure are directed to further 5130 based on an action with respect to the source content
+user-facing aspects by which a user can manage content, (e.g., with respect to items of content provided for display in
+organize content, creale content, elc., via a notebook appli- the second portion 3120). In TIG. 5A, the notebook appli-
+cation which is configured to implement one or more cation 3100 may be configured to dynamically change user
+machine-leamed models with respect to source content interlace elements in the third portion 5130 based on (in
+selected by the user. For example, FIGS. 5A through 5B response to) the selection of text from one or more sources
+illustrate examples of actions which can be implemented for 5122 (e.g., the selected text 5124). For example, as indicated
+a project in which a note is generated via one or more in FIG. SA the actions may include summarizing the selected
+machine-leamed models based on source content selected by —«text to a note, adding a quote to a note, requesting additional
+a user, according to one or more example embodiments of information regarding the selected text 5124, or suggest
+the disclosure. related ideas. For example, the notebook application 3100
+[0127] For cxample, FIG. 5A illustrates a first user inter- may be configured to generate a ote summarizing the
+face screen of a notebook application, according to one or selected text in response to receiving a selection of user
+more example embodiments of the disclosure. For example, interface element 5132a which corresponds to the action of
+in FIG. 5A the first user interface screen 5100 includes a first summarizing, the selected text to a note. For example, the
+portion 5110, a second portion 5120, and a third portion notebook application 3100 may be configured to add. content
+$130. First portion 5110 corresponds to a notes section (¢.g., to an existing note corresponding to the selected text in
+a scratchpad) which can include one or more notes 5112 that Tesponse lo receiving a selection of user interlace element
+may be generated via various methods as described herein 31324 which corresponds to the action of adding a quote to
+(e.g., automatically generated by the notebook application a note.
+3100, manually entered by a user, automatically generated [0131] Vor example, ‘IG. 5B illustrates a second user
+by the notebook application 3100 in response to the selec- interface screen of a notebook application, according to one
+tion of a user interface element which corresponds to an or more example embodiments of the disclosure. For
+action to be performed, ctc.). example, in FIG. 5B second user interface screen 5200
+[0128] Second portion 5120 corresponds to a source con- includes a first portion 5210, a second portion 5220, and a
+tent section (¢.g., a source guide or context window) which third portion 5230, cach of which may correspond to the first
+can include one or more sources 5122 (c.g., items of content portion 5110. second portion 5120, and third portion 5130 of
+which comprises the source content 3400 relied upon by the FIG. 5A.
+
+US 2025/0217626 Al Jul. 3, 2025
+14
+[0132] As described with respect to FIG. 5A, the notebook via selecting checkboxes, etc.) and in response to the selec-
+application 3100 may be configured to generate a note tion of the one or more notes, the actions may include
+summarizing the selected text in response to receiving a actions for creating content (e¢.g.. creating a study guide,
+selection of user interface element 5132a which corresponds creating, an outline, creating a spreadsheet, creating a pre-
+to the action of summarizing the selected text to a note. FIG. sentation, etc.), suggesting related ideas, etc., based on the
+5B illustrates the generated note 5214 which has been saved selected notes 6114. For example, the notebook application
+to the first portion 5210 which includes one or more notes 3100 may be configured. to generate a nole which corre-
+5212. Further, in some implementations after the generated sponds to an outline of the content from the selected notes
+note $214 is saved to the first portion $210, the plurality of 6114, in response to receiving a selection of user interface
+user interface clements 5132 from FIG. 5A may be contig- element 6122a which corresponds to the action of creating
+ured to dynamically change back to a previous state to the an outline and saving the outline to a note. For example, the
+plurality of user interface elements 5232 shown in FIG. 5B. notebook application 3100 may be configured to implement
+[0133] Examples of the disclosure are directed to further one or more machine-learned models to generate the note
+user-facing aspects by which a user can manage content, which corresponds to the selected notes 6114, in response to
+organize content, create content, ctc., via a notebook appli- receiving a selection of a user interface element which
+cation which is configured to implement one or more corresponds to an action of creating, content with respect to
+machine-learned models with respect to souree content the selected one or more notes and saving the content as a
+selected by the user. For example, FIGS. 6A through 6B note.
+illustrate examples of actions which can be implemented for [0137] For example, FIG. 6B illustrates a portion of a
+a project in which a note is generated via one or more second user interface screen of a notebook application,
+machine-learned models based on source content selected by according to one or more example embodiments of the
+a user, according to one or more example embodiments of disclosure. for example, in FIG. 6B the first portion 6210
+the disclosure. may correspond to the first portion 6110 of FIG. 6A.
+[0134] For example, FIG. 6A illustrates a portion of a first [0138] As described with respect to FIG. 6A, the notebook
+user interface screen of a notebook application, according to application 3100 may be configured to generate a nole based
+one or more example embodiments of the disclosure. Tor on one or more selected notes, by implementing one or more
+example, in L'IG. 6A a first portion 6110 and a second machine-learned models, where the selected notes may
+portion 6120 of a user interface screen are shown. First correspond to source content (e.g., source content selected
+portion 6110 corresponds to a notes section (e.g., a scratch- by a user and used as an input for generating the note). For
+pad) which can include a plurality of notes that may have example, the generated note may summarize or outline the
+been generated via various methods as described hercin notes which have been selected as described with respect to
+(¢e.g., automatically generated by the notebook application FIG. 6A. The notebook application 3100 may be configured
+3100, manually entered by a user, automatically generated to generate the generated note 6214 based on the selected
+by the notebook application 3100 in response to the selec- notes 6114. by implementing one or more machine-learned
+tion of a user interface element which corresponds to an models, where the selected notes 6114 may correspond to
+action to be performed, etc.). For example, the first portion source content (e.g., source content selected by a user and
+6110 may indicate how a parlicular note is created (e.g., as used as an input for generating the note), and in response to
+a saved response, as wrillen note which is written by a user, receiving a selection of a user interface element (e.g., user
+as a document generated from other notes, etc.). interlace element 6122a) which corresponds te an action of
+[0135] Tor example, the second portion 6120 corresponds summarizing the selected noles 6114 to the generated note
+to a query section which can include one or more user 6214. FIG. 6B illustrates the generated note 6214 which has
+interface elements for submitting or providing a query to the been saved to the first portion 6210 which includes one or
+notebook application 3100 with respect lo the source content more other notes 6212. Further, in some implementations
+or with respect to the plurality of notes. Kor example, the after the generated note 6214 is saved to the first portion
+second portion 6120 includes a plurality of user interface 6210, the plurality of user interface elements 6122 from
+elements 6122 which correspond to suggested questions or = FIG. 6A may be configured to dynamically change back to
+actions that are related to the source content or plurality of a previous stale.
+notes. For example, the notebook application 3100 may be [0139] Insome implementations, the notebook application
+configured to generate the suggested questions or actions 3100 may be configured to enable a generated note 6214 to
+based on information included in the source content and/or be exported to other applications via selection of a user
+based on the information displayed in the first portion 6110. interface element to send the document to another applica-
+The second. portion 6120 may further include a text entry tion (e.g., a word processing application, a presentation
+box by which a user can provide an inpul (e.g.. via a application, a spreadsheet application, a social media appli-
+keyboard, via a voice inpul, etc.) lo query the notebook cation, elc.). In some implementations, the notebook appli-
+application 3100, a user interface element which indicates cation 3100 may be configured to enable a generated nole
+the number of items of content which comprise the source 6214 and/or items of content (e.g., source content 3400) to
+content, etc. be shared with other users via selection of a user interface
+[0136] In the example of FIG. 6A, the notebook applica- element to share the document and/or source content with
+tion 3100 may be configured to dynamically change user another user.
+interface elements in the second portion 6120 based on (in [0140] According to examples of the disclosure, the note-
+response to) the selection of one or more notes 6112 trom book application 3100 may be configured to generate an
+among the plurality of notes provided in the first portion output (¢.g., an outline, a report, a summary, cte.) via one or
+6110. For example, as indicated in FIG. 6A one or more more machine-learned models, based on source content
+notes may be selected via a user input (e.g., via a drag input, provided to the notebook application (e.2., by the user). The
+
+US 2025/0217626 Al Jul. 3, 2025
+15
+notebook application 3100 may be configured to allow a some implementations, the graphical image 7122 may be
+user to create various projects to complete various tasks. overlaid on the second folder 7120 which is provided as a
+Fach project may be configured to act in a manner similar to user interface element that, when selected, causes the second
+a folder by which a user can store various information to folder 7120 to open and display the contents of the second
+each project. In some implementations, an individual folder 7120 to the user. In addition, or alternatively, in some
+scratchpad may correspond to or be dedicated to a particular implementations, in response to the source content being
+project. In some implementations, the notebook application provided to the notebook application 3100, the notebook
+3100 may be contigured to receive the source content as application 3100 may be configured to automatically gen-
+specified by the user. ‘The notebook application 3100 may be erale (e.g., using one or more machine-leammed models, one
+configured to add, delete, or modify projects according to an or more generative machine-learned models. semantic
+input received from a user. Each project may be provided a retrieval technologies, etc.), the textual description 7124
+default name, a name provided by the user, or a name (name) which corresponds to or represents the source con-
+generated by the notebook application 3100 (c.g., via one or tent. The textual description 7124 may be overlaid on the
+more machine-learned models) based on the information second folder 7120 which is provided as a user interface
+stored in the project (e.g., based on the source content). element that, when selected, causes the second folder 7120
+[0141] Examples of the disclosure are directed to further to open and display the contents of the second folder 7120
+user-facing, aspects by which a user can manage content, to the user.
+organize content, create content, etc., via a notebook appli- [0144] FIG. 8A depicts a block diagram of an example
+cation which is configured to implement one or more compuling system lor organizing, managing, and creating
+machine-learned models with respect to souree content content by implementing one or more machine-lcarned
+selected by the user. For example, FIG. 7 illustrates models with respect to source content selected by a user,
+examples of notebooks or projects which can be represented according to one or more example embodiments of the
+in a particular manner so that a user can readily understand disclosure. The system 8100 includes a user computing
+the contents contained within the notebook or project. device 8102, a server computing system $130, and a training
+[0142] In some implementations, in response to source computing system 8150 that are communicatively coupled
+content being provided to the notebook application 3100, the Ver a network 8180.
+notebook application 3100 may be configured to aulomali- [0145] PIG. 8B depicts a block diagram of an example
+cally generate (c.g., using one or more machine-learned computing device for organizing, managing, and creating
+models, one or more generative machine-learned models, content by implementing one or more machine-learned
+semantic retrieval technologies, ctc.), a graphical image models with respect to source content sclected by a user,
+(c.g., an emoji, an icon, ete.) or graphical animation which according to one or more example embodiments of the
+corresponds to or represents the source content. In some disclosure.
+implementations, the graphical image or graphical anima- [0146] FIG. 8C depicts a block diagram of an cxample
+tion may be overlaid on a folder which is provided as auser © computing device for organizing, managing, and creating
+interface element thal, when selected, causes the folder to content by implementing one or more machine-learned
+open and display the contents of the folder to the user. In models with respect to source content selected by a user,
+addition, or alternatively, in some implementations, in according to one or more example embodiments of the
+response to the source content being provided to the nole- disclosure.
+book application 3100, the notebook application 3100 may [0147] ‘The user computing device 8102 (which may cor-
+be configured to automatically generate (c.g., using one or respond to computing device 100) can be any type of
+more machine-learned models, one or more generative computing device, such as, for example, a personal com-
+machine-learned models, semantic retrieval technologies, puting device (c.g., laptop or desktop), a mobile computing
+etc.), a textual description (name) which corresponds to or deviee (c.g.. smartphone or tablet), a gaming console or
+represents the source content. The textual description may controller, a wearable computing device, an embedded com-
+be overlaid on the folder which is provided as a user puting device, or any other type of computing device.
+interface element that, when selected, causes the folder to [0148] The user computing device 8102 includes one or
+open and. display the contents of the folder to the user. more processors 8112 und.a memory 8114. ‘The one or more
+[0143] Referring to FIG. 7, the notebook application 3100 processors 8112 can be any suilable processing device (e.g.,
+may have a user-specific section 7100 which stores various a processor core, a microprocessor, an ASIC, an FPGA, a
+projects in particular folders. For cxample, a first folder 7110 controller, a microcontroller, cte.) and can be one processor
+(c.g., default folder) may be represented by a default image or a plurality of processors that are operatively connected.
+7112 and have a generic name 7114 (e.g., “Default Note- The memory $114 can include one or more non-transitory
+book”). For example, a second folder 7120 may be repre- computer-readable storage media, such as RAM, ROM,
+sented by a graphical image 7122 and have a textual ERPROM, EPROM, flash memory devices, magnetic disks,
+description 7124 (e.g., “Eamings”) which is machine- etc., and combinations thereof. The memory 8114 can store
+learned generated and represents or corresponds to content data 8116 and instructions 8118 which are executed by the
+included in the second lolder 7120. Vor example, in response processor 8112 to cause the user computing device 8102 to
+to source content being provided to the notebook application perform operations.
+3100, the notebook application 3100 may be configured to [0149] In some implementations, the user computing
+automatically generale (e.g., using one or more machine- device 8102 can store or include ene or more machine-
+learned models. one or more generative machine-learned learned models 8120 (c.g.. large language models, sequence
+models, semantic retrieval technologies, ete.), the graphical processing models, generative machine-learned models,
+image 7122 which may correspond to an emoji, an icon, ctc., ete.). For example, the one or more machine-learned models
+which corresponds to or represents the source content. In 8120 can be or can otherwise include various machine-
+
+US 2025/0217626 Al Jul. 3, 2025
+16
+learned models such as neural networks (e.g., deep neural network (GAN) to generate the content with one or more
+networks) or other types of machine-learned models, includ- features having values for one or more conditions associated
+ing non-linear models and/or linear models. Example neural with the features. For example, the one or more generative
+networks can include feed-forward neural networks, recur- machine-learned models 3140 may include variational auto-
+rent neural networks (RNNs), including long short-term encoders, stable diffusion machine-learned models, visual
+memory (I.STM) based recurrent neural networks, convo- transformers, neural radiance fields (NeRFs), etc., to gener-
+lutional neural networks (CNNs), diffusion models, genera- ale the content.
+tive-adversarial networks, or other forms of neural networks. [0154] Additionally, or alternatively, one or more
+Example neural networks can be deep neural networks. machine-learned models 8140 can be included in or other-
+Some example machine-learned models can leverage an wise stored and implemented by the server computing
+attention mechanism such as self-attention. For example, system $130 that communicates with the user computing
+some example machine-learned models can include multi- device 8102 according to a client-server relationship. For
+headed self-attention models (c.g., transformer models). example, the one or more machine-learned models 8140 can
+Example machine-learned models were described herein be implemented by the server computing system 8130 as a
+with reference to FIGS. 1A through 7. portion of a web service (e.g., a navigation service, a word
+[0150] In some implementations. the one or more processing service, an educational service, and the like).
+machine-learned models 8120 can be received from the Thus, one or more machine-learned models 8120 can be
+server computing system 8130 over network 8180, stored in stored and implemented at the user computing device 8102
+the memory 8114, and then used or otherwise implemented and/or one or more machine-learned models 8140 can be
+by the one or more processors 8112. In some implementa- stored and implemented at the server computing system
+tions, the user computing device 8102 can implement mul- $130.
+Giple parallel instances of a single machine-learned model [0155] The user computing device $102 can also include
+(e.g., to perform parallel tasks across multiple instances of one or more user input components §122 that receives user
+the machine-learned model). In some implementations, the input. For example, the user input component 8122 can be
+task is a generative task and one or more machine-learned a touch-sensitive component (e.g., a touch-sensitive display
+models may be implemented to output content (e.g., a screen or a touch pad) that is sensitive to the touch of a user
+response to a question, a summarization of various selected inpul object (e.g., a finger or a stylus). The touch-sensitive
+items of content, an outline of various sclected notes, ctc.) component can serve lo implement a virtual keyboard. Other
+in view of various inputs (e.g., a query, conditioning param- example user inpul components include a microphone, a
+eters, ctc.). More particularly, the machine-learned models traditional keyboard, or other devices and methods by which
+disclosed herein (e.g., including large language models, a user can provide a user input.
+sequence processing models, generative machine-learmed [0156] The server computing system 8130 (which may
+models, etc.), may be implemented to perform various tasks correspond to server computing system 300) includes one or
+related to an inpul query. more processors 8132 and a memory 8134. The one or more
+[0151] According to examples of the disclosure, a com- processors 8132 can be any suitable processing device (e.g.,
+puting system may implement one or more sequence pro- a processor core, a microprocessor, an ASIC, an FPGA, a
+cessing models 3120 as described herein to output values for controller, a microcontroller, etc.) and can be ene processor
+the one or more conditions in response to or based on the or a plurality of processors thal are operatively connected.
+query. The one or more sequence processing models 3120 ‘The memory 8134 can include one or more non-transilory
+may include one or more machine-learned models which are compuler-readable storage media, such as RAM, ROM,
+configured to process and analyze sequential data and to EEPROM, EPROM, flash memory devices, magnetic disks,
+handle data that occurs in a specific order or sequence, ete., and combinations thereof. The memory $134 can store
+including time scrics data, natural language text, or any data $136 and instructions 8138 which are executed by the
+other data with a temporal or sequential structure. processor 8132 to cause the server computing system 8130
+[0152] According to examples of the disclosure, a com- to perform operations.
+puting system may implement one or more large language [0157] In some implementations, the server computing
+models 3130 to determine a plurality of variables based on system 8130 includes or is otherwise implemented by one or
+the query. For example, a large language model may include more server computing devices. In instances in which the
+a Bidirectional Encoder Representations from Transformers server computing system 8130 includes a plurality of server
+(BERT) large language model. The large language model computing devices, such server computing devices can
+may be trained to understand and process natural language operate according to sequential computing architectures,
+for example. The large language model may be configured parallel computing architectures, or some combination
+to extract information from the input (query) to identify thereof,
+keywords, intents, and context within the input to determine [0158] As described above, the server computing system
+a plurality of variables for generating content. ‘Uhe variables 8130 can store or otherwise include one or more machine-
+may include latent variables that represent an underlying learned models 8140. For example, the one or more
+structure of the language. machine-learned models 8140 can be or can otherwise
+[0153] According to examples of the disclosure, a com- include various machine-learned models. Example machine-
+puting system may implement one or more generative learned models include neural networks or other multi-layer
+machine-leamed models 3140 to generate various content non-linear models. Example neural networks can include
+(c.g., for generating an outline, a summary, a response to a feed-forward neural networks, recurrent neural networks
+query, etc.) having values for one or more conditions. The (RNNs). including long short-term memory (LSTM) based
+one or more generative machine-learned models 3140 may recurrent neural networks, convolutional neural networks
+include a deep neural network or a generative adversarial (CNNs), diffusion models, generative-adversarial networks,
+
+US 2025/0217626 Al Jul. 3, 2025
+17
+or other forms of neural networks. Example neural networks models can be trained to process a variety of outputs to
+can be deep neural networks. Some example machine- generate a language output. However, other datasets (c.g., of
+learned models can leverage an attention mechanism such as images) may he utilized (e.g.. images obtained from external
+self-attention. For example, some example machine-learned websites). In some implementations, the dataset may be
+models can include multi-headed self-attention models (e.g., confined to a particular genre or subject, particular kinds of
+transformer models). Example machine-learned models content including imagery, videos, and text, particular styles
+were described herein with reference to FIGS. LA through 7. of content including outlines, reports, presentations, spread-
+[0159] ‘Lhe user computing device 8102 and/or the server sheets, etc.), etc. In some implementations, the dataset may
+computing system 8130 can train the one or machine- contain diverse subject matter.
+learned models 8120 and/or 8140 via interaction with the [0164] In some implementations, if the user has provided
+training computing system 8150 that is communicatively consent, the training, examples can be provided by the user
+coupled over the network 8180. The training computing computing device 8102. Thus, in such implementations, the
+system 8150 can be separate from the server computing one or more machine-learned models 8120 provided to the
+system 8130 or can be a portion of the server computing user computing device 8102 can be trained by the training
+system 8130. compuling system 8150 on user-specific dala received from
+[0160] ‘Che taining computing system 8150 includes one the user computing device $102. In some instances, this
+or more processors 8152 and a memory 8154. ‘The one or process can be referred to as personalizing the model.
+niore processors 8152 can be any suitable processing device [0165] The model trainer 8160 includes computer logic
+(e.g. a processor core, @ microprocessor, an ASIC, an utilized to provide desired functionality. The model trainer
+FPGA, a controller, a microcontroller, ste.) and can be one 8160 can be implemented in hardware, firmware, and/or
+processor or a plurality of PROCOSSOTS that are operatively software controlling a general purpose processor. Tor
+connected. The memory 8154 can include one or more example, in some implementations, the model trainer 8160
+hon-transitory computer-readable storage media, such as includes program files stored on a slorage device, loaded
+RAM, ROM. BRPROM, EPROM, flash memory devices, into a memory and executed by one or more processors. In
+magnetic disks, etc., and combinations thereof. The memory other implementations, the model tramer 8160 includes one
+8154 can store data 8156 and instructions 8158 which are or more sets of computer-cxcentable instructions that arc
+Exee uted by the processor 8152 to CaISe the trainmg com- stored in a tangible computer-readable storage medium such
+puting System 8150 lo perform operations. In some imple- as RAM, hard disk, or optical or magnetic media.
+mentations, the training computing system 8150 includes or .
+is otherwise implemented by one or more server computing, [9166] The network 8180 can be any type of communi-
+devices. cations network, such as a local area network (e.g., intranet),
+[0161] The training computing system 8150 can include a wide area network (e.g., Inlemet), or some combination
+model trainer 8160 that trains the one or more machine- thereof and can include any umber of wired or wireless
+learned models 8120 and/or $140 stored at the user com- links. In general, communication over the network $180 can.
+puting device 8102 and/or the server computing system be carried via any type of wire d and/or wireless connection,
+8130 using various training or learning techniques, such as, using a wide varicty ot communication protocols (c.2.,
+for example, backwards propagation of errors. For example, TCP/IP, HTTP, SMTP, FTP), encodings or formats (C25
+a loss function can be backpropagated through the model(s) HTMI., XMU)}, and/or protection schemes (e.g., VPN,
+to update one or more parameters of the model(s) (e.g. secure HTTP, SSL).
+based on a gradient of the loss function). Various loss [0167] The machine-leamed models described in this
+functions can be used such as mean squared error, likelihood specification may be used in a variety of tasks, applications,
+loss, cross entropy loss, hinge loss, and/or various other loss and/or use cases.
+functions. Gradient descent techniques can be used to itera- [0168] Insome implementations, the input to the machine-
+tively update the parameters over a number of training learned model(s) of the disclosure can be text or natural
+iterations. language data. The machine-learned model(s) can process
+[0162] In some implementations, performing backwards the text or natural language data to generate an outpul. As an
+propagation of crrors can include performing truncated example, the machine-leamed model(s) can process the
+backpropagation through time. The model trainer 8160 can natural language data to generate a language encoding
+perform a number of generalization techniques (e.2., weight output. As another example, the machine-learned model(s)
+decays, dropouts, etc.) to improve the generalization capa- can process the text or natural language data to generate a
+bility of the models being trained. latent text embedding output. As another example, the
+[0163] In particular, the model trainer 8160 can train the machine-learned model(s) can process the text or natural
+one er more machine-learned models 8120 and/or 8140 language data to generate a translation output. As another
+based on a set of training data 8162. The training, data 8162 example, the machine-learned model(s) can process the text
+can include, for example, various datasels which may be or natural language data to generale a classification outpul.
+stored remotely or at the training computing system 8150. As another example, the machine-learned model(s) can
+Vor example, in some implementations an example dataset process the text or natural language data to generale a textual
+ulilized for training includes a large corpus of language segmentation outpul. As another example, the machine-
+training data that provides one or more large language learned model(s) can process the text or natural language
+models with the capability to perform multiple language dala to generale a semantic intent output. As another
+tasks. For example, the one or more large language models example, the machine-learned model(s) can process the text
+can be trained to perform summarization tasks, conversa- or natural language data to generate an upscaled text or
+tional tasks, simplification tasks, oppositional viewpoint natural language output (c.g., text or natural language data
+tasks, etc. In particular, the one or more large language that is higher quality than the input text or natural language,
+
+US 2025/0217626 Al Jul. 3, 2025
+18
+etc.), As another example, the machine-learned model(s) can notebook application, a text messaging application, an email
+process the text or natural language data to generate a application, a dictation application, a virtual keyboard appli-
+prediction output. cation, a browser application, a social media application, a
+[0169] In some implementations, the input to the machine- map application, a navigation application, etc.
+learned model(s) of the disclosure can be speech data. The [0174] As illustrated in FIG. 8B, each application can
+machine-leamed model(s) can process the speech data to communicate wilh a number of other compenents of the
+generale an oulpul. As an example, the machine-learned compuling device, such as, for example, one or more sen-
+model(s) can process the speech data to generate a speech sors, a context manager, a device state component, and/or
+recognition output. As another example, the machine- additional components. In some implementations, each
+learned model(s) can process the speech data to generate a application can communicate with cach device component
+specch translation output. As another example, the machine- using an API (c.g., a public API). In some implementations,
+learned model(s) can process the speech data to generate a the API used by cach application is specitic to that applica-
+latent embedding output. As another example, the machine- tion.
+learned model(s) can process the speech data to generate an [0175] FIG. 8C depicts a block diagram of an example
+encoded speech output (e.g., an encoded and/or compressed computing device for organizing, managing, and creating
+representation of the speech data, etc.). As another example, content by implementing one or more machine-learned
+the machine-learned model(s) can process Lhe speech data to models with respect to source content selected by a user,
+generate an upscaled speech output (e.g., speech data that is according to one or more example embodiments of the
+higher quality than the input speech data, etc.). As another disclosure. ‘(he computing device 80 can be a user comput-
+example, the machine-learned model(s) can process the ing device or a server computing device.
+speech data to generate a textual representation output (e.g. [0176] The computing device 8300 includes a number of
+a textual representation of the input specch data, cte.). As applications (e.g., applications | through N). Each applica-
+another example, the machine-learned model(s) can process tion is in communication with a central intelligence layer.
+the speech data to generate a prediction output. Example applications include a notebook application as
+[0170] In some implementations, the input to the machine- described herein, a notebook application, a text messaging
+learned model(s) of the disclosure can be sensor data. The application, an email application, a dictation application, a
+machine-learned model(s) can process the sensor dala to virtual keyboard application, a browser application, a map
+generale an oulpul. As an example, the machine-learned application, a social media application, a navigation appli-
+model(s) can process the sensor data to generale a recogni- cation, a social media application, etc. In some implemen-
+tion output. As another cxample, the machine-learned model —_ tations, cach application can communicate with the central
+(s) can process the sensor data to generate a prediction _ intelligence layer (and modcl(s) stored therein) using an API
+output. As another cxample, the machine-learned model(s) (c.g., a common API across all applications).
+can process the sensor data to generate a classification [0177] The central intelligence layer includes a number of
+output. As another example, the machine-leamed model(s) machine-learned models. For example, as illustrated in FIG.
+can process the sensor data to generate a segmentation 3C, a respective machine-learned madel can be provided for
+output. As another example, the machine-learned model(s) each application and managed by the central intelligence
+can process the sensor dala to generale a visualization layer. In other implementations, two or more applications
+output. As another example, the machine-learned model(s) can share a single machine-learned model. For example, in
+can process the sensor dala to generate a diagnostic oulput. some implementations, the central intelligence layer can
+As another example, the machine-learned model(s) can provide a single model for all of the applications. In some
+process the sensor data to generate a detection output. implementations, the central intelligence layer is included
+[0171] FIG. 8A illustrates an example computing system within or otherwise implemented by an operating system of
+that can be used to implement aspects of the disclosure. the computing device $300.
+Other computing systems can be used as well. For example, [0178] The central intelligence layer can communicate
+in some implementations, the user computing device 8102 witha central device data layer. The central device data layer
+can include the model trainer 8160 and the training data can be a centralized repository of data for the computing
+8162. In such implementations, the one or more machine- device 8300. As illustrated in L'I1G. 8C, the central device
+learned models 8120 can be both trained and used locally at dala layer can communicate with a number of other com-
+the user computing device 8102. In some of such imple- ponents of the computing device, such as, for example, one
+mentalions, (he user compuling device 8102 can implement or more sensors, a context manager, a device state compo-
+the model trainer 8160 to personalize the one or more nent, and/or additional components. In some implementa-
+machine-leamed models 8120 based on user-specific data. tions. the central device data layer can communicate with
+[0172] TIG. 8B depicts a block diagram of an example each device component using an API (¢.g., a private API).
+computing device for organizing, managing, and. creating [0179] To the extent alleged generic terms including
+content by implementing one or more machine-learned “module”, and. “unit,” and the like are used herein, these
+models with respect to source content selected by a user, terms may refer to, but are not limited to, a software or
+according to one or more example embodiments of the hardware component or device, such as a lield Program-
+disclosure. The computing device 8200 can be a uscr com- mable Gate Array (7PGA) or Application Specific Integrated
+puting device or a server computing device. Circuit (ASIC), which performs certain tasks. A module or
+[0173] ‘Che computing device 8200 includes a number of unit may be configured to reside on an addressable storage
+applications (c.g., applications 1 through N). Each applica- medium and configured to execute on one or more proces-
+tion contains its own machine learning library and machine- sors. Thus, a module or unit may include, by way of
+learned model(s). For example, cach application can include example, components, such as software components, object-
+a machine-learned model. Example applications include a oriented software components, class components and task
+
+US 2025/0217626 Al Jul. 3, 2025
+components, processes, functions, attributes, procedures, What is claimed is:
+subroutines, segments of program code, drivers, firmware, 1. Acomputing device for generating content, comprising:
+microcode, circuitry, data, databases, data structures, tables, one or more memories configured to store instructions;
+arrays, and variables. The functionality provided for in the and
+components and modules/unils may be combined into fewer one or more processors configured to execute the instruc-
+~ o A its ey + : . . soe
+components and modules/units or further separated into tions to perform operations, the operations comprising:
+additional components and modules. providing, in response to a selection of a plurality of
+[0180] Aspects of the above-described example embodi- tems of content, a user interface including a first
+ments may be recorded in non-transitory computer-readable portion anda second portion, the first portion includ-
+media including program instructions to implement various mg ‘hine-learry description senerated he on ak ty ot
+operations embodied by a computer. The media may also machine-learned models Based on the plurality 0
+: : we i . items of content and. the second portion including a
+include, alone or in combination with the program instruc- : ~ : ~
+. 4.4 plurality of user interface elements configured to
+tions, data files, data structures, and the like. Examples of O° : " -
+: - . perform an operation with respect to at least one of
+non-transitory computer-readable media include magnetic or . - .
+. - ; : 5 the summary description or the plurality of items of
+media such as hard disks, floppy disks, and magnetic tape, content
+optical media such as CD ROM disks, Blue-Ray disks, and “ : 7 : . :
+‘ . . . 2. ‘The computing device of claim 1, wherein the opera-
+DVDs: magneto-optical media such as optical discs; and . . —
+, : tions further comprise:
+other hardware devices that are specially configured to store a . . .
+: . ~ P receiving a selection of the plurality of items of content;
+and perform program instructions, such as semiconductor and
+memory, read-only memory (ROM), random access . . .
+Pe implementing the one or more machine-learned models to
+memory (RAM), flash memory. USB memory, and the like. ° os
+7 . . . . . generate the summary description based on the plural-
+Examples of program instructions include both machine 5 - - -
+. 2 a ily of items of content.
+code, such as produced by a compiler, and files containing . : : :
+hi 3. The computing device of claim 1, wherein
+higher level code that may he executed by the computer . oe an
+using an interpreter. The program instructions may be the Dhurality ot user interface elements inchs a first ia
+execuled by one or more processors. The described hard- ante ace & ement COMPTISINS a suggested query, an
+ware devices may be configured to act as one or more the operations further comprise:
+software modules in order to perform the operations of the receiving a selection of the first user interface element;
+above-described embodiments, or vice versa. In addition, a and
+non-transitory computer-readable storage medium may be implementing the one or more machine-learned models to
+distributed among computer systems connected through a generale a response Lo the suggested query based on at
+network and compuler-readable codes or program insiruc- least one of the summary description or the plurality of
+tions may be stored and executed in a decentralized manner. items of content.
+In addition, the non-transitory computer-readable storage : 4. ‘The computing device of claim 3, wherein the opera-
+media may also be embodied in at least one application ions further COMPprise providing the user interface a third
+specific integrated circuit (ASIC) or Ficld Programmable Portion to provide for display a dialogue including the
+Gale Array (FPGA). suggested query and the response. | ; ;
+: . . . 5. The computing device of claim 4, wherein the third
+[0181] Bach block of the flowchart illustrations may rep- portion includes a citation user interface element which
+resent a unil, module, segment, or portion of code, which indicales a number of items ef content [rom among the
+comprises one or more executable instructions for imple- plurality of items of content referenced by the one or more
+menting the specified logical function(s). It should also be machine-learned models to generate the response.
+noted that in some alternative implementations, the fune- 6. The computing device of claim 5, wherein the opera-
+tions noted in the blocks may occur out of order. For tions further comprise:
+example, two blocks shown in succession may 11 fact be in response lo receiving a selection of the cilalion user
+executed substantially concurrently (simultaneously) or the interface element, providing, for display in a fourth
+blocks may sometimes be executed in the reverse order, portion of the user interface, content [rom one er more
+depending upon the functionality involved. items of content from among the plurality of items of
+[0182] While the disclosure has been described with content used to generate the response.
+respect to various example embodiments, each example is 7. The computing device of claim 4, wherein the third
+provided by way of explanation, not limitation of the dis- portion includes a note generation user interlace clement,
+closure. Those skilled in the art, upon attaining an under- and
+standing of the foregoing, can readily produce alterations to, the operations further comprise:
+aaa . or an Saquivalents ° such embodiments. Accord in response to receiving a selection of the note generation
+adit sath ease arian eoes nl ede litio ak “the « ik lowed user interface clement, generating a note which
+modifications, variations and/or additions to the disclosed includes content from the suggested query and the
+subject matter as would be readily apparent to one of response, and
+ordinary skill in the art. For example, leatures illustrated or torine tt , f
+described as part of one embodiment can be used with s Oring ne no - : .. .
+another embodiment to yield a still further embodiment. 8. ‘The computing device of claim 1, wherein
+Thus, it is intended that the disclosure covers such altera- the plurality of user interface clements include a first user
+tions, variations, and equivalents. interface element configured to generate a note, and
+
+US 2025/0217626 Al Jul. 3, 2025
+20
+the operations further comprise: 15. The computing device of claim 14, wherein the
+providing the user interface a third portion which includes operations further comprise:
+content from one or more items of content from among, in response to receiving the selection of the citation user
+the plurality of items of content; interface element, providing, for display in the fourth
+receiving a selection of a portion of the content from the portion of the user interface, contextual content about
+one or more items of content from among the plurality the content from the one or more items of content from
+of items of content: among the plurality of items of content used. to generale
+receiving a selection of the first user interface element; the note.
+and. 16. ‘The compuling device of claim 12, wherein the
+in response to reeciving the selection of the portion of the plurality of user interface clements include a first user
+content and the first user interface element, generating, interface element configured to generate new content based
+via the one or more machine-learned models based on on one or more notes, and
+the portion of the content, the note which includes a the operations further comprise:
+summary of the portion of the content. providing the user interface a third portion to provide for
+9. The computing device of claim 1, wherein display a plurality of notes generated via the one or
+the plurality of user interface elements include a first user more machine-learned models based on the plurality of
+interface element configured to add content to an items of content;
+existing, note, and receiving a selection of the plurality of notes;
+the operations further comprise: receiving a selection of the first user interface element;
+providing the user interface a third portion which includes and
+content from one or more items of content from among in response to receiving the selection of the plurality of
+the plurality of items of content; notes and the first user interface clement, generate the
+receiving a selection of a portion of the content from the new content based on the plurality of notes.
+one or more items of content from among the plurality 17. The computing device of claim 1, wherein the opera-
+of items of content: tions further comprise:
+receiving a selection of the first user interface element; generating, via the one or more machine-learned models,
+and a graphical image representing the plurality of items of
+in response to reeciving the selection of the portion of the content; and
+content and the first user interface clement, adding the providing a folder including the graphical image, the
+portion of the content to the existing note. folder storing the plurality of items of content and a
+10. ‘The computing device of claim 1, wherein project file including the summary description.
+the first portion further includes at least one key topic user 18. ‘The compuling device of claim 1, wherein
+interface element comprising at least one key topic the second portion includes a text entry box to receive a
+relating to the summary description of the plurality of query from a user, and
+items of content, and. the operations further comprise:
+the operations further comprise receiving a selection of implementing the one or more machine-learned models to
+the at least one key topic user interface element; and generate a response to the query based on at least one
+implementing the one or more machine-learned models to of the summary description or the plurality of items of
+generate an output relating to the at least one key topic content.
+based on at least one of the summary description or the 19. A computing device for generating content, compris-
+plurality of items of content. ing:
+11. The computing device of claim 10, whercin the one or more memories configured to store instructions;
+operations further comprise providing the user interface a and
+third portion to provide for display a dialogue including the one or more processors configured to execute the instruc-
+key topic and the output relating to the at least one key topic. tions to perform operations, the operations comprising:
+12. The computing device of claim 1, wherein the opera- receiving an input to create a notebook;
+tions further comprise: receiving a selection of a plurality of items of content
+providing the user interface a third portion to provide for to add to the notebook;
+display al least one note generated via the one or more in response to receiving the selection of the plurality of
+machine-learned models based on the plurality of items items of content, implementing one or more
+of content. machine-learned models to generate a summary
+13. The computing device of claim 12, wherein description based on the plurality of items of content
+the third portion includes a citation user interface clement and al least one of a key topic user interface element
+which indicates a number of items of content from indicative of a topic of the plurality of items of
+among the plurality of items of content referenced by content or a selectable user interlace element indica-
+the one or more machine-learned models to generate tive of a query relating to the plurality of items of
+the al least one note. content; and
+14. The computing device of claim 13, wherein the providing a user interface including a first portion and
+operations further comprise: a second portion, the first portion including the
+in response to receiving a selection of the citation user summary description and the second portion includ-
+interface clement, providing, for display in a fourth ing the selectable user interface element.
+portion of the user interface, content from one or more 20. A compuler-implemented method, comprising:
+items of content from among the plurality of items of receiving, by a computing system, an input to create a
+content used to generate the note. notebook:
+
+US 2025/0217626 Al Jul. 3, 2025
+21
+
+receiving, by the computing system, a selection of a
+plurality of items of content to add to the notebook:
+
+in response to receiving the selection of the plurality of
+items of content, implementing, by the computing
+system, one or more machine-learned models to gen-
+erate a summary description based on the plurality of
+items of content and al least one of a key topic user
+interface element indicative of a topic of the plurality of
+items of content or a selectable user interface element
+indicative of a query relating to the plurality of items of
+content; and
+
+providing. by the computing system, a user interface
+including a first portion and a second portion, the first
+portion including the summary description and the
+second portion including the selectable user interface
+element.
+
+se £ F

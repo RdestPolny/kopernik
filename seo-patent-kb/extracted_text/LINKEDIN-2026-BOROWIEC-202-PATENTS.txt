@@ -1,0 +1,157 @@
+Jak pisać treść ekspercką, którąGoogle uznaje zaautorytatywną? Mierzalnesygnały poza E-E-A-T według202 patentów
+Rafał Borowiec
+12 maja 2026
+SEO oparte na patentach Googleʼa
+E-E-A-T toframework oceny, a nie algorytm. Kiedy spojrzymy dopatentów Google, okazuje się, że pod tym pojęciem kryje się dziesiątkikonkretnych,mierzalnych sygnałówi to one decydują, czy Twoja treśćzostanie potraktowana jako autorytatywna. Ten artykuł rozkłada je naczynniki pierwsze, na podstawie 202 patentów przeanalizowanych zbazy Patent Core Digital.
+Tekst pisany jest dla ekspertów SEO. Zakładam, że wiesz, czym jesttopical authority, Knowledge Graph i Passage ranking. Nie tłumaczępodstaw  pokazuję, co konkretnie patenty traktują jakoinputrankingowy, i co z tym zrobić w praktyce content design.
+Strona główna Sieć Praca WiadomościPowiadomienia Ja
+ Dla firm
+Wypróbu1
+1. Dlaczego E-E-A-T to za mało (i conaprawdę liczy się dla algorytmu)
+E-E-A-T jest abstrakcją z Quality Rater Guidelines. Patenty operują napoziomie konkretnych metryk, które można policzyć z indeksu, logówzapytań, profili linków i Knowledge Graph. Z analizy 202 patentówwyłaniają się cztery klasy sygnałów, które działają równolegle do (aczasem zamiast) tradycyjnych wskaźników autorstwa:
+Sygnały encji i grafu  -siła powiązań w Knowledge Graph, gęstośćencji w treści, jakość disambiguation.
+Sygnały treści -information gain, spójność semantyczna,kompletność pokrycia query network, gęstość weryfikowalnychfaktów.
+Sygnały źródła  -autorytet domeny, profil cytowań, historianaruszeń, weryfikacja zewnętrzna, source diversity.
+Sygnały behawioralne  -query-specific CTR, dwell time, brandedsearches, position-normalized engagement.
+W kolejnych sekcjach przejdziemy przez każdą klasę, podając numerpatentu, mechanizm działania i praktyczną implikację dla content design.
+2. Sygnały treści: co algorytm mierzy wsamym tekście
+2.1. Information Gain Score
+PatentUS9317592B1wprowadza pojęcieTopical CoherenceiKey TermProbabilistic Relevance. W praktyce oznacza to, że dokument jestoceniany nie tylko pod kątem trafności, ale tego, czy wnosi atrybutynieobecne w pozostałych top-rankujących dokumentach. Jeśli Twójartykuł procesuje atrybuty, których nie ma w top 10 dla danego query masz mierzalny information gain advantage.
+Praktyczna implementacja
+1. Wyciągnij top 10 wyników dla target query.
+2. Zrób extraction encji, atrybutów i faktów z każdego (np. promptem doClaude/GPT).
+3. Zmapuj coverage matrix: które atrybuty pojawiają się gdzie.
+
+4. Twój artykuł musi pokrywać tabelę plus 3-5 atrybutów, których nie manigdzie  to są Twoje information gain points.
+5. Te brakujące atrybuty oznaczaj wyraźnymi nagłówkami H2/H3  wtedypassage ranking je wychwyci.
+2.2. Cross-Document Factual Consistency
+PatentyUS9619450B2orazUS8954412B1opisują mechanizmFactCorroboration CountiSource Diversity. Fakt potwierdzony przez 5różnych autorytatywnych domen ma wyższą wagę niż ten sam faktpowtórzony 50 razy w jednej domenie. Algorytm liczy, ile niezależnychźródeł potwierdza dany claim.
+Implikacja:nie wystarczy cytować jedno źródło.Jeśli stawiasz tezę„45% użytkowników porzuca koszyk z powodu kosztów dostawy”  daj 3niezależne źródła (Baymard, Statista, własne dane GA4). To nie jest„nadcytowanie”  to budowanie corroboration count, który Google liczy.
+2.3. Content-Data Alignment Score
+PatentUS12073187B2definiujeContent-Data Alignment Scoremierzywierność tekstu względem danych strukturalnych. W praktyce: jeślipiszesz „średnia cena produktu X to 1200 zł”, ale wschema.org/Productmasz „price: 1450”  masz misalignment, który degraduje sygnałyzaufania.
+Z tego patentu wynika jasna rekomendacja: każdy fakt liczbowy w treści,którymożnaosadzić wschema.org, powinien być tam osadzony.Recenzje → Review, kursy → Course, dane techniczne → PropertyValue.Tekst i strukturalne dane muszą sięzazębiać, a nie tylko współistnieć.
+2.4. Semantic Coherence Score
+PatentyUS20240012999A1,US20220067309A1iUS20240135187A1konsekwentnie wskazują naSemantic Coherence Scorejako kluczowysygnał oceny jakości treści AI-generated vs human-written. Wysokakoherencja semantyczna to:
+Spójność leksykalna w obrębie sekcji (kohezja tematyczna).
+Logiczne następstwo argumentów (entailment między zdaniami).
+Stałość terminologii (jedno pojęcie = jeden termin, nie 5synonimów na zmianę).
+Naturalne przejścia między akapitami (kohezja referencyjna).
+Praktyczna konsekwencja:przestań generować treści po jednymakapicie z LLM-a. Generuj całą sekcję w jednym kontekście, żeby modelutrzymał coherence. A jeszcze lepiej  pisz manually, a LLM-emrozszerzaj wybrane fragmenty.
+3. Sygnały encji: dlaczego Knowledge Graphjest podstawą autorytetu
+3.1. Entity Coverage Depth i Entity Group Rarity
+PatentUS9679018B1wprowadza dwie metryki, które warto znać napamięć:
+Document Entity Coverage Depthile unikalnych encji z danejdziedziny pokrywa Twój dokument.
+Entity Group Rarity (IDF)jak rzadkie/specjalistyczne są te encje(im rzadsze, tym wyższa waga).
+Konsekwencja: artykuł o „SEO” pokrywający 12 generycznych encji(Google, ranking, słowa kluczowe…)przegraz artykułem pokrywającym40 specjalistycznych encji (PageRank, Hilltop Algorithm, Topic-SensitivePageRank, Reasonable Surfer Model, NavBoost, RankBrain, NeuralMatching…). Specjalizacja > generyczność.
+3.2. Entity Salience i Content-Entity Alignment
+PatentyUS20190034530A1iUS10102187B2wprowadzająEventSalience ScoreorazContent-Entity Alignment Score. Salience =centralność encji w dokumencie. Algorytm patrzy nie tylko CZY encjawystępuje, ale CZY jest tematem dokumentu, a nie tylko wzmiankąpoboczną.
+Sygnały wysokiej salience dla encji
+• Encja pojawia się w title i H1 (nie tylko w body).
+• Encja występuje w pierwszych 100 słowach.
+• Encja jest podmiotem zdań (nie tylko obiektem).
+• Encja powtarza się z naturalną gęstością w całym dokumencie, nietylko w jednej sekcji.
+• Encja jest powiązana z innymi encjami tej samej kategorii (co-occurrence sygnalizuje topical depth).
+3.3. Verified Entity Status i Entity Disambiguation
+PatentUS12197525B2wprowadzaVerified Entity StatusiContent-Entity Association Strength. W praktyce: Twoja organizacja, autor imiejsce powinny mieć weryfikowalne identyfikatory.
+
+Person:sameAs do LinkedIn, ORCID (dla akademickich), GitHub(dla devs), Wikipedia/Wikidata jeśli istnieje.
+Organization:sameAs do Crunchbase, Wikidata, własne profilebranżowe; spójne NAP we wszystkich źródłach.
+Author profile:dedykowana strona /autor/imie-nazwisko z bio, listąpublikacji, certyfikacjami,schema.org/Person.
+4. Sygnały źródła: autorytet wykraczającypoza domain rating
+4.1. Source Authority dla konkretnej encji/tematu
+To kluczowy insight z patentuUS8244689B2Source Authoritativenessfor Entity. Autorytetnie jest globalny. Domena może mieć DR 80, ale dlazapytania o nutraceutyki jej topical authority może być zerowa.
+PatentUS20170093934A1precyzuje:Topical Authority of Source forEntityjest mierzone jako głębokość historii publikacji o danej encji, profillinków z domen o tej samej tematyce oraz performance w GSC dlazapytań związanych z encją.
+Praktyczna konsekwencja:buduj autorytet tematyczny, nie globalny.Lepiej mieć DR 40 i 200 artykułów o jednym wąskim temacie niż DR 70 i50 artykułów rozproszonych po 10 tematach. Patent operuje na poziomietematu, nie domeny.
+4.2. Source Confidence Score i Multi-Source Consensus
+PatentUS10585927B1wprowadzaSource Confidence Scoreagregatrankingu źródła, liczby linków, ruchu i feedbacku użytkowników.Kluczowy mechanizm:Multi-Source Consensusgdy informacja jestpotwierdzona przez wiele wiarygodnych źródeł, jej waga rośnienieliniowo.
+Implikacja dla treści how-to (które są podstawą AI Overviews): jeślipiszesz instrukcję,strukturuj ją zgodnie z konsensusemw top 5autorytatywnych źródłach:  kroki w tej samej kolejności, te sameostrzeżenia. Nie chodzi o kopiowanie, ale o sygnalizowanie algorytmowi,że Twoja treść jest częścią konsensusu, a nie outlierem.
+4.3. Citation Quality i Source Verifiability
+PatentyUS20250103640A1iUS20250103826A1definiująCitationAnchor PotentialiSource Verifiability Score. Treść musi być cytowalna 
+
+czyli zawierać fragmenty, które są zwięzłe, samodzielne i podpisanewiarygodnym źródłem.
+Anatomia cytowalnego fragmentu
+1. Zdanie definicyjne (1-2 zdania, max 40 słów).
+2. Konkretna liczba lub procent (algorytm preferuje claimsweryfikowalne).
+3. Atrybucja inline („według badań X”, „jak pokazują dane Y”).
+4. Link do źródła pierwotnego (nie do agregatora).
+5. Otaczający kontekst, który nie jest niezbędny do zrozumieniafragmentu  żeby fragment był wyrwalny.
+5. Sygnały behawioralne: jak użytkownicypotwierdzają autorytet
+5.1. Position-Normalized CTR i Query-Specific SelectionShare
+PatentUS8788477B1jest absolutnie kluczowy. WprowadzaPosition-Normalized CTRczyli CTR skorygowany o pozycję. Bycie na #3 z CTR18% to wyższy sygnał niż bycie na #1 z CTR 22%, bo średnia dla #3 to~10%, a dla #1 to ~28%.
+MechanizmQuery-Specific Selection Sharemówi, że Google uczy się:dla zapytania Q, który URL użytkownicynajczęściej wybierająpoobejrzeniu SERP. To jest sygnał implicit ranking, niezależny od linków.
+Praktyczna konsekwencja:title i meta description to nie są „SEO tags” to są inputy do algorytmu. Powiedzą algorytmowi, czy Twój contentzasługuje na promocję, niezależnie od backlinków. Pisz je jak copy doreklamy, nie jak metadata.
+5.2. Site Engagement Duration i Authoritative ContentExemption
+PatentUS9195944B1wprowadzaSite Engagement Duration Aggregateagregowany czas zaangażowania per witryna. To długoterminowysygnał: domeny z wysokim engagement utrzymują pozycje nawet przyniższym freshness.
+
+Drugi insight pochodzi z patentuUS20120016870A1:AuthoritativeContent Exemption. Niektóre treści są chronione przed degradacjąwynikającą ze słabych user signals, jeśli mają silne sygnały zewnętrzne:profil backlinków, cytowania w mediach, obecność w Google News,stabilne topowe wyniki dla zapytań brandowych.
+Co to znaczy operacyjnie:jeśli zbudujesz prawdziwy topical authority,jesteś częściowo odporny na chwilowe wahania CTR. Ale dopóki go niezbudujesz, każdy słaby title cię kosztuje.
+5.3. Branded Searches i Brand Mentions
+PatentUS20130055089A1opisujePublisher Semantic Affinity,aUS10832001B2wskazuje na brand mentions (linkless i z linkiem) jakoproxy autorytetu. Co-occurrence patterns marki z topic termsidentyfikują domenę jako authority w danej niszy.
+Mierzenie: GSC → zapytania brandowe + topic ("patent core digital"semantic seo). Wzrost takich zapytań to twardy dowód budowaniaautorytetu tematycznego, niezależny od linków.
+6. Sygnały AI-era: co patenty z 2024-2026wnoszą nowego
+6.1. Human-Likeness Score i Non-Syntheticity Index
+PatentyUS12073189B2(Human-like QualityMetric),US20240012999A1(Human-Likeness Score) iUS12223273B2(Non-Syntheticity Index) to seria sygnałów wprost wycelowanych wdetekcję AI-generated content.
+Mechanizm jest oparty nabacktranslation(Generated Content DetectionProbability wUS20220067309A1) oraz na entailment scoring. Krótko:jeśli generujesz tekst, który po backtranslation jest „zbyt czysty”, „zbytspójny stylistycznie” i pozbawiony osobistych mikrosygnałów  wpadaszw klasyfikator.
+Co dodać do treści, żeby zwiększyć human-likeness
+• Konkretne, niepubliczne dane (z własnych klientów, audytów,eksperymentów).
+• Anegdotyczne mikrokontrprzykłady („u jednego z naszych klientówbyło inaczej, bo...”).
+
+• Niejednorodność rejestru  naprzemienność zdań długich i krótkich,czasem styl mówiony.
+• Konkretne nazwy narzędzi, wersje, daty, nazwiska  nie generyczneodwołania.
+• Opinie wyrażone wprost („uważam, że X”)  LLM-y unikają strongclaims, ludzie nie.
+6.2. Citable Fragment Density (dla AI Overviews)
+PatentUS20250217626A1wprowadzaCitable Fragment Densityilecytowalnych fragmentów na 1000 słów. To jest kluczowa metryka dlawidoczności w AI Overviews i odpowiedziach generatywnych. Googlepreferuje treści z wysoką gęstością wyrwalnych, atrybutywnychfragmentów.
+Konsekwencja dla struktury:pisz Q&A-style nawet wtedy, gdy nie masekcji FAQ. Każde H2/H3 powinno być sformułowane jako pytanie lubodpowiedź na pytanie. Każdy akapit powinien mieć topic sentence, któresamo w sobie jest cytowalne.
+6.3. Source Authority dla LLM Training i GenerativeContext
+PatentyUS20240428015A1iUS20250356223A1potwierdzają, żeGoogle używa zaawansowanych proxy autorytetu źródła nie tylko dorankingu, ale dotreningu modelii selekcji źródeł doSource Authority forGenerative Context. Czyli: Twoje treści mogą zasilać przyszłe modeleGoogle, jeśli mają wystarczające sygnały autorytetu.
+To otwiera nowy wymiar SEO: optymalizacja nie tylko pod ranking, alepodinkluzję w korpusie treningowym i kontekście generatywnym. Wpraktyce  to te same sygnały, ale z wyższym sufitem konsekwencji.
+7. Praktyczny checklist: jak składać treśćekspercką pod patenty
+Poniższa lista to operacyjne tłumaczenie sygnałów z 202 patentów nakonkretne kroki, które wykonujesz przed publikacją artykułueksperckiego.
+Przed pisaniem
+
+1. Mapa query network  wszystkie powiązane zapytania, nie tylkoseed keyword.
+2. Coverage matrix top 10  które encje i atrybuty pokrywają, czegobrakuje.
+3. Lista 5-8 information gain points  atrybutów, których nie ma nigdziew top 10.
+4. Lista źródeł na każdy kluczowy fakt (minimum 3 niezależne dlastatystyk).
+5. Definicja autora  czy ma weryfikowalny profil, sameAs, historiępublikacji w temacie.
+W trakcie pisania
+1. Każdy H2/H3 sformułowany jako pytanie lub odpowiedź (citablefragment).
+2. Każdy akapit z topic sentence w pierwszych 25 słowach.
+3. Każda statystyka z atrybucją inline + linkiem do źródłapierwotnego.
+4. Spójna terminologia  jedno pojęcie, jeden termin (semanticcoherence).
+5. Encje w pierwszych 100 słowach + w title + w H1 (entity salience).
+6. Specjalistyczna terminologia  entity rarity (IDF) działa na Twojąkorzyść.
+Po napisaniu
+1. Schema.org/Article+ Author + Publisher + sameAs dla wszystkichencji.
+2. Audyt fact-data alignment  czy liczby w tekście zgadzają się zeschemą.
+3. Human-likeness pass  minimum 3 anegdoty/case studies,niepubliczne dane.
+4. Title/meta  pisane jak copy reklamowe, nie jak metadata (CTRsignal).
+5. Internal linking do innych artykułów z tej samej topical cluster.
+6. Po publikacji: monitoring GSC dla branded + topic queries (proxytopical authority).
+8. Konkluzja: E-E-A-T jako emergentnawłasność, nie cel
+
+Po przejściu przez 202 patenty widać wyraźny wzorzec:E-E-A-T jestskutkiem, a nie przyczyną. Algorytm nie szuka „eksperckości”  szukakonkretnych sygnałów (information gain, entity coverage, citation quality,brand mentions, citable fragments), które razem konstytuują to, coquality raterzy oceniają jako E-E-A-T.
+Praktyczna konsekwencja dla strategii content design:przestań pytać„czy ta treść jest ekspercka”. Zacznij pytać:
+Co wnosi, czego nie ma w top 10? (information gain)
+Ile rzadkich encji pokrywa? (entity depth)
+Ile fragmentów jest cytowalnych? (fragment density)
+Czy fakty są zazębione ze schemą? (content-data alignment)
+Czy autor jest weryfikowalny? (verified entity status)
+Czy zawiera niepubliczne dane? (human-likeness)
+Każde z tych pytań ma mierzalną odpowiedź.
+I to są właśnie sygnały, które Googlenaprawdęliczy.
+Komentarze
+Polecam
+66·52 komentarze·5 udostępnień na LinkedIn
+Skomentuj Udostępnij
+Dodaj komentarz…
+Najnowsze
+Paweł Wołoszyn• 2.Potrzebujesz pomocy z SEO/GEO/AI? Napisz! 📩 Konsultant SEO20godz.
+Polecam·6Odpowiedz·6 odpowiedzi
+Zobacz poprzednie odpowiedzi
+Maciej Markowski• 2.Local SEO Consultant helping brands grow through Semanti…19godz.
+PolecamOdpowiedz
+Pawel Gontarek• 2.Strategie SEO&PPC. Porozmawiajmy jak zwiększyć Twoją sprzed…20godz.
+No i po co Ty to wrzucasz?Teraz człowiek będzie musiał zarwać nockę,bo przecież nie da się tego nie przeanalizować 😄 Świetna robota! 👏
+Paweł WołoszynJak z nim rozmawiałem to mówi tak "hahahawrzucę im teraz 22 patenty". To było wczoraj. Dziś wrzucił 26patentów. Jutro pewnie zrobi nam update na 30 patentów. Ech.
+Kurde musiałeś co? Ledwo koncze inne patenty a ty wrzucasz następne ...juz wrzucam na rozkminę :D

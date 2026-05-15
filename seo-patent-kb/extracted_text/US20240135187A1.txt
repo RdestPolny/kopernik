@@ -1,0 +1,880 @@
+US 20240135187A1
+as) United States
+a2) Patent Application Publication (10) Pub. No.: US 2024/0135187 Al
+Srinivasan et al. (43) Pub. Date: Apr. 25, 2024
+(54) METHOD FOR TRAINING LARGE Publication Classification
+LANGUAGE MODELS TO PERFORM (51) Int. Cl
+QUERY INTENT CLASSIFICATION ~ GO6N 3 ISOS (2006.01)
+GO6F 16/903 2006.01
+(71) Applicant: Google LLC, Mountain View, CA (US) GOOF 16/93 (2008 al}
+(72) Inventors: Krishna Pragash Srinivasan, Union (52) Oe? (2006.01)
+City, CA (US); Michael Bendersky, - “oe
+Carnartina C y (us). ‘Anupam ¥: CPC... GO6N 3/0895 (2023.01); GO6F 1690335
+Samanta, Mountain View, CA (US); (2019.01); GO6F 1693 C8 Oi: GaBN
+Lingrui Liao, Foster City, CA (US); 3/0455 (2023.01)
+Luca Bertelli, Redwood City, CA (US); (57) ABSTRACT
+Ming-Wei Chang, Redmond, WA (US); Provided. are computing systems, methods, and. platforms
+Iftekhar Naim, San Jose, CA (US), that train query processing models, such as large language
+Siddhartha Brahma, San Tose, CA models, to perform query intent classification tasks by using
+(US); Siamak Shakeri, New York, NY retrieval augmentation and multi-stage distillation. Unla-
+U 8); Mongkun Yu, Redwood City, CA beled training examples of querics may be obtained, and a
+(US): J ohn Nham, l'remont, CA WU 8): set of the training examples may be augmented with addi-
+Karthik Raman, Sunnyvale, CA (US); tional feature annotations to generate augmented training
+Raphael Dominik Hoffmann, Los examples. A first query processing model may annotate the
+Altos, CA (US) retrieval augmented queries to generate inferred labels for
+the augmented training examples. A second query process-
+(21) Appl. No.: 18/491,877 ing model may be trained on the inferred labels, distilling the
+query processing model that was trained. with retrieval
+(22) Filed: Oct. 22, 2023 augmentation into a non-retrieval augmented query process-
+ing model. ‘The second. query processing model may anno-
+eat tate the entire set of unlabeled training examples. Another
+Related U.S. Application Data stage of distillation may train a third query processing model
+(60) Provisional application No. 63/418,151, filed on Oct. using the entire set of unlabeled training examples without
+21, 2022. retrieval augmentation.
+102 700, 1 130
+t
+WW User Computing Device Server Camputing System
+132
+“~ 134
+416 4] Memory Memory 5 136
+ite J
+mn
+120. 440
+f Machine-Learned Model(sy
+122 480 \
+os
+1 150
+Training Computing System
+152
+H 184
+HT ne
+we
+160
+162
+
+Patent Application Publication Apr. 25,2024 Sheet 1 of 5 US 2024/0135187 Al
+fo) au ona 9 R x 3 eS @ Qn
+o mo om ©
+S 8 $88 2 2 e228 28
+a a
+zs
+8 §
+Ee iS] s
+: ai] = & 2
+> 5 3 eo 2
+a men c c Sie
+OG we c = wit
+c ols S o oh) S a
+sf Ofc oO oi a & ray s
+3 | a a a 21a re & %
+alr < 7 Ei £ es
+E& Oo = Oo Oo;d Fon no
+o | 8% & Ws we Gi Ss
+oO rf = oo | @ a =
+ra gy fs) [aq wy mei =
+g |e & ele Qa s
+ela = aia 2he
+5 fa
+wi be
+ao” S
+co) =
+2
+cs cl
+@ <
+Ste ce)
+2 1a ” = 2 Sone
+= arent c
+= |s S o 5 ve)
+oO 18 m4 ihe E oa oo
+wD sis io] rad
+2 8 a 5 @ 3 a
+— — a
+ge = ® ||s Li
+a E =
+5 Ss 1/2
+oO ied —
+ral =
+%
+2 {f/f /
+nN a +2 2 6 N
+o o wee ge N rian]
+= - or = -
+
+Patent Application Publication Apr. 25, 2024 Sheet 2 of 5 US 2024/0135187 Al
+b02
+Een
+s-2 ae
+c &
+Sg
+= oO
+36 a
+Se
+z ewz a6
+< & & > O
+2 SEs
+= aed
+a
+a
+: 2
+° 5
+g
+a
+° co
+bes p a
+BES 4
+& Oo
+S238 v
+. —
+30 ie!)
+9 geo \/ . s iL
+8 BEE 2
+FS ga 5 *
+z 23 g
+a oO
+< a
+ees
+gs 2
+| 9°
+Fa
+' a
+Soda owe
+b 5 £& >
+a a SE 8
+fed
+@ |@
+So
+LY
+a
+Oo
+Nn
+
+Patent Application Publication Apr. 25, 2024 Sheet 3 of 5 US 2024/0135187 Al
+-_&
+om &
+co
+Se
+29
+3?
+z <6
+ond we
+gS
+& =
+Q
+o
+< S
+e
+4 e g
+° bd &
+wy
+See bee ad
+5 a
+2 8 Y
+2 a pea
+2 z 5 ap
+< a nN OQ & ul
+2 G =
+cad a ee
+8 2 5
+= = ied
+= 8
+< 8
+S
+5
+Fa
+8
+8 [a 3
+> c o
+Yo o
+fan} 23
+oo S 2
+& =
+5 con
+a Qa
+Fa <
+for
+O
+cm)
+iO
+N
+
+Patent Application Publication Apr. 25,2024 Sheet 4 of 5 US 2024/0135187 Al
+BN 2 Al
+Din CAH
+Yad Zo DU
+£8 Ses
+“3s
+oa
+22g
+saa
+&S
+_ _ N
+ap Tt on XO ™N
+~es ~ea 2g )
+oye ogo © a9 See
+383 SHG ses
+Seg Oss a ne _)
+es es é ye)
+LL.
+1 Ww
+gee
+oe eg
+Ea Eo
+oe ©
+a"
+Sel
+oo w
+£2
+FE &
+hit
+
+Patent Application Publication Apr. 25,2024 Sheet 5 of 5 US 2024/0135187 Al
+300
+302 Obtain a first plurality of unlabeled training examples, the first plurality of unlabeled
+training examples respectively comprising a first plurality of queries
+304 Augment the first plurality of queries with one or more additional feature
+annotations to generate a first plurality of augmented training examples
+
+306 Process the first plurality of augmented training examples with a first query
+
+processing model to respectively generate a first plurality of inferred labels for the
+first plurality of augmented training examples
+308 Train a second query processing model to predict the first plurality of inferred labels
+for the first plurality of augmented training examples
+Obtain a second plurality of unlabeled training examples, the second plurality of
+310 unlabeled training examples respectively comprising a second plurality of queries,
+each of the second plurality of unlabeled training examples comprising a smaller
+number of features than the first plurality of augmented training examples
+
+312 Process the second plurality of unlabeled training examples with the second query
+
+processing model to respectively generate a second plurality of inferred labels for
+the second plurality of unlabeled training examples
+314 Train a third query processing model to predict the second plurality of inferred
+labels for the second plurality of unlabeled training examples
+
+US 2024/0135187 Al Apr. 25, 2024
+1
+METHOD FOR TRAINING LARGE operations. The operations can include obtaining a first
+LANGUAGE MODELS TO PERFORM plurality of unlabeled training examples, the first plurality of
+QUERY INTENT CLASSIFICATION unlabeled training examples respectively comprising, a first
+plurality of queries. The operations can further include
+RELATED APPLICATIONS augmenting the first plurality of queries with one or more
+[0001] This application claims priority to and the benefit additional feature annotations to generate a first plurality of
+of U.S. Provisional Patent Application No. 63/418,151, aug nented framing exan nples. The operations call further
+which is hereby incorporated by reference in its entirety. include processing the first plurality of augmented tranmng
+examples with a first query processing model to respectively
+FIELD generate a first plurality of inferred labels for the first
+plurality of augmented training examples. ‘he operations
+[0002] The present disclosure relates generally to machine can further include training a second query processing
+learning. More particularly, the present disclosure relates to model to predict the first plurality of inforred labels for the
+computing systems, methods, and platforms that train large first plurality of augmented training examples. The opera-
+language models to perform query intent classification tasks tions can further include obtaining, a second plurality of
+by using retrieval augmentation and multi-stage distillation. unlabeled training examples, the second plurality of unla-
+beled waining examples respectively comprising a second.
+BACKGROUND plurality of queries, each of the second plurality of unlabeled
+[0003] Machine learning is a field of computer science that training examples comprising a smaller number of features
+includes the building and taining (c.g. via application of than the first plurality of augmented training examples. ‘lhe
+one or more learning algorithms) of analytical models that operations can further include processing the second plural-
+are capable of making usctul predictions or inferences on the ity of unlabeled trainmg examples with the second query
+basis of input data. Machine learning is based on the idea processing model to respectively generate a second plurality
+that systems can learn from data, identify patterns, and make of inferred labels for the second plurality of unlabeled
+decisions with minimal human intervention. training examples. The operations can further include train-
+[0004] T.arge language models are machine learning mod- ing a third query processing model to predict the second
+els that are trained on large amounts of data to perform plurality of inferred labels for the second plurality of unla-
+language understanding tasks. For example, large language beled training examples.
+models can be used to perform the task of query intent [0009] According to another example embodiment of the
+classification, where the predicted query intent from a user’s present disclosure, a computecr-implemented method for
+query input into a search engine can change the behavior of cfliciently training query processing models can be per-
+the entire search engine. formed by one or more computing deviees and can include
+[0005] However, scarch queries pose a unique challenge obtaining a first plurality of unlabeled training examples, the
+for large language models because they are short in length first plurality of unlabeled training examples respectively
+and lack nuance or context, which requires more memori- —_ comprising a first plurality of queries. The computer-imple-
+zation and knowledge than other natural language process- mented method can further include augmenting the first
+ing lasks. plurality of queries with one or more additional feature
+[0006] Retrieval augmentation of queries can provide annolations to generale a first plurality of augmented train-
+additional context to the large language model and enable an ing examples. ‘(he computer-implemented method can fur-
+improved query understanding. Retrieval augmentation ther include processing the first plurality of augmented
+improves accuracy but increases latency of large language training examples with a first query processing model to
+models because of the longer inputs that result From it, respectively generate a first plurality of inferred labels for
+which in turn decreases the distillation efficacy. The result is the first plurality of augmented training cxamples. The
+a choice between a more effective language model with a —_ computer-implemented method can further include training
+smaller distillation sct or a lower performing language a second query processing model to predict the first plurality
+model with a larger distillation set; however, a large distil- of inferred labels for the first plurality of augmented training
+lation set is required to train an effective language model and examples. The computer-implemented method can further
+benefit from retrieval augmentation. Therefore, improved include obtaining a second plurality of unlabeled training,
+techniques are desired to enhance the performance of large examples, the second plurality of unlabeled training
+language models on language and query understanding examples respectively comprising a second plurality of
+tasks. queries, each of the second plurality of unlabeled training
+examples comprising a smaller number of features than the
+SUMMARY first plurality of augmented training examples. The com-
+[0007] Aspects and advantages of embodiments of the putcr-implemented method can further include processing
+present disclosure will be set forth in part in the following the second plurality of unlabeled training cxamp les with the
+description, or can be learned from the description, or can be second query processing model to respectively generate a
+leaned through practice of the embodiments. second plurality of inferred labels for the second plurality of
+[0008] According to one example embodiment of the unlabeled training examples. The computer-implemented
+present disclosure, a computing system for efficiently train- method can further include training a third query processing
+ing query processing models can include one or more model to predict the second plurality of inferred labels for
+processors. The computing system can further include oncor __the second plurality of unlabeled. training examples.
+more non-transitory computer-readable media that collec- [0010] According to another cxample embodiment of the
+tively store instructions that, when executed by the one or present disclosure, one or more non-transitory computer-
+more processors, cause the computing system to perform readable media can collectively store a third query process-
+
+US 2024/0135187 Al Apr. 25, 2024
+2
+ing model that has been trained by performance of training DETAILED DESCRIPTION
+operations. The training operations can include obtaining a
+first plurality of unlabeled training examples, the first plu- Overview
+rality of unlabeled training examples respectively font cnn [0019] Generally, the present disclosure is directed to
+furthe ve des ity 0 aoe the fi it shnalite orate TONS vit h computing systems, methods, and platforms that train query
+urmer wen “dite tek Nes vies i ° ee, ‘hy t processing models, such as large language models or other
+vite ah ny of weeny 4 ure annola vmnpl ° ihe eaars sequence processing models such as vision-language mod-
+pia ity oe a ane ee exanip th fi © vette els, to perform query intent classification tasks by using
+aeons od url ser Ine wl eawith a fh e Lirst plurality retrieval augmentation and multi-stage distillation. Retrieval
+° oohode alt te training i amp cs Marae ‘ st ine interned augmentation of the queries improves large language model
+ib ast €. . Teer cling, i vera ad, Ural ity olin vole. performance by providing models with the additional con-
+The for the first plurality rm wher tac enn oxamp nd text necessary fo enable an improved understanding of the
+c traiming oP’ Set act edict ‘th ot a a litt f search query. In particular, one example compuling system
+toe Piebole fry the fi te Pee re rst eed te ity 0 can use retrieval augmentation by concalenaling a search
+inferred labels for the first plurality of augmented training query with the title and URL of the retrieved decument.
+examples. The training operations can further include a : :
+we : ws [9020] The computing system can train a query processing
+obtaining a second plurality of unlabeled. training examples, ~ et
+. model (e.g., a large language model, vision-language model,
+the second plurality of unlabeled training, examples respec- ; . a ays :
+: - . ~ . other sequence processing model, etc.) with retrieval aug-
+tively comprising a second plurality of queries, each of the : js ee : : an
+A oe mentation of the queries. ‘The retrieval augmentation results
+second plurality of unlabeled training examples comprising : : ; .. varpast cess ae a
+~ ~ : in longer inpuls, which decreases the distillation ellicacy,
+a smaller number of features than the first plurality of " Iti distillati be used by tt
+mented training cxamples. The training operations can thus a multi-stage distillation process call be us y the
+augmen! & cxampics. S Oper: proposed system to distill the trained model and improve the
+further inchide processing the second plurality of unlabeled _ . . wae . .
+_ . performance of query intent prediction. Therefore, by using
+training cxamples with the second query processing model . satay oat a
+; ann the multi-stage distillation process, the benefits of retrieval
+to respectively generate a second plurality of inferred labels A - on A
+5 .. augmentation can be realized without sutfering the increased
+for the second plurality of unlabeled training examples. The . . . “
+. : a : compute time that is generally associated with retrieval
+training, operations can further include training the third .
+: : : augmentation.
+query processing model to predict the second plurality of . .
+inferred labels for the second plurality of unlabeled training [0021] In one example. the multi-stage process can
+include two stages. During the first stage of distillation, the
+examples. proposed system can distill the query processing model that
+[0011] ‘These and other leatures, aspects, and advantages : if . : aan :
+- : : : . was trained with retrieval augmentation into a non-retrieval
+of various embodiments of the present disclosure will ‘ .
+. . * augmented query processing model (e.g., a non-retrieval
+become better understood with reference to the following . :
+we . - augmented large language model) by using a small set of
+description and appended claims. The accompanying draw- nar ae . .
+. . . : . nae training data. In this stage, a small subset of unlabeled data
+ings, which are incorporated in and constitute a part of this . ; ean vs
+. ao : can be used lo train a second query processing model (e.z.,
+specification, illustrate example embodiments of the present 7 ones : "
+4 ae a second large language model). Training a large language
+disclosure and, together with the description, serve to ie eal =
+. - model with a small subset of unlabeled data performs better
+explain the related principles. oe G a
+than training a large language model without retrieval aug-
+BRIEF DESCRIPTION OF THE DRAWINGS mentation directly on human data and results in more
+efficient distillation of the model. Thus, a non-retricval
+[0012] Detailed discussion of implementations directed to augmented query processing model can be trained to benefit
+one of ordinary skill in the art is set forth in the specification, from the gains of retrieval augmentation, without the
+which makes reference to the appended figures, in which: increased cost of retrieval augmentation, by using, this
+[0013] FIG. 1A depicts a block diagram of an example approach. The resulting query processing model can then be
+computing, system that performs training query processing, used in the second. stage of distillation.
+models according to example embodiments of the present [0022] During the sccond stage of distillation, the pro-
+disclosure. - . . posed system can distill the second query processing model
+[0014] PIG. 1B depicts a block diagram of an example into a smaller query processing model (c.g., a smaller large
+computing device thal perlorms training query processing language model) using a large set of training, data without
+models according to example embodiments of the present retrieval augmentation. The full unlabeled data set can be
+disclosure. used in this stage. The second query processing, model can
+[0015] FIG. 1C depicts a block diagram of an example amnolate the entire unlabeled data set, rather (han a small
+computing device that performs training query processing subset of the unlabeled data set, which can be used to train
+models according to example embodiments of the present a third query processing model (e.g., a third large language
+disclosure. model). ‘Lhe resulting query processing model can then be
+[0016] FIG. 2 depicts a block diagram of an example of used in practical applications, such as for online use.
+(raining query processing models according to example [0023] In another aspect, the computing system can use
+implementations of the present disclosure. the proposed retrieval augmentation and multi-stage distil-
+[0017] FIG. 3 depicts a flow chart diagram of an example lation process to perform any query understanding task,
+method to perform training query processing models accord- including query intent classification, Query intent classifi-
+ing, to example embodiments of the present disclosure. cation, for example, needs language models that are fast
+[0018] Reference numerals that are repeated across plural (.c., low latency) and high cflicacy, thus the proposed
+figures are intended to identify the same features in various system can improve the query intent task. Other query
+implementations. understanding tasks can benefit from the proposed system
+
+US 2024/0135187 Al Apr. 25, 2024
+3
+
+because it enables the use of retrieval augmentation to the machine-learned models 120 and 140 can be both trained
+improve query understanding while reducing the computing and used locally at the user computing device 102. In some
+resources for retrieval augmentation, resulting in production of such implementations, the user computing device 102 can
+language models that are real-world capable and that can be implement the model trainer 160 to personalize the machine-
+used in various applications. learned models 120 based on user-specific data.
+[0024] Another aspect of the present disclosure is directed [0030] ‘The user computing device 102 can be any type of
+to identifying queries wilh a specific intent, for example in compuling device, such as, for example, a personal com-
+the context of e-commerce. In particular, human-labeled puting device (e.g., laptop or desktop), a mobile computing
+data can be accompanied by a large unlabeled data set for the device (e.g., smartphone or tablet), a gaming console or
+proposed system to use for knowledge distillation. controller, a wearable computing device, an embedded com-
+[0025] In another aspect, the proposed system can use a puting device, or any other type of computing device.
+data set that is human-labeled and contains queries labeled [0031] The user computing device 102 includes one or
+with one or more intent classes from among a sct of multiple more processors 112 and a memory 114. The one or more
+intent classes. processors 112 can be any suitable processing device (e.g.,
+[0026] The systems and methods of the present disclosure a processor core, a microprocessor, an ASIC, an FPGA, a
+provide a number of technical effects and benefits. As one controller, a microcontroller, etc.) and can be one processor
+example, various computing systems and applications would or a plurality of processors thal are operatively connected.
+benefit from an improvement in the performance of large ‘The memory 114 can include one or more non-transitory
+language models on language and query understanding computer-readable storage media, such as RAM, ROM,
+tasks. ‘Ihe proposed system provides value because the EEPROM, EPROM, flash memory devices, magnetic disks,
+increase in the complexity of large language model infer- etc., and combinations thereof. The memory 114 can store
+ence that normally occurs when using retrieval augmenta- data 116 and instructions 118 which are executed by the
+tion is reduced, with no loss in performance and a decrease processor 112 to cause the user computing device 102 to
+in computing time. Without the setbacks of retrieval aug- perform operations.
+mentation, large language models trained with the proposed [0032] In some implementations, the user computing
+system can retain the performance gains of retrieval aug- device 102 can store or include one or more machine-
+mentation on query understanding tasks, making these large leamed models 120. Vor example, the machine-leamed
+language models practical for online use or other applica- models 120 can be or can otherwise include various
+tions. Thus, the proposed systems improve the functionality machine-learned models such as neural networks (e.g., deep
+of a computer for various tasks. . neural networks) or other types of machine-Iearned models,
+[0027] As another example technical effect and benefit, including non-linear models and/or lincar models. Neural
+the computing resources used for query understanding tasks networks can include feed-forward neural networks, recur-
+are reduced when using retrieval augmentation and multi- rent neural networks (¢.g., long short-term memory recur-
+slage distillation. Retrieval augmentation of a data sel uses rent neural networks), convolutional neural networks or
+many computing resources. Tor example, using retrieval other forms of neural networks. Some example machine-
+augmentation to improve query understanding on an entire learned models can leverage an attention mechanism such as
+data set with millions of examples uses many computing self-atlention. For example, some example machine-learned.
+resources. However, using retrieval augmentation on a sub- models can include multi-headed sel {-atlention models (e.g.,
+set of the data set (i.c., a smaller data set) uses less transformer models). Example machine-learned models 120
+computing resources. Thus, training a large language model are discussed with reference to MIG. 2.
+with a retrieval augmented subset of the data set saves [0033] In some implementations, the one or more
+considerable computing FOSOUTCCS. Furthermore, a large machine-learned models 120 can be received from the server
+language model trained with the retrieval augmented subset computing system 130 over network 180, stored in the user
+of the data set can then be distilled into a smaller large computing device memory 114, and then used or otherwise
+language model using. the entire training data without implemented by the one or more processors 112. In some
+retrieval augmentation. Therefore, a resulling, large language implementations, the user computing, device 102 can imple-
+model can be obtained with the benefit of retrieval augmien- ment multiple parallel instances of a single machine-learned
+tation and without the increased computing resources of model 120 (e.g., to perform parallel retrieval augmentation
+using retrieval augmentation on the enlire data set. . and multi-stage distillation across multiple instances).
+[0028] With reference now fo the Tigures, example imple- [0034] Additionally, or alternatively, one or more
+mentations of the present disclosure will be discussed in machine-learned models 140 can be inchided in or otherwise
+grealer detail. stored and implemented by the server computing system 130
+
+. that communicates with the user computing device 102
+
+Example Devices and Systems . . ye . .
+according to a client-server relationship. For example, the
+
+[0029] TIG. 1A depicts a block diagram of an example machine-learned models 140 can be implemented by the
+computing, system 100 that performs training query process- server computing, system 130 as a portion of a web service.
+ing models according to example embodiments of the pres- Thus, one or more machine-learned models 120 can be
+ent disclosure. The computing system 100 includes a user stored and implemented. al the user compuling device 102
+computing device 102, a server computing system 130, and and/or one er more machine-learned. models 140 can be
+a training compuling system 150 that are communicatively stored and implemented al the server computing system 130.
+coupled over a network 180. Other computing systems can [0035] The user computing device 102 can also include
+be used as well. For example, in some implementations, the one or more user input components 122 that receives user
+user computing device 102 can include the model trainer input. For example, the user input component 122 can be a
+160 and the training dataset 162. In such implementations, touch-sensitive component (e.g., a touch-sensitive display
+
+US 2024/0135187 Al Apr. 25, 2024
+4
+screen or a touch pad) that is sensitive to the touch of a user [0041] The training computing system 150 can include a
+input object (¢.g., a finger or a stylus). The touch-sensitive model traincr 160 that trains the machine-learned models
+component can serve to implement a virtual keyboard. Other 120 and/or 140 stored at the user computing device 102
+example user input components include a microphone, a and/or the server computing, system 130 using various
+traditional keyboard, or other means by which a user can training or learning techniques, such as, for example, back-
+provide user input. wards propagation of errors. For example, a loss function
+[0036] The server computing system 130 includes one or can be backpropagated through the model(s) to update one
+more processors 132 and a memory 134. The one or more —«© More parameters of the model(s) (¢.g., based on a gradient
+processors 132 can be any suitable processing device (e.g., of the loss function). Various loss functions can be used such
+a processor core, a microprocessor, an ASIC, an FPGA, a as mean squared error, likelihood loss, cross entropy loss,
+controller, a microcontroller, ete.) and can be one processor hinge loss, and/or various other loss functions. Gradient
+or a plurality of processors that are operatively connected. descent techniques can be used to iteratively update the
+The memory 134 can include one or more non-transitory parameters over a number of training iterations.
+computer-readable storage media, such as RAM, ROM, [9042] In some implementations, performing backwards
+EEPROM, EPROM, flash memory devices, magnetic disks, propagation of errors can include performing truncated
+etc., and combinations thereof. ‘the memory 134 can store backpropagation through time. ‘he model trainer 160 can
+data 136 and instructions 138 which are execuled by the perlorm a number of generalization techniques (e.g., weight
+processor 132 to cause the server computing system 130 to decays, dropouts, etc.) to improve the generalization capa-
+perform operations. bility of the models being trained.
+[0037] In some implementations, the server computing [0043] In particular, the model trainer 160 can train the
+system 130 includes or is otherwise implemented by one or machine-learned models 120 and/or 140 based on a set of
+more server computing devices. In instances in which the training data 162. The training data 162 can include, for
+server computing system 130 includes plural server com- example, quer ies of search terms and other query input such
+puting devices, such server computing devices can operate as queries input into a search engine.
+according to sequential computing architectures, parallel [0044] In some implementations, if the user has provided
+computing architectures, or some combination thereof. consent, the training examples can be provided by the user
+[0038] As described above, the server computing system computing device 102. ‘Thus, in such implementations, the
+130 can store or otherwise include one or more machine- machine-lcarned model 120 provided to the user computing
+learned models 140. For example, the machine-learned device 102 can be trained by the training computing system
+models 140 can be or can otherwise include various 150, on user-specific data received from the user computing
+machine-leamed models. Example machine-learned models device 102. Tn some instances, this process can be referred
+include neural networks or other multilayer nonlinear © 48 personalizing the model.
+models, Example neural networks include feed forward [0045] The model trainer 160 includes computer logic
+neural networks, decp neural networks, recurrent neural utilized to provide desired functionality. The medel trainer
+networks, and convolutional neural networks. Some 160 can be implemented in hardware, firmware, and/or
+example machine-learned models can leverage an attention sofiware controlling a general purpose processor. For
+mechanism such as self-attention. For example, some example, im some implementations, the model trainer 160
+example machine-learned models can include multi-headed includes program files stored on a storage device, loaded
+self-attention models (e.g., transformer models). Example into a memory and executed by one or more processors. In
+machine-learned models 140 are discussed with reference to other implementations, the model trainer 160 includes one
+FIG. 2. or more sets of computer-cxecutable instructions that are
+[0039] The user computing, device 102 and/or the server stored in a tangible computer-rcadable storage medium such
+compuling system 130 can train the machine-learned models as RAM, hard disk, or optical or magnetic media.
+120 and/or 140 via interaction with the training computing [0046] The network 180 can be any type of communica-
+system 150 that is communicatively coupled over the net- tions network, such as a local area network (e.g., intranet),
+work 180. The traming computing system 150 can be wide area network (c.g., Internet), or some combination
+separate from the server computing system 130 or can be a thereof and can include any number of wired or wireless
+portion of the server computing system 130. links. In general, communication over the network 180 can
+[0040] The training computing system 150 includes one or be carried via any type of wired andor wi reless connection,
+more processors 152 and a memory 154. The one or more using a wie vanety of communication protocols (eg.
+R i . TCP/IP, IITTP, SMTP, 'TP), encodings or formats (e.g.,
+processors 152 can be any suitable processing device (e.g., ns ; : hi VPN
+a processor core, a microprocessor, an ASIC, an FPGA, a HIML, XML), and/or protection schemes (e.g, VPN,
+: secure HTP, SSL).
+controller, a microcontroller, etc.) and can be one processor . . .
+or a plurality of processors that are operatively connected. [0047] , Mc. 1B depicts a block diagram of an example
+The memory 154 can include one or more non-transitory computing device 200 that performs training query process-
+computer-readable storage media, such as RAM, ROM, ing models according to example embodiments of the pres-
+CEPROM, EPROM, flash memory devices, magnetic disks, cnt disclosure. The conrputing device 200 can be a user
+etc., and combinations thereof. ‘he memory 154 can store computing device or a server computing device.
+data 156 and instructions 158 which are executed by the [0048] ‘The computing device 200 includes a number of
+processor 152 to cause the training computing system 150 to applications (c.g., applications 1 through N). Each applica-
+perform operations. In some implementations, the training tion contains its own machine learning library and machine-
+computing system 150 includes or is otherwise implemented learned model(s). For example, cach application can include
+by one or more server computing devices. a machine-learned model. Example applications include a
+
+US 2024/0135187 Al Apr. 25, 2024
+5
+text messaging application, an email application, a dictation (e.g., an alteration of the image data, etc.). As another
+application, a virtual keyboard application, a browser appli- example, the machine-learned model(s) can process the
+cation, etc. image data to generate an encoded image data output (e.g.,
+[0049] As illustrated in FIG. 1B, each application can an encoded and/or compressed representation of the image
+communicate with a number of other components of the data, etc.). As another example, the machine-learned model
+computing device, such as, for example, one or more sen- (s) can process the image data to generate an upscaled image
+sors, a context manager, a device state component, and/or data output. As another example, the machine-learned model
+additional components. In some implementations, each (s) can process the image data to generate a prediction
+application can communicate with each device component output.
+using an APT (e.g., a public APT). In some implementations, [0056] In some implementations, the input to the machine-
+the APT used by each application is specific to that applica- learned model(s) of the present disclosure can be text or
+tion. natural language data. The machine-learned model(s) can
+[0050] FIG. 1C depicts a block diagram of an example process the text or natural language data to generate an
+computing, device 250 that performs training query process- output. As an example, the machine-learned model(s) can
+ing, models according to example embodiments of the pres- process the natural language data to generate a language
+ent disclosure. The computing device 250 can be a user encoding output. As another example, the machine-learned
+computing device or 4 server computing device. model(s) can process the text or natural language data to
+[0051] ‘Lhe computing device 250 includes a number of generate a latent text embedding output. As another
+applications (e.g., applications 1 through N). Each applica- example, the machine-learned model(s) can process the text
+tion is in communication with a central intelligence layer. or natural language data to gencrate a translation output. As
+Example applications include a text messaging application, another example, the machine-learned model(s) can process
+an email application, a dictation application, a virtual key- the text or natural language data to generate a classification
+board application, a browser application, etc. In some imple- output. As another example, the machine-learned model(s)
+mentations, each application can communicate with the can process the text or natural language data to generate a
+central intelligence layer (and model(s) stored therein) using, textual segmentation output. As another example, the
+an API (e.g., a common APT across all applications). machine-learned model(s) can process the text or natural
+[0052] ‘The central intelligence layer includes a number of language data to generale a semantic intent outpul. As
+machine-learned models. For example, as illustrated in FIG. another example, the machine-learned model(s) can process
+1C, a respective machine-learned model can be provided for the lext or natural language data lo generate an upscaled text
+cach application and managed by the central intelligence or natural language output (c.g., text or natural language data
+layer. In other implementations, two or more applications that is higher quality than the input text or natural language,
+can share a single qnachine-learned model. For example, in ete.). As another example. the machine-learned models) can
+some implementations, the central intelligence layer can process the text or natural language data to generate a
+provide a single model for all of the applications. In some prediction output.
+implementations, the central intelligence layer is included [0057] In some implementations, the input to the machine-
+within or otherwise implemented by an operating system of learned model(s) of the present disclosure can be speech
+the compuling device 250. data. he machine-learned model(s) can process the speech
+[0053] The central intelligence layer can communicate data to generale an outpul. As an example, the machine-
+with a central device data layer. ‘he central device data layer learned model(s) can process the speech data to generate a
+can be a centralized repository of data for the computing speech recognition output. As another cxample, the
+device 250. As illustrated in FIG. 1C, the central device data machine-learned model(s) can process the speech data to
+layer can communicate with a number of other components generate a speech translation output. As another example,
+of the computing device, such as, for example, one or more the machine-learned model(s) can process the speech data to
+sensors, a context manager, a device state component, and/or generate a latent embedding output. As another example, the
+additional components. In some implementations, the cen- machine-learned model(s) can process the speech data to
+tral device data layer can communicate with each device generate an encoded speech output (e.g., an encoded and/or
+component using an API (¢.g., a private API). compressed representation of the speech dala, etc.). As
+[0054] The machine-learned models described in this another example, the machine-learned model(s) can process
+specification may be used in a variety of tasks, applications, the speech data to generate an upscaled speech output (e.g.,
+and/or use cases. speech data that is higher quality than the inpul speech data,
+[0055] In some implementations, the input to the machine- etc.), As another example, the machine-learned model(s) can
+learned model(s) of the present disclosure can be image data. process the specch data to generate a textual representation
+The machine-learned model(s) can process the image datato —«©utput (¢.g., a textual representation of the input speech data,
+generate an output. As an example, the machine-learned etc.). As another example, the machine-learned model(s) can
+model(s) can process the image dala to generate an image process the speech data to generate a prediction output.
+recognition output (e.g., a recognition of the image data, a [0058] In some implementations, the input to the machine-
+latent embedding of the image data, an encoded represen- learned model(s) of the present disclosure can be latent
+tation of the image data, a bash of the image data, etc.). As encoding dala (e.g., a latent space representation of an inpul,
+another example, the machine-learned model(s) can process etc.). ‘he machine-learned model(s) can process the latent
+the image data to generale an image segmentation outpul. As encoding dala to generale an outpul. As an example, the
+another example, the machine-learned model(s) can process machine-learned model(s) can process the latent encoding
+the image data to generate an image classification output. As data to generate a recognition output. As another example,
+another example, the machine-learned model(s) can process the machine-learned model(s) can process the latent encod-
+the image data to generate an image data modification output ing data to generate a reconstruction output. As another
+
+US 2024/0135187 Al Apr. 25, 2024
+6
+example, the machine-learned model(s) can process the tiple images, and the image processing output defines, for
+latent encoding data to generate a search output. As another each pixel of one of the input images, a motion of the scene
+example, the machine-learned model(s) can process the depicted at the pixel between the images in the network
+latent encoding data to generate a reclustering output. As input.
+another example, the machine-learned model(s) can process [0062] In some cases, the inpul includes audio dala rep-
+the latent encoding data to generate a prediction output. resenting a spoken utterance and the task is a speech
+[0059] In some implementations, the iput to the machine- recognition task. The output may comprise a text output
+learned model(s) of the present disclosure can be statistical which is mapped to the spoken utterance. In some cases, the
+data. Statistical data can be, represent, or otherwise include task comprises encrypting or decrypting input data. In some
+data computed and/or calculated from some other data eases, the task comprises a microprocessor performance
+source. The machine-learned model(s) can process the sta- task, such as branch prediction or memory address transla-
+tistical data to generate an output. As an example, the tion.
+machine-learned model(s) can process the statistical data to
+generate a recognition output. As another example, the Lxample Multi-Stage Distillation
+machine-leamed model(s) can process the statistical dala to
+generale a prediction output. As another example, the [0063] FIG. 2 depicts a block diagram of an example of
+machine-leamed model(s) can process the statistical dala to multi-stage distillation for training query processing models
+generate a classification output. As another example, the according to example embodiments of the present disclo-
+machine-learned model(s) can process the statistical data to sure. In some implementations, the example mulli-stage
+generate a segmentation output. As another example, the distillation illustrated in FIG. 2 can receive a first plurality
+machine-learned model(s) can process the statistical data to of training examples 10. ‘The training examples 10 may be
+generate a visualization output. As another example, the 2 unlabeled sct of training examples. In at least one
+machine-learned model(s) can process the statistical data to implementation, the unlabeled training cxamples in training
+generate a diagnostic output. examples 10 may comprise a plurality of search queries. In
+[0060] Insome implementations, the input to the machine- one or more imp Iementations, training cxamples 10 may be
+learned model(s) of the present disclosure can be sensor used to train query Processing, models (e-8. large language
+data. ‘he machine-learned. model(s) can process the sensor models) on query intent classification tasks.
+data to generate an output. As an example, the machinc- [0064] The queries in training examples 10 may be aug-
+learned model(s) can process the sensor data to generate a mented with one or more additional feature annotations to
+recognition output. As another example, the machine- generate augmented training examples 12. For example,
+learned model(s) can process the sensor data to generate a augmented training examples 12 may include the queries in
+prediction output. As another example, the machine-learned training examples 10 augmented with the titles of documents
+model(s) can process the sensor data to generate a classifi- retrieved for the queries or the URLs of documents retrieved
+cation output. As another example, the machine-learned for the queries. For instance, the titles of the documents or
+model(s) can process the sensor data lo generale a segmen- the URLs of the documents can be concatenated with a
+tation output. As another example, the machine-learned query, and the query can be used as an input to a query
+model(s) can process the sensor dala to generate a visual- processing model. For example, for a query of “ua 1234,” it
+ization output. As another example, the machine-learned may not be immediately apparent what they query is asking,
+model(s) can process the sensor data to generate a diagnostic however, the retrieved documents for the query can provide
+output. As another example, the machine-learned model(s) additional context that allaws a model to determine that the
+can process the sensor data to generate a detection output. query is seeking information about a United Airlines flight.
+[0061] In some cases, the input includes visual data and [0065] A first query processing model 14 (c.g.. a first large
+the task is a computer vision task. In some cases, the input language model) may be used to annotate a data set com-
+includes pixel data for one or more images and the task is an prising the augmented training examples 12. For instance,
+image processing task. For example, the image processing the first query processing model 14 may process the aug-
+task can be image classification, where the output is a set of mented training examples 12 to generate inferred labels 16
+scores, each score corresponding to a dillerent object class for the augmented training examples 12. Thus, the first query
+and representing the likelihood that the one or more images processing model 14 may infer labels for the unlabeled
+depict an object belonging to the object class. ‘The image training examples 10 that have been augmented in aug-
+processing task may be object detection, where the image mented training examples 12 to generale inferred. labels 16
+processing output identifics one or more regions in the one for another model to train on.
+or more images and, for each region, a likelihood that region [0066] The first query processing model 14 may be dis-
+depicts an object of interest. As another cxample, the image tilled into a second query processing model 18 (c.g., a
+processing task can he image segmentation, where the image second large language model). For instance, the second
+processing output defines, for each pixel in the one or more query processing model 18 may be trained to predict the
+images, a respective likelihood for each category in a inferred labels 16 for the augmented training examples 12.
+predetermined set of categories. lor example, the set of ‘The second. query processing model 18 may be trained on
+categories can be foreground and background. As another the first set of training examples 10 and the inferred labels
+example, the set of categories can be object classes. As 16 so the second query processing model 18 can learn to
+another example, the image processing task can be depth predict the inferred labels 16. ‘Thus, the second query
+estimation, where the image processing output defines, for processing model 18 can be trained to benefit from the gains
+each pixel in the one or more images, a respective depth of retrieval augmentation. In order to train the second query
+valuc. As another example, the image processing task can be processing model 18, the training examples 10 may not be
+motion estimation, where the network input includes mul- augmented.
+
+US 2024/0135187 Al Apr. 25, 2024
+7
+[0067] A second set of training examples 20 may be some examples, the computing system obtains a first plu-
+obtained for use in another stage of distillation. The second rality of labeled training examples, the first plurality of
+set of training examples 20 may be an unlabeled set of labeled training examples respectively comprising a first
+training, examples. In at least one implementation, the unla- plurality of queries. The first plurality of labeled training
+beled training examples in training, examples 20 may com- examples are labeled with a query intent class in some
+prise a plurality of search queries. In at least one implemen- examples.
+tation, the second set of training examples 20 may be larger [0073] At 304, the computing system augments the first
+than the first set of training examples 10. ‘lhe training plurality of queries with one or more additional feature
+examples 20 may not be augmented with one or more annotations to generate a first plurality of augmented train-
+additional feature annotations. Thus, training cxamples 20 ing examples. In some implementations, the one or more
+may contain a smaller number of feature annotations than additional feature annotations comprises URLs of docu-
+the augmented training examples 12. ments retrieved for the first plurality of queries. In another
+[0068] The second query processing model 18 may be example, the one or more additional feature annotations
+used to annotate a data set comprising the second set of comprises titles of documents retrieved for the first plurality
+training, examples 20. For instance, the second query pro- of queries.
+cessing, model 18 may process the training examples 20 to [0074] At 306, the computing, system processes the first
+generale a second set of inferred labels 22 for the training plurality of augmented. training examples with a first query
+examples 20. Thus, the second query processing, model 18 processing model to respectively generate a first plurality of
+may infer labels lor the unlabeled training examples 20 that interred labels for the first plurality of augmented. training
+have not been augmented to generate inferred labels 22 for examples.
+another model to train on. In at least one implementation, the [0075] At 308, the computing system trains a second
+second set of training examples 20 may be larger than the query processing model to predict the first plurality of
+first sect of training cxamples 10. Thus, the second query inferred labels for the first plurality of augmented training
+processing model 18 may annotate an entire unlabeled data examples. In some implementations, training the second
+set. query processing model to predict the first plurality of
+[0069] The second query processing model 18 may be inferred labels for the first plurality of augmented training
+distilled into a third query processing, model 24 (e.g... a third examples comprises training the second query processing
+large language model). For instance, the third query pro- model to predict the first plurality of inferred labels based on
+cessing model 24 may be trained to predict the second set of the first plurality of queries exclusive of the one or more
+inferred labels 22 for the second set of training examples 20. additional feature annotations. In some examples, the second
+‘The third query processing model 24 may be trained on the query processing model has the same number of parameters
+second set of training examples 20 and the second set of as the first query processing model.
+inferred labels 22 so the third query processing model 24 can [0076] At 310, the computing system obtains a second
+learn to predict the interred labels 22. plurality of unlabeled training examples, the second plural-
+[0070] In at least one implementation, the second set of ity of unlabeled training examples respectively comprising a
+(raining examples 20 may be larger than the first set of second plurality of queries, each of the second plurality of
+(raining examples 10. Thus, the second query processing unlabeled training examples comprising a smaller number of
+model 18 can be distilled into the third query processing features than the first plurality of augmented training
+model 24 using a large data sct. The second query processing examples. In some implementations, the second plurality of
+model 18, distilled from the retricval-augmented first query unlabeled training, examples is a larger number of training
+processing model 14, generated the second set of inferred examples than the first plurality of unlabeled training
+labels 22 for training the third query processing model 24. examples.
+Thus, the third query processing, model 24 can be trained to [0077] At312, the computing system processes the second
+benefit from the gains of retrieval augmentation while being plurality of unlabeled training examples with the second
+smaller than the first query processing model 14 and the query processing, model to respectively generate a second
+second query processing model 18 and using a larger set of plurality of inferred. labels lor the second plurality of unla-
+training examples. beled training examples.
+[0078] At 314, the computing system trains a third query
+
+Example Methods processing model to predict the second plurality of inferred
+[0071] TG. 3 depicts a Mow chart diagram of an example labels for the second plurality of unlabeled training
+method to perform training query processing models accord- examples. Tn some implementations, the third query pro-
+. : . : ' Sere cessing model has a smaller number of parameters than the
+ing to example embodiments of the present disclosure. :
+Although TIG. 3 depicts steps performed in a particular second query processing model.
+order for purposes ot illustration and discussion, the meth- Additional Disclosure
+ods of the present disclosure are not limited to the parlicu-
+larly illustrated order or arrangement. The various steps of [0079] The technology discussed herein makes reference
+the method 300 can be omitted, rearranged, combined, to servers, databases, soltware applications, and other com-
+and/or adapted in various ways without deviating from the puter-based systems, as well as actions laken and informa-
+scope of the present disclosure. tion sent to and from such systems. ‘The inherent flexibility
+[0072] At 302, a computing system obtains a first plurality of computer-based systems allows for a greal variety of
+of unlabeled training cxamples, the first plurality of unla- possible configurations, combinations, and divisions of tasks
+beled training examples respectively comprising a first plu- and functionality between and among components. For
+rality of queries. In some implementations, the first plurality instance, processes discussed herein can be implemented
+of queries comprises queries of technical terminologies. In using a single device or component or multiple devices or
+
+US 2024/0135187 Al Apr. 25, 2024
+8
+components working in combination. Databases and appli- predict the first plurality of inferred labels for the first
+cations can be implemented on a single system or distributed plurality of augmented training examples comprises training
+across multiple systems. Distributed components can oper- the second query processing model to predict the first
+ate sequentially or in parallel. plurality of inferred labels based on the first plurality of
+[0080] While the present subject matter has been queries exclusive of the one or more additional feature
+described in detail with respect to various specific example annotations.
+embodiments thereof, each example is provided by way of 6. The computer-implemented method of claim 1,
+explanation, not limitation of the disclosure. ‘hose skilled in wherein the second query processing model comprises a
+the art, upon allaining an understanding of the loregoing, same number of parameters as the first query processing
+can readily prochice alterations to. variations of, and equiva- model.
+lents to such embodiments. Accordingly, the subject disclo- 7. The computer-implemented method of claim 1,
+sure docs not preelude inclusion of such modifications, wherein the second plurality of unlabeled training examples
+variations and/ or additions to the prescit subject matter as comprises a larger number of training examples than the first
+would be readily apparent to one of ordinary skill in the art. plurality of unlabeled training examples.
+For instance, features illustrated or described as part of one : :
+. . : : 8. The computer-implemented method of claim 1,
+embodiment can be used with another embodiment to yield | : : i, : .
+. ; a - wherein the third query processing model comprises a
+a still further embodiment. Thus, it is intended that the . ae
+: : ner smaller number of parameters than the second query pro-
+present disclosure cover such alterations, variations, and ct del
+equivalents cessing, Mowe".
+. : : 9. The computer-implemented method of claim 1, further
+What is claimed is: - ra . a
+_ . comprising obtaining a first plurality of labeled training
+1. A computer-implemented method for training query : so
+. . examples, the first plurality of labeled training examples
+processing models, the method performed by one or more . a i : - 5
+. . a. respectively comprising a first plurality of queries.
+computing devices and comprising: 10. Th imp 4 hod of claim 9
+obtaining a first plurality of unlabeled training examples, A . h, fect van 4 method of ¢ von ;
+the first plurality of unlabeled training examples wherein the first plurality of labeled training examples are
+respectively comprising a first plurality of queries; labeled with a query intent class. . .
+augmenting the first plurality of queries with one or more dt. A computing system for tramung query processing
+additional feature annotations to generate a first plu- models, the computing system comprising:
+rality of augmented training examples; one or more processors; and
+processing the first plurality of augmented training one or more non-transitory computer-readable media that
+examples with a first query processing model to respec- store instructions that, when executed by the one or
+tively generate a first plurality of inferred labels for the more processors, cause the computing system to per-
+first plurality of augmented training examples: form operations, the operations comprising:
+training a second query processing model to predict the obtaining a first plurality of unlabeled training
+first plurality of interred labels for the first plurality of examples, the first plurality of unlabeled training
+augmented training examples; examples respectively comprising a first plurality of
+oblaining a second plurality of unlabeled training queries;
+examples, the second plurality of unlabeled training augmenting the first plurality of querics with one or
+examples respectively comprising a second plurality of more additional feature annotations to generate a first
+queries, each of the second plurality of unlabeled plurality of augmented training examples;
+training examples comprising a smaller number of : : so
+. . . . woe processing the first plurality of augmented training
+features than the first plurality of augmented training . . .
+. . ° examples with a first query processing model to
+examples: an | ‘ : :
+‘ : - aa respectively generale a first plurality of inferred
+processing the second plurality of unlabeled training . a
+‘ : labels for the first plurality of augmented training
+examples with the second query processing model to examples: .
+respectively generate a second plurality of inferred _. pies; . .
+labels for the second plurality of unlabeled training training a second query processing model to predict the
+examples; and . first plurality of inferred labels for the first plurality
+training a third query processing model to predict the of augmented training examples; ..
+second plurality of inferred labels for the second plu- obtaining a second plurality of unlabeled training
+rality of unlabeled training examples. examples, the second plurality of unlabeled training
+2. The computer-implemented method ef claim 1, examples respectively comprising a second plurality
+wherein the first plurality of queries comprises queries of of queries, each of the second plurality of unlabeled
+technical terminologies. training examples comprising a smaller number of
+3. The computer-implemented method of claim 1 features than the first plurality of angmented training
+wherein the one or more additional feature annotations examples,
+comprises URLs of documents retrieved for the first plural- processing the second plurality of unlabeled training
+ity of queries. examples with the second query processing, model to
+4. The computer-implemented method of claim 1, respectively generale a second plurality of inferred
+wherein the one or more additional feature annotations labels for the second plurality of unlabeled training
+comprises titles of documents retrieved for the first plurality examples; and
+of queries. training a third query processing model to predict the
+§. The computer-implemented method of claim 1, second plurality of inferred labels for the second
+wherein training the second query processing model to plurality of unlabeled training examples.
+
+US 2024/0135187 Al Apr. 25, 2024
+9
+
+12. The computing system of claim 11, wherein the one or 20. One or more non-transitory computer-readable media
+more additional feature annotations comprises URLs of that collectively store a third query processing model,
+documents retrieved for the first plurality of queries. wherein the third query processing model has been trained
+
+13. The computing system of claim 11, wherein the one or by perlormance of training operitions, the training opera-
+
+as : . ae : tions comprising:
+more additional feature annotations comprises titles of docu- 2. . ~ . ;
+: . . obtaining a first plurality of unlabeled taining examples,
+ments retrieved for the first plurality of queries. nd ran .
+: , . . the first plurality of unlabeled training examples
+
+14. The computing system of claim 11, wherein training respectively comprising a first plurality of queries;
+the second query processing model to predict the first augmenting the first plurality of queries with one or more
+plurality of inferred labels for the first plurality of aug- additional feature annotations to generate a first plu-
+mented. training examples comprises training the second rality of augmented training examples:
+query processing model to predict the first plurality of processing the first plurality of augmented training
+inferred labels based on the first plurality of queries exclu- examples with a first query processing model to respec-
+sive of the one or more additional feature annotations. tively generate a first plurality of interred labels tor the
+
+15. The computing, system of claim 11, wherein the first plurality of augmented {ramming examples, .
+
+_— Ce . Se training a second query processing model to predict the
+second query processing model comprises a same number of first plurality of inferred labels lor the first plurality of
+arameters as the furst query processing model irst plurality of inferred labels lor the first plurality o
+
+parame) “ query Pp 8 . augmented training examples:
+
+16. The computing, system of claim 11, wherein the obtaining a second plurality of unlabeled training
+second plurality of unlabeled training examples comprises a examples, the second plurality of unlabeled training
+larger number of training examples than the first plurality of examples respectively comprising a second plurality of
+unlabeled training examples. queries, each of the second plurality of unlabeled
+
+17. The computing system of claim 11, wherein the third training cxamples comprising a smaller number of
+query processing model comprises a smaller number of Features than the first plurality of augmented training
+parameters than the second query processing model. examples; : so
+
+” ; . . . processing the second plurality of unlabeled training
+
+18. The compuling system of claim ul, wherein the examples with the second query processing model to
+operations further comprise obtaining a first plurality of respectively generate a second plurality of inferred
+labeled training examples, the first plurality of labeled labels for the second plurality of unlabeled training
+training examples respectively comprising a first plurality of examples; and.
+queries. training the third query processing model to predict the
+
+19. The computing system of claim 18, wherein the first second plurality of inferred labels for the second. plu-
+plurality of labeled training cxamples are labeled with a tality of unlabeled training examples.
+query intent class. ‘ok kk OF

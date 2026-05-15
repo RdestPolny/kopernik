@@ -1,0 +1,763 @@
+US 20240428015A1
+as) United States
+a2) Patent Application Publication (10) Pub. No.: US 2024/0428015 Al
+Yoon et al. (43) Pub. Date: Dec. 26, 2024
+(54) LEARNING SELF-EVALUATION TO Publication Classification
+TMPROVE SELECTIVE PREDICTION IN ;
+LLMs ($1) Int. Cl.
+G06F 40/40 (2006.01)
+(71) Applicant: Google LLC, Mountain View, CA (US) (52) U.S. Cl.
+CPC vicccnneeese GO6EF 40/40 (2020.01)
+(72) Inventors: Jinsung Yoon, San Jose, CA (US); (87) ABSTRACT
+Jicfeng Chen, Madison, W1 (US); » : : .
+Sayna Ebrahimi, Los Altos Hills, CA Aspects of the disclosure are directed to methods, systems,
+(US); Sorean Om er Arik, San > and computer readable media for adaptation with sclt-
+Francisco CA (US) 7 evaluation to improve sclective prediction in large language
+. models (LLMs), generally referred to as ASPIRE. ASPIRE
+. includes training LLMs on a portion of training data from a
+(21) Appl. No.: 18/386.343 question answering task to learn self-evaluation, e.g., learn
+“od. to distinguish whether a generaied answer is correct or not.
+(22) Filed: Nov. 2, 2023 ASPIRE further includes a selection score that combines a
++ salt likelihood of that generated. answer is correct with a sell-
+Related U.S. Application Data evaluation score for selective prediction. ASPIRE: demon-
+(60) Provisional application No. 63/521,930, filed on Jun. strates improved selective prediction performance with less
+20, 2023. computational cost.
+J 300
+Task Specific Tuning 340 Answer Sampling 320 Self-evaluating Jearning 330 337
+| Correct | Incorrect 338
+Answer i AnswerA | Answer® | ee ee
+a ee
+bocce ccc Frozen model parameters
+Frozen model parameters @ of LLM 331
+GofLLM 311 asleainataainaietednenemedemnetatea
+eoren meee! parameters Frozen Adaptable
+Adaptable parameters Op oN ae parameters Op 332
+312 Frozen Adaptable Adaptable parameters Os
+parameters Op 322 336
+Guestion Question Question Question
+uestia’ Answer A Answer B
+333 334
+
+Patent Application Publication Dec. 26,2024 Sheet 1 of 7 US 2024/0428015 Al
+Qo
+o
+~
+Ny co
+bo
+vt
+& 2a
+i wo | i oO
+Bo BD
+<4 <so
+i ur i i Ww
+6 5 a4 2
+- 3 -~¢ 3
+oo un & =
+Gs 7 65
+= oe
+< <4
+Lemma
+a \ “ N iS)
+i % ‘ a.) \ ae
+; et \ i ro) ‘
+‘ > {2 i \ > oO i
+‘ o / \ fo} :
+Se eet Se
+c
+aw UY O cong
+3.25 @¢
+BER a
+a oO QO oo
+SE 5 gee 8
+Sag s
+
+Patent Application Publication Dec. 26,2024 Sheet 2 of 7 US 2024/0428015 Al
+wo
+co
+a)
+c
+iw
+Cc
+2o
+ro
+>
+?
+at
+y
+WwW
+N
+a
+N =
+g 2 5
+a SB 3
+> ER a
+g Be 2 “
+‘s) & ‘we =
+<x
+N
+°o
+Nn
+Te s
+a
+a] fas)
+g ra
+= o
+Oo 3
+a ej
+QO
+c
+fr) €
+o 3
+N ae
+5 2
+a ou
+>
+wn
+ku
+a
+a.
+4
+<
+
+Patent Application Publication Dec. 26,2024 Sheet 3 of 7 US 2024/0428015 Al
+Pm 00
+mo oO
+m om
+= \)
+S
+” Hi
+: i wn 1 ws
+i : be cm
+\ G | ©
+mw u 4 S 4
+om tye & i a g2o
+on | OO c i a G 5 2
+sie eo 1 @efeE CO
+nd 2
+a 2. ' oe QELS
+o i Gori gSjs
+& BRi ae a
+i : oS wu
+2s ES < = 3 g<
+Si ata: ca Cc m & 3
+3 glo ge g e & a BH
+a7 Sl eo a ff 2 0 eam
+g 9 = ; LL epoum ae
+fa i wa & m AEC mo GZ
+o
+vs
+poe |e
+2 nN | € ' fon)
+a va mo | G { N .
+N = : & a a
+~ < | a tea < )
+J a j 4 a 2 fanenal
+e <« fi sn igs 3
+6 o 9 ] E = ' aie o
+wy i Fond S
+5 ee
+z 6 ~—18e es
+2 : ua ma
+gq
+<
+a 2
+2g Ss
+wo wy
+g E 5
+) a e
+op c
+& o g& £ Re)
+5 FA Ge a a
+e 2 ou a gv
+fs) = om 2 a
+= Es 2
+9 Foes Riel
+wv 5 2 S
+Q. Nl Me
+¢ ss) ss
+ay Le Qo Cm
+<
+
+Patent Application Publication Dec. 26,2024 Sheet 4 of 7 US 2024/0428015 Al
+S
+o
+st
+Ny :
+~
+wy
+—”
+a >
+st ¢ au
+° = =
+S se a | 3~ 88
+< £8 5 Be
+Ds =
+S Ss 9 o 3 §
+20 Y ic 2m og
+= = o ot
+& a Mt gy
+fa 9 ao
+2 Pe
+S
+E es
+o w
+Q
+2 fc)
+So
+rad =F
+on Q
+se 4
+a 8
+Ow
+faz)
+dt
+ies +
+my i are
+$ h = a
+Qa
+o Lt s & S
+oo oD er Y a
+oe 20 ad oO ea
+e §£ 2 3
+5 <3 9 og
+2S
+avi Fd c ~
+2 = fay a
+£ 8 x
+f | 8
+&
+5
+Ww
+
+Patent Application Publication Dec. 26,2024 Sheet 5 of 7 US 2024/0428015 Al
+8
+a i}
+N\ N
+13)
+2
+>
+a
+2 a s
+Elo - a] 1
+2 ot a Fad in ~
+us N Oo wo ~~ eo]
+Efe nN PSs 3 a
+GS 19 > PRP po als
+QO a me 3 =
+2 64s 6 EZ] po
++ w e ~
+x y E “a a2 - -
+& 18 Ce ee ee) ¥ y
+Go Jef ES a] y>
+WwW
+Lasaa!
+~ By
+: :
+Ww
+ise)
+Q
+a)
+wv
+2
+>
+wy
+5 Ne]
+pe € a
+Ela £ a
+Balad ds g 2
+e,Orls a Bi io
+alsty > a gps
+O14 = x =yat
+a. a
+SBISIPETH 2S Peps
+27op] SO fL a St ia
+BlaplSe }
+
+Patent Application Publication Dec. 26,2024 Sheet 6 of 7 US 2024/0428015 Al
+LO 600
+Training a LLM to a task to optimize first
+610
+adaptable parameters
+Training the LLM on self-evaluation to optimize 620
+second adaptable parameters
+Generating output with a prediction for the task 630
+FIG. 6
+
+Patent Application Publication Dec. 26,2024 Sheet 7 of 7 US 2024/0428015 Al
+—_ 700
+freezing model parameters of the LLM 710
+adding and iteratively updating the first adaptable 720
+parameters for the LLM
+sampling the LLM with the optimized first
+adaptable parameters to generate a plurality of 730
+outputs fora query associated with the task
+determining whether each of the plurality of 740
+outputs is correct using an evaluation metric;
+freezing model parameters of the LLM and the 750
+optimized first adaptable parameters
+adding and iteratively updating the second 760
+adaptable parameters for the LLM
+FIG. 7
+
+US 2024/0428015 Al Dec. 26, 2024
+1
+LEARNING SELF-EVALUATION TO ing the second adaptable parameters for the LLM. In another
+IMPROVE SELECTIVE PREDICTION IN example, determining whether cach of the plurality of out-
+LLMS puts is correct further comprises labeling each of the plu-
+rality of outputs as correct or wrong. In yet another example,
+CROSS-REFERENCE TO RELATED the evaluation metric compares a similarity of an output of
+APPLICATIONS the plurality of outputs to a reference output.
+[0001] ‘Che present application claims the benefit of the (0007) In yel another example, determining whether each
+filing date of U.S. Provisional Patent Application No. of the . plurality of outputs is correct further comprises
+63/521,930, filed Jun. 20, 2023, the disclosure of which is determining whether the output is within a threshold of the
+hereby incorporated herein by reference. reference output. In yet another example, the threshold is a
+. Rouge threshold having a value large cnough where outputs
+BACKGROUND that are wrong are not determined to be correct.
+[0008] Another aspect of the disclosure provides for a
+[0002] Large Language Models (LLMs) can demonstrate system including: one or more processors; and one or more
+impressive capabilities at natural language understanding, storage devices coupled to the one or more processors and
+reasoning, and generation tasks, such as question answering, storing instructions thal, when executed by the one or more
+summarization, semantic classification, and code gencra- processors, cause (he one or more processors to perform
+tion. Based on these impressive capabilities, LLMs are being operations for selective prediction, the operations including:
+considered for scenarios with higher stakes in decision training a large language model (LLM) to a task to adjust
+making. However, a major bottleneck for the LLMs is first adaptable parameters to the task using training data;
+reliability, as the TMs may not guarantee accurate — genorating a plurality of outputs associated with the task
+responses for all queries. The I.Ms have yet to understand using the LLM with the adjusted first adaptable parameters;
+whether a generated response to a query is accurate, and training the I.T.M on self-evaluation to adjust second adapt-
+more specifically, to refrain from outputting imaccurate able parameters to the task; and generating a prediction for
+Tesponses, the task using the I.I.M based on the first adaptable param-
+, eters and second adaptable parameters, the prediction com-
+BRIEF SUMMARY prising a self-evaluation score.
+[0003] Aspects of the disclosure are directed to methods, [0009] In an example, the LLM is a pretrained LLM. In
+systems, and computer readable media for adaptation with another example. training the LLM to the task and on
+self-evaluation to improve selective prediction in large lan- self-evaluation comprises fine-tuning the LLM using soft
+guage models (LLMs), generally referred to as ASPIRE. prompt tuning. In yet another example, training the LLM to
+ASPIRE includes taining LLMs on a portion of training the task further includes freezing model parameters of the
+data from a question answering task to learn self-evaluation, LLM and adding and iteratively updating the first adaptable
+e.g., learn to distinguish whether a generated answer is parameters for the T.1.M.
+correct or not. ASPIRE further includes a selection score that [0010] In yet another example, training the LLM on sell-
+combines a likelihood of that generated answer being correct evaluation further includes determining whether each of the
+with a self-evaluation score for selective prediction. plurality of outputs is correct using an evaluation metric,
+ASPIRE demonstrates improved selective prediction perfor- freezing model parameters of the LLM and the optimized
+mance with less computational cost. first adaptable parameters, and adding and iteratively updat-
+[0004] An aspect of the disclosure provides for a method ing the second adaptable parameters for the LLM. In yet
+for selective prediction, including: training, by one or more another cxample, determining whether cach of the plurality
+processors, a large language model (LLM) to a task to adjust of outputs is correct further comprises labeling cach of the
+first adaptable parameters to the task using, training data; plurality of outputs as correct or wrong. In yet another
+generating, by one or more processors, a plurality of outputs example, the evaluation metric compares a similarity of an
+associated with the task using the LLM with the adjusted output of the plurality of outputs to a reference output.
+first adaptable parameters; training, by the one or more [0011] Tn yet another example, determining whether each
+processors, the LLM on self-evaluation to adjust second of the plurality of outputs is correct further comprises
+adaptable parameters to the task; and generating, by the one determining, whether the outpul is within a threshold of the
+or more processors, a prediction for the task using the LLM reference output. In yet another example, the threshold is a
+based on the first adaptable parameters and second adaptable Rouge threshold having a value large enough where outputs
+parameters, the prediction comprising a sclt-cvaluation that are wrong are not determined to be correct.
+score. [0012] Yet another aspect of the disclosure provides for a
+[0005] In an example, the LLM is a pretrained LLM. In non-transitory computer readable medium for storing
+another example, training the LLM to the task and on instructions that, when executed by one or more processors,
+sel-evalualion comprises fine-tuning the LLM using sofi cause (he one or more processors lo perform operations for
+prompt tuning. In yet another example, training the LLM to selective prediction, the operations including: training a
+the task further includes freezing model parameters of the large language model (LLM) to a task to adjust first adapt-
+LLM and adding and iteratively updating the first adaptable able parameters to the task using (raining dala; generating a
+parameters for the TM. plurality of outputs associated with the task using the LLM
+[0006] In yet another example, training the LLM on self- with the adjusted first adaptable parameters; training the
+evaluation further includes determining whether cach of the LLM on self-evaluation to adjust second adaptable param-
+plurality of outputs is correct using an evaluation metric, eters to the task; and generating a prediction for the task
+freezing model parameters of the LLM and the optimized using the LLM based on the first adaptable parameters and
+first adaptable parameters, and adding and iteratively updat- second adaptable parameters, the prediction comprising, a
+
+US 2024/0428015 Al Dec. 26, 2024
+2
+self-evaluation score. In an example, training the LLM to the [0023] LLMs are primarily trained to predict subsequent
+task and on self-evaluation comprises fine-tuning the LLM tokens in a context, lacking awareness of answer correctness
+using, soft prompt tuning. for specific questions. Furthermore, since I.I.Ms generate an
+output sequence in an auto-regressive manner, I]. Ms may
+BRIEF DESCRIPTION OF THE DRAWINGS not directly produce a confidence score for the output
+[0013] FIG. 1 depicts a block diagram of an example LLM sequence. Consequently, acquiring a confidence score from
+a — ae i . LLMs for their output is not straightforward.
+output without selective prediction and with selective pre- . . o
+diction according to aspects of the disclosure. [0024] Fine-tuning II Ms on training data from the target
+[0014] FIG. 2 depicts a block diagram of an example question answering task using standard I.I.M training loss
+ASPIRE system for adaptation with self-evaluation to can INPLOve selective prediction performance, which fan
+improve selective prediction in LLMs according to aspects IMPrOve accuracy of the predictions and merease the like-
+of the disclosure. libood of the ground-truth answer for a given question.
+[0015] VIG. 3 depicts a block diagram of an example However, standard LLM fine-tuning do es not reduce the
+process performed by an ASPIRE system for a generative likelihood of outputting wrong answers for a given question.
+task according to aspects of the disclosure. Additionally, the increase of ground-truth answer likelihood
+[0016] FIG. 4 depicts a block diagram of example soft may not result in a deerease of incorrect answer likelihood,
+an . oo as LLMs generate output sequences in an auto-regressive
+prompt tuning implemented by an ASPIRE system accord- ; - °
+ing to aspects of the disclosure. manner. Consequently, even after fine-tuning, wrong
+- : , answers may still have high likelihood to he generated by the
+[0017] FIG. 5 depicts a block diagram of an example TMs, resulting in difficulty separating correct and wrong
+environment for implementing an ASPIRE system accord- swers based on the likelihood scores
+ing lo aspects of the disclosure. answers 088 na :
+[0018] FIG. 6 depicts a flow diagram of an example [0025] As such, the technology disclosed herein generally
+process for training a machine learning model for the relates toa framework for learning self-evaluation to
+selective prediction according to aspects of the disclosure. improve selective prediction in L.I.Ms. The framework can
+[0019] FIG. 7 depicts a flow diagram of an cxample generally be referred to as ASPIRE, The ASPIRE framework
+. ae ae . aa can be configured to train T.I.Ms using relevant data from a
+process for performing a training step for training the Gon answering task abline the LLMs to learn to
+machine learning model for the selective prediction accord- question answenng Wiss: enabang ie ; $i lam Wc
+ing to aspects of the disclosure. distinguish whether their proposed answers are correct or
+not. ‘The trained LLMs can be configured to provide a
+DETAILED DESCRIPTION selection score within the ASPIRE framework, which can
+“ ° combine the likelihood of the generated answer with the
+[0020] Large language models (LLMs) have recently learned self-evaluation score for selective prediction. The
+shown great advances in a variety of tasks, including natural overall computational complexity of the ASPIRE trame-
+language understanding and generation. However, the usage work can be the same as that of generating an output for a
+of LLMs in high-stakes decision-making scenarios is still | query using an T.1.M, which is less computationally expen-
+limited due to the potential for errors. The reliability of sive compared to alternative approaches that require gener-
+LLMs can be improved through selective prediction, allow- aling multiple output sequences lo obtain an uncertainty
+ing the LLMs to abstain from making predictions when measure. While the framework is described with respect to
+unsure of the answer. LLMs, the framework can be applied to any machine
+[0021] Sclective prediction can generally refer to a learning model or other artificial intelligence more gener-
+deployment scenario for Al models where the AI models ally.
+avoid low-confidence outputs to maintain a certain overall [0026] Within the ASPIRE [ramework, an LLM can be
+accuracy level. In some cases, I.I.Ms can be capable of pre-trained for any generative modeling task, such as ques-
+determining whether the generated response is accurate or tion answering. lo determine whether the output of the
+not lo avoid making incorrect predictions. If an LLM detects pre-trained LLM to the question answering task is correct or
+the potential for an answer to be incorrect in response to a not, a reference output and an evaluation metric are utilized.
+specific question, il can generale a response conveying a The evaluation metric, such as a Rouge-L metric, can assess
+statement such as ‘I don’t know’ to avoid an erroneous the similarity between the generated output and the refer-
+answer. ence output. For example, a Rouge-I. metric can he
+[0022] FIG. 1 depicts a block diagram of LLMs outputs employed as the evaluation metric to generate a score from
+{00 without selective prediction and with selective predic- [0, 1]. The correctness of the generated answer can be
+tion according to aspects of the disclosure. When a question determined by comparing the score to a threshold value
+is presented, LLMs with selective prediction 120 can pro- applied to the reference output. The generated score meeting
+vide an answer with a confidence or selection score while the threshold value can be classified as correct answer, while
+LLMs without selective prediction 110 may just provide the generated scores falling below the threshold value can be
+answer. For example, for a question like ‘What is the capital classified as incorrect. ‘The threshold value can be a value
+of California?’, LLM models 112 without selective predic- large enough where the generated answers that are incorrect
+Gion might provide an incorrect answer like “Los Angeles’ are not determined ta be correct.
+instead of the correct answer, ‘Sacramento.’ Without selec- [0027] FIG. 2 depicts a block diagram of an example
+live prediction, LLMs 112 may directly output incorrect system for adaptation with sel [-evaluation to improve selec-
+answers. With selective prediction, LLMs 114 can output a tive prediction in LLMs. The ASPIRE system 200 can be
+low selection score 116 along with the wrong answer. The implemented on one or more computing devices in one or
+low selection score 116 can provide a warning not to trust more locations. For example, the ASPIRE system 200 can
+the answer. receive training data 204 for a generative task and query data
+
+US 2024/0428015 Al Dec. 26, 2024
+3
+202 to adapt the pre-trained LLM to the question answering assembly, object-oriented, data-oriented, functional, or
+task. The ASPIRE system 200 can receive the inference data imperative. The computer programs can be written to per-
+and/or training data as part of a call to an application form one or more different functions and to operate within
+programming, interface (APT) exposing the ASPIRE system a computing environment, e.g., on a physical device, virtual
+200 to one or more computing devices. The query data 202 machine, or across multiple devices. The computer pro-
+and/or training data 204 can also be provided to the ASPIRE grams can also implement functionality described herein, for
+system 200 through a storage medium, such as remote example, as performed by a system, engine, module, or
+storage connected to the one or more computing devices model. ‘The ASPIRE system 200 can further be contigured to
+over a network. ‘he query data 202 and/or training data 204 forward the output data 212 to one er more other devices
+can further be provided as input through a user interface on configured for translating the output data into an executable
+a client computing device coupled to the ASPIRE system program written in a computer programming language. ‘he
+200. ASPIRE system 200 can also be configured to send the
+[0028] The query data 202 can include data associated output data 212 to a storage device for storage and later
+with a prompt lor a generative task, such as question- retrieval. The ASPIRE system 200 can include a fine-tuning
+answering, summarization, semantic classification, and/or engine 206, an answer sampling engine 208, and a self-
+code generation. Ihe training data 204 can correspond to «Valuation engine 210. Given training data 204 for a gen-
+(raining data associated with the generative task, such as erative task, the fine-tuning engine 206 can fine tune a LLM
+data to train a large language model (LLM). The training on the training data 204 to improve prediction performance.
+data can be split into a training set, a validation set, and/or The fine-tuning engine 206 can be conligured to (raina LLM
+a testing sct. An example training/validation/testing splitcan by keeping the model parameters fixed and adjusting adapt-
+be an 80/10/10 split, although any other split may be able parameters. ‘Lhe fine-tuning engine 206 can be config-
+possible. ured ° undare, oe optimize, the Adaptable payamoters ®
+a . . train the . The answer sampling engine can be
+[0029] r he training data 204 can be in any form suitable configured to generate multiple answers to cach question of
+tor taming a model, according to one of a variety of the query data 202 using the trained LLM. The answer
+different learning techniques. Leaming techniques for tram- sampling engine 208 can be configured to assess the cor-
+mg @ model can includ c supervised Icarning, unsupervised rectness of the generated answers using an evaluation met-
+learning, semi-supervised Jearning techniques, parameter- ric. The self-evaluation engine 210 can be configured to
+etlicient techniques and reintore cement learning techniques. evaluate the correctness of generated. answers (o determine
+Training the model can further include priming, the model whether ihe trained LLM properly assessed the correctness
+using zero- or few-shot prompting to output higher-quality of generated answers. ‘The self-evaluation engine 210 can
+FESPOnses. For example, the training data 204 can include receive correctness of the generated answers as inpul and
+multiple taming examples that can be received as input by generate self-evaluation scores as outputs 212. ‘Lhe fine-
+a model. The Uaining examples can be labeled wilba desired tuning engine 206, answer sampling engine 208, and selt-
+output Lor the model when processing the labeled training evaluation engine 210 can be implemented as one or more
+examples. ‘The label and the model oulpul can be evaluated computer programs, specially configured electronic cir-
+through a loss function to determine an error, which can be cuitry, or any combination thereof.
+back propagated through the model to update weights for the , = . i
+model. For cxample, a supervised learning technique can be [0030] FIG. 3. depicts a block diagram of an example
+applicd to calculate an crror between outputs, with a ground- process 300 for a question answering task. ‘The process 300
+truth label of a training cxample processed by the modcl. can be performed by the ASPIRL system 200 as depicted in
+Any of a variety of loss or error functions appropriate for the F IG, 2. ‘The fine-tuning engine 206 can be configured to
+type of the task the model is being trained for can be utilized, refine the LLM. such as by applying parameter efficient
+such as cross-entropy loss for classification tasks, or mean tuning techniques like sot prompt tuning SPT to enhance
+square error for regression tasks. The gradient of the error prediction performance. Fine-tuning LLMs on downstream
+with respect to the different weights of the candidate model datasets after their pretraining leads to substantial perfor-
+on candidate hardware can be calculated, for example using mance improvements, compared to using pretrained LLMs
+a backpropagation algorithm, and the weights for the model directly. The parameter-eflicient fine-tuning (PET'T)
+can be updated. The model can be trained until stopping approach involves freezing, the majority of pretrained LLM
+criteria are met, such as a number of iterations for training, parameters fixed and fine-tuning only a subset ol additional
+a maximum period of time, a convergence, or when a parameters, resulting in significant reduction in computa-
+minimum accuracy threshold is met. From the query data tional and storage costs. ‘The ASPIRE system can employ
+202 and/or training data 204, the ASPIRE system 200 canbe SP!’ to enhance the selective prediction performance of
+configured to output one or more results related to selective LLMs. As shown in the task specific fine-tuning process
+prediction, generated as output data 212. The output data 310, the fine-tuning engine 206 can perform fine-tuning on
+212 can include answers on the query dala 202 and/or a adaptable parameters while freezing, c.g., keeping the
+self-evaluating, score associated with the penerative task. As remaining parameters of the trained T1.M constant.
+an example, the ASPIRL’ system 200 can be configured. to [0031] ‘The ASPIRE system 200 can be configured to
+send. the output dala 212 for display on a client or user receive the query dala, such as 4 natural language query
+display. As another example, the ASPIRE system 200 can be “Who was the man behind ‘he Chipmunks?”. ‘lhe fine-
+configured to provide the output data 212 as a set of tuning engine 206 can be configured to freeze, ¢.g., fix the
+computer-readable instructions, such as one or more com- value of model parameters 0 of the LLM 311, and add
+puter programs. The computer programs can be written in adaptable parameters 0, 312 for training the LLM 311.
+any type of programming language, and according to any During the training, only the adaptable parameters 0, 312
+programming, paradigm, e.g., declarative, procedural, are subjected to iterative updates and/or optimizations.
+
+US 2024/0428015 Al Dec. 26, 2024
+4
+[0032] To further enhance the performance of selective [0036] After training both adaptable parameters 0, and 6,,
+prediction, the ASPIRL system 200 can be configured. to the self-evaluation engine 210 can be configured to utilize a
+undergo additional fine-tuning. As shown in the answer beam search decoding method to define a selection scoring
+sampling, process 320, the answer sampling engine 208 can function, enabling the selection scoring, function to obtain
+be configured io generate diverse answers for each query, the prediction for the input query.
+achieved by sampling answers using the updated adaptable [0037] The output of the prediction can include the cor-
+parameter Op. ‘he answer sampling engine 208 can be rectness of the generated output 337 and the self-evaluation
+configured to generate different answers for each query and score 338. The self-evaluation score 338 can include any
+evaluate the likelihood of these outputs. ‘The answer sam- type of likelihood defined as a selection scoring function.
+pling engine 208 can be configured to apply an evaluation Since the input 333 and 334 are consiructed by appending
+metric to determine whether the generated outputs are additional tokens to the initial query, the ASPIRE system
+correct or not, and the determination can be made based on 200 can be configured to reuse the states in the answer
+a threshold value of the evaluation metric. sampling process 320 instead of recomputing them to save
+[0033] ‘Lhe ASPIRE system 200 can be configured to use comiputational cost. . . . .
+a Rouge-L metric to evaluate if the predicted answer is [0038] TG. 4 depicts a block diagram, implementing the
+correct or not. The Rouge-L metric can generate a score of ‘framework with SPI’ according to the ASPIRE system 200.
+[0,1] for the predicted answers. The generated scores can be The SPV approach involves keeping the majority of pre-
+compared to Rouge thresholds to determine the correctness _—trained LLM parameters fixed and fine-tuning only a subset
+of the generated answers. Specifically, the generated scores of additional parameters, resulting in significant reduction in
+meeting the threshold value can be classified as correct computational and storage costs. The adaptable parameters
+outputs, while generated scores falling, below the threshold 9, 412 and adaptable parameters 6, 414 can be trained using
+value can be classified as incorrect. ‘he answer sampling different parameter efficient tuning approaches. The adapt-
+engine 208 can be configured to label each of the answers able parameters 6,, 412 and adaptable parameters 0, 414 are
+based on the determination. I'he threshold can be predeter- _—‘earnable soft prompt embeddings. Q.,,,.¢ 413 and AL veg
+mined based on prior sampling, as setting the threshold too 415 are input embeddings for the question and answer
+high or too low may result in misclassification of correct respectively and both values remain constant. As shown in
+answers as incorrect and/or incorrect answers as correct. 410, the ASPIRU system 200 can be configured to generale
+Example threshold values can be 0.6, 0.7, or 0.8. the answer and the likelihood of the answer for the question
+: ; via the LLM with the fine-tuned adaptable parameters 0, and
+[0034] The answer sampling engine 208 can generate — embeddings of the question, while keeping the model
+answer A 323 and answer B 324 for a single question. parameters 0 of LLM 411 frozen. As shown in block 420, the
+During the answer sampling 320, the answer sampling ASPIRE system can be configured to acquire the correctness
+cngine 208 can be contigured to fix both the values of model of the answer and calculate the self-evaluation score via the
+parameters @ and updated adaptable parameters @,,. The additional fine-tuned adaptable parameters 6, and embed-
+generated multiple answers can be subjected to evaluation dings of the answers, while also keeping the model param-
+for correctness using answer metrics and compared to the eters @ of I..M 411, the updated adaptable parameters 8,
+threshold value. The generated score for answer A via the 412 and Q, ie 413 frozen. The ASPIRE system 200 can be
+evaluation metric, exceeding the threshold can be designated configured to cache the states when generaling the answer
+as correct answer 323, whereas the generated score for and reuse those slates when computing the sel[-evaluation
+answer B failing to reach the threshold value can be cat- score lo save computational cost.
+egorized us incorrect answer 324. Consequently, the [0039] T'IG. § depicts a block diagram of an example
+ASPIRE system 200 can be configured to acquire the compuling environment 500 implementing an example
+answers and the likelihoods of whether the answers are ASPIRE system 502. For example, the ASPIRE system 502
+correct or not as outputs. can be the ASPIRE framework 200 described in FIG. 2. ‘The
+[0035] Afier sampling high-likelihood outputs for each ASPIRE system 502 can be implemented on one or more
+query, the self-evaluation learning process 330 can be per- deviecs having one or more processors in one or more
+formed by a sell-evaluation engine 210. A self-evaluation locations, such as in server computing device 504. User
+engine 210 can be configured to compute a self-evaluation computing device 506 and the server computing device 504
+score. ‘The ASPIRE system 200 can be configured to receive can be communicatively coupled to one or more storage
+the outputs of the answer sampling process 320 as input. The devices 508 over a network 510. The storage devices 508
+input can include a pair of tokens that can indicate the can be a combination of volatile and non-volatile memory
+correctness of the generated answers. The ASPIRE system and can be at the same or different physical locations than
+200 can be configured to add additional adaptable param- the computing devices 504, 506. Tor example, the storage
+eters 6, 336 to the pre-trained I.I.M and further fine-tune the device(s) 508 can include any type of non-transilory com-
+additional adaptable parameters 6, 336 for learning self- puter readable medium capable of storing information, such
+evaluation. Since answer generation only depends on model as a hard-drive, solid state drive, tape drive. optical storage,
+parameters 4 and adaptable parameters 4,, the ASPIRL, memory card, ROM, RAM, DVD, CD-ROM, write-capable,
+system 200 can be configured to fix the values of the model and read-only memories.
+parameters @ 331 and the optimized adaptable parameters J, [0040] ‘The server computing device 504 can include one
+332 to avoid changing the prediction behaviors of the LLM or more processors 512 and memory 514. ‘he memory 514
+when learning self-cvaluation. while additional adaptable can store information accessible by the processors 512,
+parameters @, 336 are introduced. The additional adaptable including instructions 516 that can be executed by the
+parameters 6, 336 can be configured to also be updated and processors 512. The memory 514 can also include data 518
+optimized during training. that can be retrieved, manipulated, or stored by the proces-
+
+US 2024/0428015 Al Dec. 26, 2024
+5
+sors 512. The memory 514 can be a type of transitory or or all of the instructions 516, 524 and data 518, 526 can be
+non-transitory computer readable medium capable of storing stored in a location physically remote from, yet still acces-
+information accessible by the processors 512, such as vola- sible by, the processors 512, 520. Similarly, the processors
+tile and non-volatile memory. The processors 512 can 512, 520 can include a collection of processors that can
+include one or more central processing units (CPUs), perform concurrent and/or sequential operation. The com-
+graphic processing units (GPUs), field-programmable pate puting devices 504, 506 can each include one or more
+arrays (FPGAs), and/or application-specilic integrated cir- internal clocks providing timing information, which ean be
+cuits (ASICs), such as tensor processing units (TPUs). used for time measurement for operations and programs run
+[0041] ‘Lhe instructions 516 can include one or more by the computing devices 504, 506.
+instructions that, when executed by the processors 512,
+cause the one or more processors 512 to perform actions [0046] The server computing device 504 can be config-
+defined by the instructions 516. The instructions 516 can be ured to reccive requests to process data from the user
+stored in object code format for direct processing by the computing device 506. For example. the environment 500
+processors 512, or in other formats including interpretable can be part of a computing platform configured to provide a
+scripts or collections of independent source code modules variety of services to users, through various user interfaces
+that are interpreted on demand or compiled in advance. The and/or APIs exposing the platform services. One or more
+instructions $16 can include instructions for implementing services can be a machine learning framework or a set of
+ASPIRE system 502. The ASPIRE system 502 can be tools for generating neural networks or other machine learn-
+executed. using the processors 512, and/or using other pro- ing models according to a specified task and training data.
+cessors remotely located from the server computing device The user computing device 506 may receive and transmit
+504. data specifying target computing resources to be allocated
+[0042] The data 518 can be retrieved, stored, or modified for executing a neural network trained to perform a particu-
+by the processors $12 in accordance with the instructions Jar neural network task.
+516. The data 518 can be stored in computer registers, in a [0047] ‘The computing devices 504, 506 can be capable of
+relational or on-relational database as a table having a direct and indirect communication over the network 510.
+plurality of different fields and records, or as ISON, YAMT., The computing devices 504, 506 can sct up listening sockets
+proto, or XML documents. The data 518 can also be for- that may accept an initiating connection for sending and
+matted ma computer-readable format such as, bul not receiving information. The network 510 can include various
+limited to, binary values, ASC I or Unicode. Moreover, the configurations and protocols including the Internet, World
+data 518 can include information sufficient to identify rel- Wide Web, intranets, virtual private networks, wide area
+evant information, such as numbers, descriptive text, pro- networks. local networks, and private networks using com-
+prictary codes, pointers, references to data stored in other munication protocols proprietary to one or more companies.
+memores, including other network locations, or information The network 510 can support a variety of shori- and long-
+that is used by a function to calculate relevant data. range connections. ‘lhe short- and long-range connections
+[0043] The user computing device 506 can also be con- may be made over different bandwidths, such as 2.402 Gllz
+figured similar to the server computing, device 504, with one to 2.480 GHz (commonly associated with the Bluetooth®
+or more processors 520, memory 522, instructions 524, and standard), 2.4 GHz and 5 GHz (commonly associated with
+data 526. The user computing device 506 can also include a the Wi-Fi® communication protocol); or with a varicty of
+user inpul 528, and. a user output 530. ‘The user input 528 can communication standards, such as the LTE® standard for
+include any appropriate mechanism or technique for receiv- wireless broadband communication. The network 510, in
+ing input from a user, such as keyboard, mouse, mechanical addition or alternatively, can also support wired connections
+actuators, soft actuators, touchscreens, microphones, and between the computing, devices 504, 506, including, over
+sensors. various types of T'thernet connection.
+[0044] ‘he server computing device 504 can be config- . . Lo.
+ured to transmit data to the user computing device 506, and [0048] Although a single server computing device 304 and
+the user computing device 506 can be configured to display USer_ computing device 506 are shown in FIG. 5, it is
+at least a portion of the received data on a display imple- understood that the aspects of the disclosure can be imple-
+mented as part of the user output 530. The user output 530 mented according, to a variety of different configurations and
+can also be used for displaying an interface between the user quantities of computing devices, including in paradigms for
+computing device 506 and the server computing device 504. sequential or Par. allel Processing, or over a distr ibuted net-
+The user output 530 can alternatively or additionally include work of multiple devices. In some implementations, aspects
+one or more speakers, transducers or other audio outputs, a of the disclosure can be performed ona single device, and
+haptic interface or other tactile feedback that provides any combination thereof.
+non-visual and non-audible information to the user of the [0049] FIG. 6 depicts flow diagrams of an example pro-
+user computing device 506. cess 600 fer training a machine learning model for the
+[0045] Although T'1G. 5 illustrates the processors 512, 520 selective prediction. The example process 600 can be per-
+and the memories $14, 522 as being within the computing formed on a system of one or more processors in one or more
+devices 504, 506, components described here, including locations, such as the ASPIRE system 200 as depicted in
+the processors 512, 520 and the memories 514, 522 can FIG. 2. lo generate the answer and obtain the selection score
+include multiple processors and memories thal can operate for a given question, two slages of LLM training can be
+in different physical locations and not within the same performed. As shown in block 610. the first stage can be for
+computing device. For example, some of the instructions training the LLM to adjust first adaptable parameters 6, to a
+516, 524 and the data 518, 526 can be stored on a removable question answering task. The question answering can
+SD card and others within a read-only computer chip. Some include the task of responding to various questions. After
+
+US 2024/0428015 Al Dec. 26, 2024
+6
+training the LLM for the first adaptable parameters 6,, the self-evaluation score to each answer via the trained LLM
+ASPIRE system 200 can generate multiple answers with the with the updated first parameters and the updated second
+correctness of each answer. parameter. As an example, the ASPIRE system 200 can be
+[0050] As shown in block 620, the second stage of the configured to utilize a beam search decoding method to
+ASPIRE. system 200 can be for training the LLM on define a selection scoring function. Using the defined selec-
+self-evaluation to improve the second adaptable parameters _ tion scoring function, the ASPIRE system 200 can be
+Q,. After training the LLM for the second. adaptable param- configured to generate the self-evaluation scores to each
+eters 0,, the ASPIRE system 200 can receive the output of input query. ‘he LSEP system 200 can cache the states when
+the first stage as input. As shown in block 630, the ASPIRE generating the answer and reuse the states in the first stage
+system 200 can be configured to gencrate outputs with a when computing the self-cvaluation score to save compu-
+prediction for the question answering task via the trained tational cost.
+LLM. [0056] Aspects of this disclosure can be implemented in
+[0051] FIG. 7 depicts flow diagrams of an example pro- digital circuits, computer-readable storage media, as one or
+cess 700 for training a machine learning model for the more computer programs, or a combination of one or more
+selective prediction in further detail. The example process of the foregoing. The computer-readable storage media can
+700 can be performed on a system of one or more processors be non-transitory, e.g., as one or more instructions execut-
+in one or more locations, such as the ASPIRL system 200 as able by a cloud computing platform and stored on a tangible
+depicted in FIG. 2. storage device.
+[0052] As shown in block 710, to train the LLM to the [0057] In this specification, the phrase “configured. to” is
+task, the ASPIRE system 200 can be contigured to freeze used in different contexts related to computer systems,
+model parameters. The parameters related to the T.I.M are hardware, or part of a computer program, engine, or module.
+kept constant, and additional parameters for the SPT param- When a system is said to be configured to perform one or
+eters are introduced to the ASPIRE system 200. As shown in more operations, this means that the system has appropriate
+block 720, the ASPTRE system 200 can be configured to add software, firmware, and/or hardware installed on the system
+the first adaptable parameters for the SPT parameters and that, when in operation, causes the system to perform the one
+interactively update the first adaptable parameters. or more operations. When some hardware is said to be
+[0053] As shown in block 730, the ASPIRE system 200 configured to perform one or more operations, this means
+can be configured to employ the updated first adaptable that the hardware includes one or more circuits that, when in
+parameters when sampling the LLM, generating a plurality operation, receive imput and generate oulput according lo the
+of outputs for a query associated with the question answer- inpul and. corresponding to the one or more operations.
+ing task. These outputs can include multiple answers to a When a computer program, engine, or module is said to be
+question. The ASPIRE system 200 can be configured to configured to perform one or more operations, this means
+present the multiple answers in natural language format. As that the computer program includes one or more program
+shown in block 740, the ASPIRE system 200 can be con- instructions, that when executed by one or more computers,
+figured to determine whether each of the multiple answers Causes the one or more computers to perform the one or
+are correct or incorrect using an evaluation metric. Tor more operations.
+example, the ASPIRE system 200 can be configured. to use [0058] Unless otherwiso stated, the foregoing alternative
+the Rouge-L metric to evaluate if the predicted answer is examples are not mutually exclusive, but may be imple-
+correct or not. Lhe Rouge-L metric can generate a score of mented in various combinations to achieve unique advan-
+[0,1] for the predicted answers. The generated scores can be tages. As these and other variations and combinations of the
+compared to Rouge thresholds, ¢.g., 0.6. 0.7. or 0.8, to features discussed above can be utilized without departing
+determine the correctness of the generated answers. If the from the subject matter defined by the claims, the foregoing
+generated scores mect a threshold value, the ASPIRE system description of the embodiments should be taken by way of
+200 can be configured to label the output as ‘correct’; illustration rather than by way of limitation of the subject
+otherwise, the ASPIRT system 200 can be configured to matter defined by the claims. In addition, the provision of the
+label the output as ‘incorrect’. Consequently, the ASPTRE examples described herein, as well as clauses phrased. as
+system 200 can be configured to generate a likelihood of “such as.” “including” and the like, should not be interpreted
+each output with the answers. as limiting the subject matter of the claims to the specific
+[0054] As shown in block 750, for learning self-evalua- examples, rather, the examples are intended to illustrate only
+tion, the ASPIRE system 200 can be configured to freeze ONS of many possible cmbodiments. Further, the same
+model parameters of the LLM and the updated first adapt- reference numbers in different drawings can identify the
+able parameters. Since the generated answers depend on —«S#Me or similar clements.
+model parameters of the LLM and the optimized first 1. A method for selective prediction, comprising:
+adaptable parameters, fixing the values of the model param- training, by one or more processors, a large language
+eters of the LLM and the updated first adaptable parameters model (LLM) to a task to adjust first adaptable param-
+can avoid changing the prediction of the I.T.M when learning, eters to the task using training data;
+self-evaluation. As shown in block 760, the ASPIRE system generating, by one or more processors, a plurality of
+200 can be configured to add the second adaptable param- outputs associated with the task using the I.I.M with the
+eters 0,, lor sel[-evaluation and update the second adaptable adjusted first adaplable parameters,
+parameters 6, ileratively. training, by the one or more processors, the LLM on
+[0055] Aftcr updating the second adaptable paramcters, self-evaluation to adjust second adaptable parameters
+the generated likelihood of cach output with the answers can to the task; and
+be input back into the trained LLM for self-cvaluation. The generating, by the one or more processors. a prediction for
+ASPIRE system 200 can be configured to compute the the task using, the T1.M based on the first adaptable
+
+US 2024/0428015 Al Dec. 26, 2024
+7
+parameters and second adaptable parameters, the pre- 11. The system of claim 10, wherein the LLM is a
+diction comprising a self-evaluation score. pretrained LLM.
+2. The method of claim 1, wherein the I.I.M isa pretrained 12. The system of claim 10, wherein training, the 1.1.M to
+LIM. the task and on self-evaluation comprises fine-tuning the
+3. The method claim 1, wherein training the I.I.M to the LLM using soft prompt tuning.
+task and on self-evaluation comprises fine-tuning the T.].M 13. The system of claim 10, wherein training, the 1.1.M to
+using sofl prompt tuning. the task further comprises:
+4. Lhe method of claim 1, wherein training the LLM to the freezing model parameters of the LLM; and
+task further comprises: adding and ileratively updating the first adaptable param-
+freezing model parameters of the LLM: and eters for the LLM.
+adding and iteratively updating the first adaptable param- 14. The system of claim 10, wherein training the LLM on
+eters for the LLM. self-evaluation further comprises:
+§. The method of claim 1, wherein training the LLM on determining whether cach of the plurality of outputs is
+self-evaluation further comprises: correct using an evaluation metric;
+determining whether each of the plurality of outputs is freezing model parameters of the LLM and the optimized
+correct using, an evaluation metric; first adaptable parameters; and
+freezing model parameters of the LLM and. the optimized adding, and iteratively updating the second. adaptable
+first adaptable parameters; and parameters for the LLM.
+adding and iteratively updating the second adaptable 15. The system of claim 14, wherein determining whether
+parameters for the LLM. each of the plurality of outputs is correct further comprises
+6. ‘he method of claim 5, wherein determining whether labeling each of the plurality of outputs as correct or wrong.
+cach of the plurality of outputs is correct further comprises 16. The system of claim 14, wherein the evaluation metric
+labeling cach of the plurality of outputs as correct or wrong. compares a similarity of an output of the plurality of outputs
+7, The method of claim 3, wherein the evaluation metric to a reference output.
+compares a similarity of an output of the plurality of outputs 17. The system of claim 16, wherein determining whether
+to a reference output. each of the plurality of outputs is correct further comprises
+8. The method of claim 7, wherein determining whether determining whether the output is within a threshold of the
+each of the plurality of outputs is correct further comprises reference output.
+determining whether the output is within a threshold of the 18. ‘The system of claim 17, wherein the threshold is a
+reference output : . Rouge threshold having a value large cnough where outputs
+9. ‘The method of claim 8, wherein the threshold is a that are wrong are not determined to be correct.
+Rouge threshold having a value large enough where oulpuls 19. A non-transilory computer readable medium for stor-
+that are wrong are not Setermined to be correct. ing instructions that, when executed by one or more pro-
+10. A system comprising: cessors, cause the one or more processors to perform opera-
+one OF MOLe Processors; and tions for selective prediction, the operations comprising:
+one or more storage device es coupled to the one or more training a large language model (1.1.M) to a task to adjust
+processors and storing instructions that, when executed first adaptable parameters to the task using (raining
+by the one or more processors, cause the one or more data:
+Processors to perform operations for selective predic- generating a plurality of outputs associated with the task
+tion, the operations comprising: re P adivte a cacheapat« ce
+an using the LLM with the adjusted first adaptable param-
+training a large language model (LLM) to a task to eters:
+adjust first adaptable parameters to the task using training the LLM on self-evaluation to adjust second
+training data; dantabl ters to the task: and
+generating a plurality of outputs associated with the adaptable parameters to The task; an
+task using the LLM with the adjusted first adaptable generating a prediction for the task using the LLM based
+S J iP %
+parameters: on the first adaptable parameters and second adaptable
+training the LLM on self-evaluation to a djust second parameters. the prediction comprising a self-evaluation
+g caonte ag aradiction 10 the tasks a sing the LLM 20. The system of claim 19, wherein training the LLM to
+based on the first adaptable parameters and second the task and on self-evaluation comprises fine-tuning the
+adaptable parameters, the prediction comprising a LLM using soft prompt tuning.
+self-evaluation score. + oe ok oe

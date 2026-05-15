@@ -671,6 +671,505 @@ CRITICAL_FACTOR_PENALTIES = {
     "https_enabled": 12,
 }
 
+UI_GROUP_ORDER = ["technical", "onpage", "schema", "eeat", "patents", "ai_aeo"]
+UI_GROUP_LABELS = {
+    "technical": "Techniczne SEO",
+    "onpage": "On-page",
+    "schema": "Schema",
+    "eeat": "E-E-A-T",
+    "patents": "Patenty Google",
+    "ai_aeo": "AI / AEO",
+}
+
+SCHEMA_FACTOR_IDS = {
+    "appropriate_schema_for_content_type",
+    "organization_schema",
+    "website_schema",
+    "any_schema",
+    "product_or_service_schema",
+    "faq_schema_bonus",
+    "breadcrumb_schema",
+    "article_schema",
+    "schema_author_field",
+    "schema_dates",
+    "person_schema_team",
+    "localbusiness_or_organization_schema",
+    "itemlist_schema",
+}
+
+PAGE_TECH_APPLIES_TO = {
+    "meta_title_present": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "meta_description": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "canonical_tag": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "h1_single": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "heading_hierarchy": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "og_tags": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "viewport_meta": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "lang_attribute": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "image_alt_coverage": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "semantic_html5_tags": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "response_size_ok": ["homepage", "service", "article", "about", "contact", "category", "other"],
+    "organization_schema": ["homepage", "about"],
+    "website_schema": ["homepage"],
+    "any_schema": ["homepage", "category", "other"],
+    "product_or_service_schema": ["service"],
+    "faq_schema_bonus": ["service", "article"],
+    "breadcrumb_schema": ["service", "article", "about", "category", "other"],
+    "article_schema": ["article"],
+    "schema_author_field": ["article"],
+    "schema_dates": ["article"],
+    "person_schema_team": ["about"],
+    "localbusiness_or_organization_schema": ["contact"],
+    "tel_link_present": ["contact"],
+    "mailto_link_present": ["contact"],
+    "contact_form_present": ["contact"],
+    "itemlist_schema": ["category"],
+}
+
+
+def _clamp_score(value: int, low: int = 1, high: int = 3) -> int:
+    return max(low, min(high, value))
+
+
+def _content_applies_to(factor_id: str) -> list[str]:
+    page_types = [
+        page_type
+        for page_type, spec in PAGE_TYPE_FACTORS.items()
+        if factor_id in spec.get("factors", [])
+    ]
+    if page_types:
+        return page_types
+    patent_types = [
+        page_type
+        for page_type, factor_ids in PATENT_PAGE_TYPE_FACTORS.items()
+        if factor_id in factor_ids
+    ]
+    return patent_types or ["homepage", "service", "article", "about", "contact", "category", "other"]
+
+
+def _ui_group_for_factor(factor_id: str, meta: dict | None = None, *, is_tech: bool = False, is_domain: bool = False) -> str:
+    meta = meta or {}
+    if meta.get("source") == "google_patent":
+        return "patents"
+    if factor_id in SCHEMA_FACTOR_IDS or "schema" in factor_id:
+        return "schema"
+    if is_tech or is_domain:
+        return "technical"
+
+    category = meta.get("category", "")
+    if category == "eeat":
+        return "eeat"
+    if category in {"geo", "rag"}:
+        return "ai_aeo"
+    if category == "patent":
+        return "patents"
+    return "onpage"
+
+
+def _impact_effort_for_factor(factor_id: str, group: str, meta: dict | None = None, *, is_tech: bool = False, is_domain: bool = False) -> tuple[int, int]:
+    meta = meta or {}
+    impact = 2
+    effort = 2
+
+    if group == "patents":
+        impact = 3 if meta.get("confidence") == "high" else 2
+        effort = 2 if meta.get("seo_inference_level") == "direct" else 3
+    elif group == "schema":
+        impact = 3
+        effort = 1
+    elif group == "eeat":
+        impact = 3
+        effort = 2
+    elif group == "ai_aeo":
+        impact = 3 if factor_id in {"direct_answer_near_content_start", "citable-fragment-density"} else 2
+        effort = 2
+    elif group == "technical":
+        impact = 3 if factor_id in CRITICAL_FACTOR_PENALTIES or is_domain else 2
+        effort = 1
+    else:
+        impact = 2
+        effort = 2
+
+    high_effort_tokens = ("depth", "original", "external", "citations", "case", "comprehensive", "differentiation")
+    low_effort_tokens = ("date", "cta", "title", "h1", "mailto", "tel", "viewport", "lang", "canonical")
+    if any(token in factor_id for token in high_effort_tokens):
+        effort = max(effort, 3)
+    if any(token in factor_id for token in low_effort_tokens):
+        effort = min(effort, 1)
+    if factor_id == "pagespeed_mobile_ok":
+        effort = 3
+
+    return _clamp_score(impact), _clamp_score(effort)
+
+
+def _schema_code_example(factor_id: str) -> str | None:
+    if factor_id in {"article_schema", "schema_author_field", "schema_dates"}:
+        return """<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "Tytuł artykułu",
+  "author": {"@type": "Person", "name": "Imię i nazwisko"},
+  "datePublished": "2026-05-15",
+  "dateModified": "2026-05-15"
+}
+</script>"""
+    if factor_id in {"organization_schema", "website_schema", "localbusiness_or_organization_schema"}:
+        return """<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Nazwa firmy",
+  "url": "https://example.com",
+  "sameAs": ["https://www.linkedin.com/company/example"]
+}
+</script>"""
+    if factor_id == "product_or_service_schema":
+        return """<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Service",
+  "name": "Nazwa usługi",
+  "provider": {"@type": "Organization", "name": "Nazwa firmy"},
+  "areaServed": "PL"
+}
+</script>"""
+    if factor_id == "breadcrumb_schema":
+        return """<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    {"@type": "ListItem", "position": 1, "name": "Home", "item": "https://example.com"}
+  ]
+}
+</script>"""
+    return None
+
+
+def _generic_detail(factor_id: str, label: str, group: str, meta: dict | None = None, *, is_tech: bool = False, is_domain: bool = False) -> dict:
+    meta = meta or {}
+    if meta.get("source") == "google_patent" and factor_id in PATENT_FACTORS:
+        patent = PATENT_FACTORS[factor_id]
+        patents = [p.get("patent_id", "") for p in patent.get("source_patents", []) if p.get("patent_id")]
+        return {
+            "what": patent.get("definition_pl", f"Czynnik patentowy: {label}."),
+            "why": (
+                f"{patent.get('evidence_summary_pl', '')} "
+                "Traktuj to jako sprawdzalną hipotezę audytową, nie deklarację aktualnego czynnika rankingowego Google."
+            ).strip(),
+            "how_to_fix": patent.get("how_to_satisfy_pl", "Popraw treść zgodnie z opisem mechanizmu i zweryfikuj zmianę na konkretnych URL-ach."),
+            "code_example": None,
+            "patent_ref": ", ".join(patents),
+        }
+
+    if group == "schema":
+        return {
+            "what": f"{label} to techniczny opis treści w danych strukturalnych, który pomaga wyszukiwarkom i systemom AI rozpoznać typ strony.",
+            "why": "Schema zmniejsza niejednoznaczność: artykuł, organizacja, oferta, breadcrumb lub osoba są opisane jawnie, a nie tylko wywnioskowane z HTML.",
+            "how_to_fix": "Dodaj lub popraw JSON-LD zgodny z realną treścią strony. Nie oznaczaj elementów, których użytkownik nie widzi w treści.",
+            "code_example": _schema_code_example(factor_id),
+        }
+    if group == "technical":
+        return {
+            "what": f"{label} to warunek techniczny, który wpływa na możliwość poprawnego pobrania, zinterpretowania lub zaufania do strony.",
+            "why": "Problemy techniczne ograniczają wartość nawet dobrej treści, bo boty i wyszukiwarki mogą jej nie pobrać, nie zrozumieć albo źle skonsolidować.",
+            "how_to_fix": "Napraw element w kodzie strony, konfiguracji serwera albo plikach domenowych, a potem sprawdź wynik ponownym audytem.",
+            "code_example": None,
+        }
+    if group == "eeat":
+        return {
+            "what": f"{label} pokazuje, czy strona daje użytkownikowi i AI wystarczające sygnały doświadczenia, eksperckości i wiarygodności.",
+            "why": "Przy tematach eksperckich anonimowa lub generyczna treść jest trudniejsza do zaufania i cytowania.",
+            "how_to_fix": "Dodaj konkret: autora, kwalifikacje, źródła, dane własne, case study, zewnętrzne potwierdzenia albo inne dowody adekwatne do typu strony.",
+            "code_example": "Przykład treści: „Autor: Anna Nowak, senior SEO consultant od 2016 r.; w tekście wykorzystano dane z GSC z marca 2026 oraz dokumentację Google Search Central.”",
+        }
+    if group == "ai_aeo":
+        return {
+            "what": f"{label} wpływa na to, czy system AI może łatwo wyciągnąć z podstrony jednoznaczną odpowiedź.",
+            "why": "Asystenci AI preferują krótkie, samodzielne fragmenty z jasną odpowiedzią, źródłem i kontekstem.",
+            "how_to_fix": "Dodaj odpowiedź już na początku sekcji, rozbij długie akapity, użyj list/tabel i dopisz brakujące pytania klientów.",
+            "code_example": "Przykład: „Crawl budget to limit zasobów, które Googlebot przeznacza na pobieranie URL-i z domeny. Najczęściej problem dotyczy dużych sklepów i serwisów z filtrami.”",
+        }
+    return {
+        "what": f"{label} określa, czy podstrona jasno komunikuje swój temat, cel i wartość dla użytkownika.",
+        "why": "Czytelny on-page zmniejsza chaos informacyjny: użytkownik, Google i AI szybciej rozumieją, co jest najważniejsze.",
+        "how_to_fix": "Doprecyzuj tytuł, H1, pierwszą sekcję, linkowanie wewnętrzne i układ treści tak, żeby wspierały jedną główną intencję.",
+        "code_example": "Przykład: zamiast ogólnego H1 „Rozwiązania dla firm” użyj „Audyt SEO dla sklepów internetowych po migracji platformy”.",
+    }
+
+
+def _enrich_factor_metadata() -> None:
+    for factor_id, meta in FACTOR_META.items():
+        group = _ui_group_for_factor(factor_id, meta)
+        impact, effort = _impact_effort_for_factor(factor_id, group, meta)
+        meta.setdefault("group", group)
+        meta.setdefault("group_label", UI_GROUP_LABELS[group])
+        meta.setdefault("applies_to", _content_applies_to(factor_id))
+        meta.setdefault("impact", impact)
+        meta.setdefault("effort", effort)
+        meta.setdefault("detail", _generic_detail(factor_id, meta.get("label", factor_id), group, meta))
+        if meta.get("source") == "google_patent" and factor_id in PATENT_FACTORS:
+            patents = [p.get("patent_id", "") for p in PATENT_FACTORS[factor_id].get("source_patents", []) if p.get("patent_id")]
+            meta.setdefault("patent_ref", ", ".join(patents))
+
+    for factor_id, meta in TECH_FACTOR_META.items():
+        group = _ui_group_for_factor(factor_id, meta, is_tech=True)
+        impact, effort = _impact_effort_for_factor(factor_id, group, meta, is_tech=True)
+        meta.setdefault("group", group)
+        meta.setdefault("group_label", UI_GROUP_LABELS[group])
+        meta.setdefault("applies_to", PAGE_TECH_APPLIES_TO.get(factor_id, ["homepage", "service", "article", "about", "contact", "category", "other"]))
+        meta.setdefault("impact", impact)
+        meta.setdefault("effort", effort)
+        meta.setdefault("detail", _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_tech=True))
+
+    for factor_id, meta in DOMAIN_TECH_META.items():
+        group = _ui_group_for_factor(factor_id, meta, is_domain=True)
+        impact, effort = _impact_effort_for_factor(factor_id, group, meta, is_domain=True)
+        meta.setdefault("group", group)
+        meta.setdefault("group_label", UI_GROUP_LABELS[group])
+        meta.setdefault("applies_to", ["domain"])
+        meta.setdefault("impact", impact)
+        meta.setdefault("effort", effort)
+        meta.setdefault("detail", _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_domain=True))
+
+
+def _score_status(score: float) -> str:
+    if score >= 1.75:
+        return "ok"
+    if score >= 0.75:
+        return "partial"
+    return "missing"
+
+
+def _status_label(status: str) -> str:
+    return {"ok": "OK", "partial": "Częściowo", "missing": "Brak"}.get(status, status)
+
+
+def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_tech: bool = False, is_domain: bool = False) -> dict:
+    uid = f"domain:{key}" if is_domain else f"tech:{key}" if is_tech else f"factor:{key}"
+    if uid not in index:
+        group = meta.get("group") or _ui_group_for_factor(key, meta, is_tech=is_tech, is_domain=is_domain)
+        index[uid] = {
+            "uid": uid,
+            "id": key,
+            "label": meta.get("label", key),
+            "group": group,
+            "group_label": UI_GROUP_LABELS.get(group, group),
+            "applies_to": meta.get("applies_to", []),
+            "impact": meta.get("impact", 2),
+            "effort": meta.get("effort", 2),
+            "detail": meta.get("detail", {}),
+            "source": meta.get("source", "technical" if (is_tech or is_domain) else "audit"),
+            "patent_ref": meta.get("patent_ref", ""),
+            "confidence": meta.get("confidence", ""),
+            "seo_inference_level": meta.get("seo_inference_level", ""),
+            "evidence_ids": meta.get("evidence_ids", []),
+            "is_tech": is_tech,
+            "is_domain": is_domain,
+            "observations": [],
+        }
+    return index[uid]
+
+
+def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> list[dict]:
+    index: dict[str, dict] = {}
+
+    for pa in page_audits:
+        page_ref = {
+            "url": pa.get("url", ""),
+            "title": pa.get("title", ""),
+            "page_type": pa.get("page_type", "other"),
+            "page_type_label": pa.get("page_type_label", PAGE_TYPE_LABELS.get(pa.get("page_type", "other"), pa.get("page_type", "other"))),
+            "scope": "page",
+        }
+        for key, value in (pa.get("factors") or {}).items():
+            if not isinstance(value, dict) or "score" not in value:
+                continue
+            meta = FACTOR_META.get(key, {"label": key, "category": "topical"})
+            record = _ensure_factor_record(index, key, meta)
+            score = int(value.get("score", 0))
+            status = _score_status(score)
+            record["observations"].append({
+                **page_ref,
+                "score": score,
+                "score_pct": round(score / 2 * 100),
+                "status": status,
+                "status_label": _status_label(status),
+                "note": value.get("note", ""),
+            })
+
+        for key, score_value in (pa.get("tech_scores") or {}).items():
+            meta = TECH_FACTOR_META.get(key, {"label": key, "category": "tech"})
+            record = _ensure_factor_record(index, key, meta, is_tech=True)
+            score = int(score_value)
+            status = _score_status(score)
+            record["observations"].append({
+                **page_ref,
+                "score": score,
+                "score_pct": round(score / 2 * 100),
+                "status": status,
+                "status_label": _status_label(status),
+                "note": "",
+            })
+
+    for key, score_value in (domain_tech_scores or {}).items():
+        meta = DOMAIN_TECH_META.get(key, {"label": key, "category": "tech"})
+        record = _ensure_factor_record(index, key, meta, is_domain=True)
+        score = int(score_value)
+        status = _score_status(score)
+        record["observations"].append({
+            "url": "domain",
+            "title": "Cała domena",
+            "page_type": "domain",
+            "page_type_label": "Domena",
+            "scope": "domain",
+            "score": score,
+            "score_pct": round(score / 2 * 100),
+            "status": status,
+            "status_label": _status_label(status),
+            "note": "",
+        })
+
+    records = []
+    for record in index.values():
+        observations = record["observations"]
+        if not observations:
+            continue
+        scores = [obs["score"] for obs in observations]
+        worst = min(scores)
+        avg_score = sum(scores) / len(scores)
+        status = _score_status(worst)
+        affected = [obs for obs in observations if obs["score"] < 2]
+        record["score"] = worst
+        record["avg_score"] = round(avg_score, 2)
+        record["score_pct"] = round(avg_score / 2 * 100)
+        record["status"] = status
+        record["status_label"] = _status_label(status)
+        record["affected_count"] = len(affected)
+        record["ok_count"] = len(observations) - len(affected)
+        record["priority_score"] = round(((2 - worst) * record["impact"] / max(record["effort"], 1)) + (len(affected) * 0.15), 2)
+        records.append(record)
+
+    return sorted(records, key=lambda item: (UI_GROUP_ORDER.index(item["group"]) if item["group"] in UI_GROUP_ORDER else 99, -item["priority_score"], item["label"]))
+
+
+def _scoped_observations(factor: dict, scope_url: str = "all") -> list[dict]:
+    observations = factor.get("observations", [])
+    if scope_url == "all":
+        return observations
+    return [
+        obs
+        for obs in observations
+        if obs.get("url") == scope_url or obs.get("scope") == "domain"
+    ]
+
+
+def calculate_scope_scores(factor_index: list[dict], scope_url: str = "all") -> dict:
+    totals = {group: {"val": 0.0, "max": 0.0, "count": 0} for group in UI_GROUP_ORDER}
+    for factor in factor_index:
+        group = factor.get("group")
+        if group not in totals:
+            continue
+        observations = _scoped_observations(factor, scope_url)
+        if not observations:
+            continue
+        impact = factor.get("impact", 2)
+        for obs in observations:
+            totals[group]["val"] += (obs.get("score", 0) / 2) * impact
+            totals[group]["max"] += impact
+            totals[group]["count"] += 1
+
+    groups = []
+    for group in UI_GROUP_ORDER:
+        total = totals[group]
+        score = round(total["val"] / total["max"] * 100) if total["max"] else None
+        groups.append({
+            "id": group,
+            "label": UI_GROUP_LABELS[group],
+            "score": score,
+            "count": total["count"],
+        })
+
+    visible_scores = [g["score"] for g in groups if g["score"] is not None]
+    overall = round(sum(visible_scores) / len(visible_scores)) if visible_scores else 0
+    return {"overall": overall, "groups": groups}
+
+
+def build_top_actions(factor_index: list[dict], scope_url: str = "all", limit: int = 5) -> list[dict]:
+    actions = []
+    for factor in factor_index:
+        observations = [obs for obs in _scoped_observations(factor, scope_url) if obs.get("score", 2) < 2]
+        if not observations:
+            continue
+        worst = min(obs.get("score", 0) for obs in observations)
+        severity = 2 - worst
+        priority = round((severity * factor.get("impact", 2) / max(factor.get("effort", 1), 1)) + (len(observations) * 0.15), 2)
+        first_note = next((obs.get("note", "") for obs in observations if obs.get("note")), "")
+        page_refs = [
+            {
+                "url": obs.get("url", ""),
+                "title": obs.get("title", ""),
+                "page_type": obs.get("page_type", ""),
+                "page_type_label": obs.get("page_type_label", ""),
+                "score": obs.get("score", 0),
+                "status": obs.get("status", ""),
+            }
+            for obs in observations[:5]
+        ]
+        actions.append({
+            "factor_uid": factor.get("uid"),
+            "factor_id": factor.get("id"),
+            "label": factor.get("label"),
+            "group": factor.get("group"),
+            "group_label": factor.get("group_label"),
+            "status": _score_status(worst),
+            "status_label": _status_label(_score_status(worst)),
+            "impact": factor.get("impact", 2),
+            "effort": factor.get("effort", 2),
+            "affected_count": len(observations),
+            "priority_score": priority,
+            "note": first_note,
+            "page_refs": page_refs,
+            "source": factor.get("source", ""),
+        })
+    return sorted(actions, key=lambda item: (-item["priority_score"], -item["affected_count"], item["label"]))[:limit]
+
+
+def build_dashboard(factor_index: list[dict], page_audits: list[dict]) -> dict:
+    default_scores = calculate_scope_scores(factor_index, "all")
+    url_options = [{
+        "id": "all",
+        "label": "Wszystkie",
+        "url": None,
+        "page_type": "all",
+        "page_type_label": "Wszystkie",
+        "count": len(page_audits),
+        "score": default_scores["overall"],
+    }]
+    for idx, page in enumerate(page_audits, start=1):
+        scoped = calculate_scope_scores(factor_index, page.get("url", ""))
+        url_options.append({
+            "id": page.get("url", f"page-{idx}"),
+            "label": page.get("page_type_label") or PAGE_TYPE_LABELS.get(page.get("page_type", "other"), page.get("page_type", "other")),
+            "url": page.get("url", ""),
+            "title": page.get("title", ""),
+            "page_type": page.get("page_type", "other"),
+            "page_type_label": page.get("page_type_label", ""),
+            "count": 1,
+            "score": scoped["overall"],
+        })
+
+    return {
+        "overall": default_scores["overall"],
+        "groups": default_scores["groups"],
+        "top_actions": build_top_actions(factor_index, "all", limit=5),
+        "url_options": url_options,
+    }
+
+
+_enrich_factor_metadata()
+
 
 # --- URL DISCOVERY ---
 
@@ -1879,30 +2378,30 @@ def audit_stream(url: str):
         except Exception as e:
             synth = {"top_recommendations": [], "content_gaps": [], "overall_assessment": f"Synteza nieudana: {e}"}
 
-        # 8. Aggregate scores
+        # 8. Aggregate scores + UI index for L1/L2/L3
         domain_tech_pct = weighted_domain_tech_score_pct(domain_tech_scores)
         fan_pct = fan_out_score(fan_out)
         page_scores = [pa["combined_score"] for pa in page_audits] if page_audits else [0]
         avg_page = round(sum(page_scores) / len(page_scores))
 
-        # Category breakdowns for radar chart (content, patent-derived signals, domain tech)
-        grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "geo", "patent")}
+        # Legacy category breakdowns kept for debugging/backward comparison.
+        legacy_grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "geo", "patent")}
         for pa in page_audits:
             for fk, v in (pa.get("factors") or {}).items():
                 cat = FACTOR_META.get(fk, {}).get("category", "")
-                if cat in grp:
-                    grp[cat]["max"] += 2
-                    grp[cat]["val"] += (v.get("score", 0) if isinstance(v, dict) else 0)
+                if cat in legacy_grp:
+                    legacy_grp[cat]["max"] += 2
+                    legacy_grp[cat]["val"] += (v.get("score", 0) if isinstance(v, dict) else 0)
 
         def _grp_pct(g): return round(g["val"] / g["max"] * 100) if g["max"] else 0
-        cat_eeat = _grp_pct(grp["eeat"])
-        cat_topical = _grp_pct(grp["topical"])
-        cat_geo = _grp_pct(grp["geo"])
-        cat_patent = _grp_pct(grp["patent"])
+        cat_eeat = _grp_pct(legacy_grp["eeat"])
+        cat_topical = _grp_pct(legacy_grp["topical"])
+        cat_geo = _grp_pct(legacy_grp["geo"])
+        cat_patent = _grp_pct(legacy_grp["patent"])
 
         # Base overall: page scores carry category weights (via factor_score_pct),
         # domain tech is weighted by DOMAIN_TECH_WEIGHTS, fan-out coverage last.
-        base_overall = round(avg_page * 0.55 + domain_tech_pct * 0.30 + fan_pct * 0.15)
+        legacy_base_overall = round(avg_page * 0.55 + domain_tech_pct * 0.30 + fan_pct * 0.15)
 
         # Per-factor critical penalties — each absent P0 factor subtracts fixed points.
         ds = domain_tech_scores
@@ -1911,20 +2410,29 @@ def audit_stream(url: str):
             if ds.get(factor, 2) == 0
         )
 
-        overall = max(0, base_overall - penalties)
+        legacy_overall = max(0, legacy_base_overall - penalties)
+        factor_index = build_factor_index(page_audits, domain_tech_scores)
+        dashboard = build_dashboard(factor_index, page_audits)
+        category_scores = {group["id"]: group["score"] if group["score"] is not None else 0 for group in dashboard["groups"]}
+        overall = dashboard["overall"]
         scores_obj = {
             "overall": overall,
-            "category": {
-                "eeat": cat_eeat,
-                "topical": cat_topical,
-                "geo": cat_geo,
-                "patent": cat_patent,
-                "accessibility": domain_tech_pct,
-            },
+            "category": category_scores,
             "penalties": penalties,
             "page_average": avg_page,
             "domain_technical": domain_tech_pct,
             "fan_out": fan_pct,
+            "legacy": {
+                "overall": legacy_overall,
+                "base_overall": legacy_base_overall,
+                "category": {
+                    "eeat": cat_eeat,
+                    "topical": cat_topical,
+                    "geo": cat_geo,
+                    "patent": cat_patent,
+                    "accessibility": domain_tech_pct,
+                },
+            },
         }
 
         yield event("progress", {"message": "Generowanie podglądu snippeta AI (Perplexity sonar-pro)...", "pct": 93})
@@ -1955,6 +2463,8 @@ def audit_stream(url: str):
             "homepage_title": homepage_title,
             "homepage_meta_desc": homepage_data["meta_desc"],
             "scores": scores_obj,
+            "dashboard": dashboard,
+            "factor_index": factor_index,
             "page_audits": page_audits,
             "domain_technical": {
                 "scores": domain_tech_scores,
@@ -1974,6 +2484,8 @@ def audit_stream(url: str):
                 "tech_factor_meta": TECH_FACTOR_META,
                 "domain_tech_meta": DOMAIN_TECH_META,
                 "category_labels": CATEGORY_LABELS,
+                "group_labels": UI_GROUP_LABELS,
+                "group_order": UI_GROUP_ORDER,
                 "page_type_labels": PAGE_TYPE_LABELS,
                 "patent_factor_count": len(PATENT_FACTORS),
                 "patent_scored_factor_count": len(scored_patent_factor_ids()),

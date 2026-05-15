@@ -1,0 +1,1023 @@
+US012073189B2
+a2) United States Patent (10) Patent No: US 12,073,189 B2
+Sellam et al. (45) Date of Patent: *Aug, 27, 2024
+(54) LEARNED EVALUATION MODEL FOR (58) Field of Classification Search
+GRADING QUALITY OF NATURAL CPC .... GOGF 40/58; GOGF 18/214; GO6F 18/2178;
+LANGUAGE GENERATION OUTPUTS GO6E 40/30; GO6E 40/51; GO6E 40/44;
+(71) Applicant: Google LLC, Mountain View, CA (US) (Continued)
+(72) Inventors: Thibault Sellam, New York City, NY (56) References Cited
+(US); Dipanjan Das, Jersey City, NJ ATT ay .
+(US): Ankur Parikh, New York, NY U.S. PATENT DOCUMENTS
+(US) 11,551,002 B2 1/2023 Sellam ct al.
+2012/0101804 Al* 4/2012) Roth oo... GOK 40/45
+(73) Assignee: Google LLC, Mountain View, CA (US) 04/2
+Continued
+(*) Notice: Subject to any disclaimer, the term of this (Continued)
+patent is extended or adjusted under 35 _ ,
+USC. 154(b) by 0 days. OTIIER PUBLICATIONS
+‘This patent is subject to a terminal dis- Smith, Ronnie W. , et al., Spoken Natural T.anguage Dialog Sys-
+claimer. tems, a Practical Approach, Oxford University Press (excerpts),
+1994, pp. 1-37
+(21) Appl. No.: 18/205,018 (Continued)
+(22) Filed: Jun, 2, 2023 Primary Examiner — Danicl C Washburn
+(65) Prior Publication Data Assistant Examiner — Paul J. Mueller ;
+US 2023/0306209 Al Sen. 28. 2023 (74) Attorney, Agent, or Firm — Botos Churchill IP Law
+3/0306209 # Sep. 28, 3
+Related U.S. Application Data (87) ABSTRACT
+(63) Continuation of application No. 17/112,285, filed on Systems and methods for automatic evaluation of the quality
+Dec. 4, 2020, now Pat. No. 11,704,506, which is a of NLG outputs. In some aspects of the technology, a learned
+(Continued) evaluation model may be pretrained first using NLG model
+’ pretraining tasks, and then with further pretraining tasks
+(51) Int. Cl using automatically generated synthetic sentence pairs. In
+G06 -F 4 O58 (2020.01) some cases, following pretraining, the evaluation model may
+CO6F 18/21 (2023.01) be further fine-tuned using a set of human-graded sentence
+. ed . pairs, so that it learns to approximate the grades allocated by
+_ (Continued) the human evaluators. In some cases, following fine-tuning,
+(52) US. ch aor coe the learned evaluation model may be distilled into a student
+CPC cae GO6F 40/58 (2020.01); GOB 18/214 snodel.
+(2023.01); G@6F 18/2178 (2023.01),
+(Continued) 20 Claims, 9 Drawing Shects
+302,
+Select 4 passage of fext fram a source document
+045
+Replace one of more words in the passage of text with a mask token (.9., "[MASK")
+306,
+Train evaluation model to predict the original ward corresponding to
+e8ch mask token based on ae or mare addivanal dacuments
+00
+
+US 12,073,189 B2
+Page 2
+Related U.S, Application Data Williams, Adina , et al., A Broad-Coverage Challenge Corpus [or
+. oo. . co. Sentence Understanding through Inference, Proceedings of NAACT.-
+continuation-in-part of application No. 17/003,572, ITT 2018, pp. 1112-1122.
+filed on Aug. 26, 2020, now Pat. No. 11,551,002. Wiseman, Sam, et al., Challenges in Data-to-Document Generation,
+Proceedings of the 2017 Conference on Empirical Methods in
+(51) Int. Cl. Natural I.anguage Processing, pp. 2253-2263.
+GOGF 18/214 (2023.01) Xenouleas, Stratos , et al.. SUM-QM: a BERT-based Summary
+G06F 4030 (2020.01) Quality Estimation Model, Proceedings of the 2019 Conference on
+Empirical Methods in Natural T.anguage Processing and the 9th
+GO6F 4051 (2020.01) International Joint Conference on Natural Language Processing, pp.
+GOON 3/08 (2023.01) 6005-6011.
+(52) US. CL Zhang. Tianyi , el al., BERTSCORE: Evaluating Text Generation
+CPC wa GO6F 40/30 (2020.01); GO6F 40451 with BERT, arXiv: 1904.09675v1, Apr. 21, 2019.
+(2020.01); GO6N 3/08 (2013.01) Zhang. Tianyi vel al., BERTSCORE: Evaluating Text Generation
+58 Field of Classification Search With BERT, arXiv: 1904.09675v3, Teb, 24, 2020, pp. 1-43. :
+(58) teld’ oF © Tassiica’ ao i. , Zhang. Tianyi , el al., BERTSCORE: Evaluating Text Generation
+CPC ........ GOGF 40/284; GO6F 40/56; GO6N 3/08; With BER, arXiv:1904.09675v2, Ocl. 1, 2019, pp. 1-41.
+GOGN 3/045 Zhao, Wei , el al., “MoverScore: Text Generation Evaluating with
+See application file for complete search history. Conlextualized Embeddings and Earth Mover Distance”, Proceed-
+ings of the 2019 Conference on Empirical Methods in Natural
+(56) References Cited Language Processing and the 9th International Joint Conference on
+Natural Language Processing, pp. 563-578.
+U.S. PATENT DOCUMENTS. Bahdanau, Damitry , el al., Neural Machine ‘Iranslalion, by Jointly
+Learning to Align and I'ranslate, arXiv: 1409.0473v7, May 19, 2016,
+QOIG/OLITSIG AL*® 4/2016 Te vases, GOP 7/023 pp. 1-15.
+704:9 Bannard, Colin . et al., Paraphrasing with Bilingual Parallel Cor-
+2017/0060855 Al* 3/2017 Song we GOGF 40/55 pora, Proceedings of the 43rd Annual Meeting of the ACL, pp.
+2020/0210772 Al* 7/2020 Bojar .......0.... GOOF 18/2148 597-604, Ann Arbor Jun. 2005, Association for Computational
+2021/0174204 Al* 6/2021 Yin wc GOGF 40/279 Linguistics.
+202 10182662 Al* 6/2021 Lal veeesceereciien, GOOF 40/284 Belinkov, Yonatan , et al., Synthetic and Natural Noise Both Break
+20210365837 Al 11/2021 Kashihara et al. Neural Machine Translation, Published as a conference paper at
+2022/0067285 Al 3/2022 Sellam et al. ICLR 2018, pp. 1-13.
+2022/0067309 Al 3/2022 Sellam ef al. Belz, Anja , ct al., Comparing Automatic and Human Evaluation of
+NLG Systems, 11th Conference of the European Chapter of the
+OTHER PUBLICATIONS Association for Computational Linguistics, www.aclweb.org, 2006,
+pp. 1-8
+Stanojevic, Milos , ct al, BEER: BEtter Evaluation as Ranking, Bojar, Ondrej , Results of the WMTI6 Metrics Shared Task,
+Proceedings of the Ninth Workshop on Statistical Machine Trans- Proceedings of the First Conference on Machine Translation, vol. 2
+lation, pp. 414-419,2014. Shared Task Papers, 2016, pp. 199-231. :
+Sutskever, Ilya , et al., Sequence to Sequence Learning with Neural Bojar, Ondrej , et al., Results of the WMT17 Metrics Shared Task,
+5 Aly: q ql 8 7 . cy i r 7 r
+Networks, arXiv:1409.32[5v3, Dec. 14, 2014. Proceedings of the Conference on Machine Translation (WMT),
+os > aids , hoes se vol. 2: Shared Task Papers, 2017, pp. 489-513.
+lian, Ran , et al., Sticking lo the Facts: Confident Decoding for B S, 1 et al. A lar tated for learni
+: . owman, Samuel , et al., A large annotated corpus for learning
+Faithful Data-To-Text Generation, arXiv:1910.08684v 1. Oct. 19, . ae 7 : ms .
+natural language inference, Proceedings of the 2015 Conference on
+2019, pp. 1-12. co . Empirical Methods in Natural Language Processing, pp. 632-642,
+Tian, Ran , et al., Sticking to the Facts: Confident Decoding for 2015,
+Faithful Data-To-Text Generation, arXiv:1910.08684v2, Nov. 15, Callison-Burch, Chris , et al., Re-evaluating the Role of BLEL in
+2019, pp. 1-16 Machine Translation Research, [1th Conference of the Furopean
+‘lomar, Gaurav Singh , et al., Neural Paraphrase Identification of Chapter of the Association for Computational Linguistics, https://
+Questions with Noisy Pretraining, Proceedings of the First Work- www.aclweb.org‘anthology'T.06-1032.pdf, 2006, pp. 1-8.
+shop on Subword and Character Level Models in NLP, 2017, pp Celikyilmaz, Asli, et al., Evaluation of Text Generation: A Survey,
+142-147. arXiv:2006. 14799v 1, Jun. 26, 2020, pp. I-58.
+Ture, Julia , et al, Well-Read Students Learn Better: On the Chaganty, Arun Tejasvi, et al., The price of debiasing automatic
+Importance of Pre-Training Compact Models, Google Research, metrics in natural language evaluation, Proceedings of the 56th
+Sep. 25, 2019, pp. 1-13, arXiv:1908.08962v2 [cs.CL] Annual Meeting of the Association for Computational T.inguistics
+Ture, Iulia, ct al., Well-Read Students Learn Better: The Lmpact of (Long Papers), pp. 643-653, 2018.
+Student Initialization on Knowledge Distillation, arXiv:1908. Chen, Qian , et al., Mnhanced I.STM tor Natural T.anguage Infer-
+08962v I [cs.CT.] Sep. 23. 2019, pp. [-12. ence, Proceedings of the 55th Annual Meeting of the Associalion Lor
+Vaswani, Ashish , et al., Attention Is All You Need, 31st Conference Computational Tinguistics, pp. 1657-1668, 2017.
+on Neural Information Processing Systems (NIPS 2017), pp. [-I1. Chopra, Sumit , el al.. Abstraclive Sentence Summarizalion with
+Vinyals, Orio , et al., A Neural Conversational Model, arXiv: 1506 Attentive Recurrent Neural Networks. Proceedings of NAACT.-
+05869v3. Jul. 22, 2015, pp. 1-8. HLT 2016, pp. 93-98.
+Wang, Alex , et al, GLUE: A Multi-Task Benchmark and Analysis Clark, Tlizabeth , et al., Sentence Mover’s Similarity: Automatic
+Platform for Natural T.anguage Understanding, Proceedings of the Evaluation for Mulli-Sentence Texts, Proceedings of the 37h Annual
+2018 EMNI.P Workshop BlackboxNT.P: Analyzing and Interpreting Meeting of the Associalion for Compulational Linguistics, Jul.
+Neural Networks for NTP, pp. 353-355. 28-Aug, 2, 2019, pp. 1-13, Florence, Italy.
+Wang, Alex , et al., GIUT: A Multi-Task Benchmark and Analysis Clark. Elizabeth , et al., Senlence Mover’s Similarity: Automatic
+Platform for Natural Tanguage Understanding, Published as a Evaluation for Mulli-Sentence Texts, Proceedings of the 37h Annual
+conference paper at ICT.R 2019. arXiv:1804.07461v3, Feb. 22, Meeting of the Association [or Compulational Linguistics, Jul.
+2019, pp. 1-20. 28-Aug. 2, 2019, pp. 2748-2760, Florence, Italy.
+Wieting. John . et al., Towards Universal Paraphrastic Sentence Devlin, Jacob , el al, BERT: Pre-uaining of Deep Bidirectional
+Embeddings. Published as a conference paper al ICLR 2016, ‘Transformers for Language Understanding, Proceedings of NAACL-
+arXiv: 1511.08198v3 Mar. 4, 2016, pp. 1-19. HLYI 2019, pp. 4171-4186.
+
+US 12,073,189 B2
+Page 3
+(56) References Cited tics Iask, Proceedings of the Conference on Machine ‘lranslalion
+(WMT), vol. 2: Shared Task Papers, pp. 598-603, 2017.
+OTHER PUBLICALIONS Ma, Qingsong , ct al., Results of the WMT18 Metrics Shared Task,
+Proceedings of the Third Conference on Machine Translation (WMT),
+Dusek, Ondrej , ef al., Automatic Qualily Estimation for Natural vol. 2: Shared Task Papers, pp. 671-688, 2018. .
+Language Generation: Ranting (Jointly Rating and Ranking), In Ma. Qingsong , et al., Results of the WM'1'19 Meurics Shared ‘Task:
+Proceedings of INLG, Tokyo, Japan, Oct. 2019, arXiv:1910. Segment-Level and Strong MT Systems Pose Big Challenges,
+O4731v1, pp. 1-9. Proceedings of the Fourth Conference on Machine ‘Iranslation
+: . . . . . (WMT), vol. 2: Shared Task Papers (Day 1) pp. 62-90, 2019.
+
+Dusek, Ondrej . el al., Automatic Qualily Eslimalion for Natural Mani, Inderjcet , ct al., Advances in Automatic ‘loxt Summarization,
+Language Generation: Ranting (Jointly Rating and Ranking}. Pro- the MIT Press, Copyright 1999, pp. 1-32.
+ceedings of the 12th Intemational Conference on Natural Language Mathur, Nitika . et al., Pulling Evaluation in Context: Contextual
+Gencration, pp. 369-376, 2019. Embeddings improve Machine Translation Evaluation, Proceedings
+Dusek, Ondrej , et al., Referenceless Quality l'stimation for Natural of the 57th Annual Meeting of the Associalion for Computational
+Language Generation, arXiv:1708.01759v1, Aug. 5. 2017, pp. 1-9 Linguistics, pp. 2799-2808, 2019.
+Tiyal. Matan , et al., Question Answering as an Automatic Fvalua- Mathur, Nilika , el al.. “Tangled up in BLEU: Reevaluating Lhe
+tion Metric for News Article Summarization, Proceedings of NAACT.- Evaluation of Automatic Machine'lranslation Evaluation Metrics”,
+TILT 2019, pp. 3938-3948. Proceedings of the 58th Annual Meeling of the Association for
+Tang, IIao , et al., From Captions lo Visual Concepts and Back, Computational Linguistics, Jul. 5-10, 2020, pp. 1-14, the University
+CVPR 2015, pp. I-10. Melbourne, Vicloria, Australia.
+Ganitkevilch, Juri . et al., PPDB: The Paraphrase Database, Pro- Novikova, Jekaterina , et al, Why We Need New Evaluation
+ceedings of NAACT-IITT 2013, pp. 758-764. Metrics for NLG, Proceedings of the 2017 Conference on Empirical
+Gardent, Claire , el al., The WebNLG Challenge: Generating Text Methods in Natural Language Processing, pp. 2241-2252.
+from RDF Data, Proceedings of the 10th International Natural Papineni, Kishore , ct al., BLEU: a Mcthod for Automatic Evalu-
+Language Generation conference, 2017, pp. 124-133. ation of Machine ‘lranslation, Proceedings of the 40th Annual
+Goodrich, Ben, et al., Assessing the Factual Accuracy of Generaled Mecting of the Association for Computational Linguistics (ACL),
+TexL, Research Track Paper, KDD *19, Aug. 4-8, 2019, Anchorage, Philadelphia, Jul. 2002. pp. 311-318,
+AK, USA, pp. 166-175. Ribeiro, Marco Tulio, ct al., Semantically Equivalent Adversarial
+Ilinton, Geollrey , et al., “Distilling the Knowledge in a Neural Rules for Debugging NLP Models, Proceedings of the 56th Annual
+Network,” arXiv: 1503.02531v1 [slal.ML] Mar. 9, 2015, pp. 1-9. Mecting of the Association for Computational Linguistics (Long
+Tyyer, Mohit , et al., Adversarial Example Generation with Syntac- Papers), pp. 856-865, 2018.
+lically Controlled Paraphrase Networks. Proceedings of NAACL- Scllam, Thibault , BLEURT: Learning Robust Metrics for Text
+HLI 2018, pp. 1875-1885. Generation, arXiv:2004.04696v4, May 20, 2020, pp. 1-12
+Jia, Robin , et al., Adversarial Examples for Evalualing Reading Scllam, Thibault , ct al, BLEURT: Learning Robust Metrics for
+Comprehension Systems, Proceedings of the 2017 Conference on Text Generation, arXiv:2004.04696v1, Apr. 9, 2020, pp. 1-12.
+Empirical Methods in Natural Language Processing, pp. 2021-2031 Sellam, Thibault , et al. BLELTRT: Learning Robust Metrics for
+Koehn, Philipp , Statistical Machine I'ranslation, Cambridge Uni- Text Generation, arXiv:2004.04696v2, May 11, 2020, pp. 1-12
+versity Press, 2009, pp. 1-20. Sellam, Thibault , et al. BLELTRT: Learning Robust Metrics for
+Kukich, Karen , Design of a Knowledge-Based Report Generator, Text Generation, arXiv:2004.04696v3, May 14, 2020, pp. 1-12.
+University of Pittsburgh, Bell Telophone Laboratorics, 1983, pp Sellam, Thibault , et al. BLELTRT: Learning Robust Metrics for
+145-150. Text Generation, arXiv:2004.04696v5. May 21, 2020, pp. 1-12.
+Lin, Chin-Yew , Rouge: A Package for Automatic Evaluation of Sellam, Thibault , et al., Evaluating Natural Language Generation
+Summarics, in Proceedings of Workshop on Text Summarization with BILEURT, Google AI Blog: Fvaluating Natural I.anguage
+Branches Out, Post-Conference Workshop of ACL 2004, pp. 1-10 Generation with BLEURT, May 26, 2020, https://ai.googleblog.
+Liu, Yinhan , ROBERTa: A Robustly Optimized BERT Pretraining com/2020/05/evaluating-natural-language-generation.html. pp. 1-5.
+Approach, arXiv: 1907.11692v1, Jul. 26, 2019, pp. 1-13 Sennrich, Rico , et al, Improving Neural Machine Translation
+Liu, Chia-Wei , ct al., How Not to Evaluate Your Dialogue System: Models with Monolingual Data, Proceedings of the 54th Annual
+An Empirical Study of Unsupervised Evaluation Metrics for Dia- Meeting of the Association for Computational T.inguistics, pp.
+logue Response Generation, Proceedings of the 2016 Conference on 86-96, 2016.
+Empirical Methods in Natural Language Processing, pp. 2122-2132 Shimanaka, ITiroki , et al. RUST: Regressor Using Sentence
+Lo, Chi-Kiu , “YiSi—A unified semantic MT quality evaluation and Embeddings for Automatic Machine Translation valuation, Pro-
+estimation metric for languages with different levels of available ceedings of the Third Conference on Machine Translation (WMT),
+resources,” Proceedings of the Fourth Conference on Machine vol, 2: Shared Task Papers, pp. 751-758, 2018.
+Translation (WMT), vol. 2: Shared Task Papers (Day 1), 2019, Shimorina, Anastasia , et al.. WebNT.G Challenge: TTuman Fvalu-
+Florence, IT.. pp. |-7. auion Results. Jan. 2018. pp. 1-16.
+Ma, Qingsong , et al., Blend: a Novel Combined MT Metric Based
+on Direct Assessment, CASICT-DCU submission to WMTI7 Met- * cited by examiner
+
+U.S. Patent Aug. 27, 2024 Sheet 1 of 9 US 12,073,189 B2
+€
+g
+Ww
+a
+go 0
+s121/§ [2] |s
+j=|811 8 {211s
+N a a4
+2 ! ji } }
+2 fee
+S|
+_
+©
+LL.
+
+U.S. Patent Aug. 27, 2024 Sheet 2 of 9 US 12,073,189 B2
+202~J Pretraining
+204--TNILG Pretraining Tasks
+206 -1-1| Masked Language Modeling Tasks
+208 -|~|—| Next-Sentence Prediction Tasks
+210). Pretraining Using Synthetic Sentence Pairs
+212-114 Generate synthetic sentence pairs from source documents using:
+214-1) Random substitutions
+220 ~}-1-| Encode each sentence pair with training signals based on:
+222 -+-+-}. | Synthetic Sentence Pair Generation Flag
+224 --+-+1-+1 Automatic Metrics
+226 ~}-+-4+| Learned Backtranslation Prediction Mode!
+228 -/-|---] Learned Textual Entailment Model
+230-1 Train evaluation model to predict/approximate:
+232-}-++44 The synthetic sentence pair generation flag using classification loss
+2341-41 Each automatic metric’s output using regression loss
+236~+~-1+_| The backtranslation prediction model's output using regression loss
+238 ~~). | The textual entailment model's output using classification loss
+240 ~ Fine-Tuning
+942 —-L. Using a set of human-graded sentence pairs, train evaluation made! to
+approximate the grades allocated by the human evaluators
+FIG. 2 an
+
+U.S. Patent Aug. 27, 2024 Sheet 3 of 9 US 12,073,189 B2
+302,
+Select a passage of text from a source document
+304.
+Replace one or more words in fhe passage of text with a mask token (e.g., “[MASK]"}
+
+306.
+
+is
+
+Train evaluation model to predict the original word corresponding ta
+each mask token based on one or more additional documents
+
+300
+
+FIG. 3
+
+U.S. Patent Aug. 27, 2024 Sheet 4 of 9 US 12,073,189 B2
+402.
+Select a first passage of text (‘passage A”) from a source document
+404.
+Select a second passage of text (“passage B”) from the source document
+406.
+ML
+Train evaluation model to predict whether passage B directly
+follows passage A based on the words of passage A and passage B
+400
+FIG. 4
+
+U.S. Patent Aug. 27, 2024 Sheet 5 of 9 US 12,073,189 B2
+502.
+Select a passage of text (passage A) from a source document
+504.
+Randomly select one or more words in passage A to be replaced
+
+506.
+
+ML
+
+Replace each selected word in passage A with a replacement word
+to create a second passage of text (passage B)
+
+500
+
+FIG. 5
+
+U.S. Patent Aug. 27, 2024 Sheet 6 of 9 US 12,073,189 B2
+602.
+Select a passage of text (passage A) from a source document
+604.
+Randomly select one or more words in passage A
+606.
+ML
+Delete each selected word from passage A to
+create a second passage of text (passage B)
+800
+FIG. 6
+
+U.S. Patent Aug. 27, 2024 Sheet 7 of 9 US 12,073,189 B2
+702,
+Select a passage of text (passage A) from a source document,
+passage A being in a first language
+704.
+Transiate passage A from the first language into a
+second language to create a second passage (passage A’)
+706 ~
+iS
+Transiate passage A’ from the second language back into
+the first language to create a third passage (passage B)
+700
+FIG. 7
+
+U.S. Patent Aug. 27, 2024 Sheet 8 of 9 US 12,073,189 B2
+802.
+Generate a first set of sentence pairs using random substitutions
+{e.g., according to method 500 of FIG. 5)
+804.
+Generate a second set of sentence pairs using random omissions
+(é.g., according to method 600 of FIG. 6)
+806 ~
+XM
+Generate a third set of sentence pairs using back-transiation
+({@.g., according to method 700 of FIG. 7)
+808.
+For each given sentence pair of the first, second, and third sets of
+sentence pairs, generate a grade using a learned evaluation model
+(e.g., a model trained according to method 200 of FIG. 2)
+810.
+Generate a set of graded sentence pairs, each graded sentence pair
+comprising a given sentence pair from one of the first, second, or third sets of
+sentence pairs and the grade generated in step 808 for that given sentence pair
+800
+FIG. 8
+
+U.S. Patent Aug. 27, 2024 Sheet 9 of 9 US 12,073,189 B2
+902.
+Set each of a step counter ¢, a training cycle counter c,
+and a “past Kendail Tau score” to 0
+904.
+
+Select a batch of graded sentence pairs from a first set of graded senience
+pairs, each graded sentence pair comprising a sentence pair and a grade (e.g.,
+as created according to the method 800 of FIG. 8)
+
+906 .,
+Using a student model, generate a grade for
+the sentence pair in each graded sentence pair of the batch
+908 .
+
+Calculate a loss value between the grades generated by the student model and
+the grades encoded in each graded sentence pair of the batch, and modify one
+or more parameters of the student model based on the loss value
+
+210., 912.
+> Is tless than Yes
+Increment tby 1 (e.g.,t=t+ 1) a predetermined number of steps
+(e.g., 500,000)?
+O14 No
+Evaluate the student mode! using a second set of graded sentence pairs to
+generate a current Kendall Tau score
+916 )
+Create a copy of the student model if the current Kendall Tau score
+is greater than the past Kendail Tau score. Then, set the past Kendall Tau
+score to have the same value as the current Kendall Tau score.
+918. 920 ~
+; a ~~ Is less than Yes
+increment c by 1 {e.g.,c=¢ + 1) a predetermined number of
+and set fto 0
+cycles (e.g., 10)?
+900 No
+FIG. 9
+
+US 12,073,189 B2
+
+1 2
+LEARNED EVALUATION MODEL FOR training signals based on whether the given synthetic sen-
+GRADING QUALITY OF NATURAL tence pair was generated using backtranslation; and one or
+LANGUAGE GENERATION QUTPUTS more second. training signals of the plurality of training
+signals based on a prediction from a backtranslation predic-
+CROSS-REFERENCE TO RELATED 5 tion model regarding a likelihood that one of the original
+APPLICATIONS passage of text or the modified passage of text of the given
+synthetic sentence pair could have been generated by back-
+This application is a continuation of U.S. patent applica- translating the other one of the original passage of text or the
+tion Ser. No. 17/112,285, filed Dec. 4, 2020, which is a modified passage of text of the given synthetic sentence pair;
+continuation-in-part of U.S. patent application Ser. No. 1 (ii) training, by the one or more processors. a neural network
+17/003,572, filed Aug. 26, 2020, issued as U.S. Pat. No. based on each given synthetic sentence pair of the plurality
+11,551,002, the entire disclosures of which are hereby of synthetic sentence pairs and the plurality of training
+incorporated by reference in their entirety. signals, and further based on a plurality of human-graded.
+sentence pairs; (ii) generating, by the one or more proces-
+BACKGROUND 15 sors, a plurality of graded sentence pairs, each graded
+sentence pair of the plurality of graded sentence pairs
+Tn recent years, research in natural language generation comprising an original passage of text and a modified
+(“NLG”) has made tremendous progress, with models now _—passage of text and a grade gencrated by the neural network
+able to translate text, summarize articles, engage in conver- based on the original passage of text and the modified
+sation, and comment on pictures with unprecedented accu- 20 passage of text, and (iv) training, by the one or more
+racy, using approaches with increasingly high levels of processors, a student network to predict, for cach given
+sophistication. The pace of development in this area has graded sentence pair in a plurality of graded sentence pairs,
+created a need for an efficient way of evaluating the quality the grade generated by the neural network. In some aspects,
+(e.g., accuracy and fluency) of an NLG model’s output. the plurality of synthetic sentence pairs comprises text in a
+Currently, there are two general approaches lo evaluating the 25 plurality of different languages, and the plurality of graded
+performance of NLG systems: human evaluation and auto- sentence pairs comprises lext in only a subset of the plurality
+matic metrics. Human evaluation typically involves a large- of different languages. In some aspects, generating the
+scale quality survey for each new version of an NLG model plurality of graded sentence pairs comprises, lor each given
+in which human evaluators grade the NLG model's outputs, graded sentence pair of a first subsct of the graded sentenec
+e.g., by comparing how well a sentence created by an NLG 30 pairs, substituting one or more words of the original passage
+model matches the meaning and fluency of a reference of text of the given graded sentence pair to create the
+sentence created by a human. While humans are unrivaled in modified passage of text of the given graded sentence pair.
+their ability to flexibly interpret and compare language In some aspects, generating the plurality of graded sentence
+samples, using human evaluators for large-scale tests can be pairs further comprises, for each given graded sentence pair
+prohibitively time- and labor-intensive. On the other hand, 35 of a second subset of the graded sentence pairs, removing
+exisling automatic metrics are eflicient and can be run on one or more words of the original passage of text of the
+demand, but can be overly literal and provide inconsistent given graded sentence pair to create the modified passage of
+results compared to human evaluators. text the modified passage of text of the given graded
+sentence pair. In some aspects, generating the plurality of
+BRIEF SUMMARY 40 graded sentence pairs further comprises. for each given
+graded sentence pair of a third subsct of the graded sentence
+The present technology relates to improved systems and pairs: translating, by the one or more processors, the original
+methods for automatic cvaluation of the quality of NLG passage of text of the given graded sentence pair from a first
+outputs. In that regard, in some aspects of the technology. a language into a second language, to create a translated
+learned evaluation model may be pretrained first using NILG 45 passage of text; and translating, by the one or more proces-
+model pretraining tasks, and then with further pretraining sors, the translated passage of text from the second language
+tasks using automatically generated (“synthetic”) sentence into the first language, to create the modified passage of text
+pairs. In some aspects, following pretraining, the evaluation of the given graded sentence pair. In some aspects, the
+model may be further fine-tuned using a set of human- method. further comprises generating, by the one or more
+graded sentence pairs, so il learns to approximate (he grades 50 processors, the plurality of synthetic sentence pairs, and
+allocated by the human evaluators. Using this combination generating the plurality of synthetic sentence pairs com-
+of pretraining and fine-tuning steps, the evaluation model prises: for each given synthetic sentence pair of a first subset
+can produce grades that are up to 48% more accurate of the synthetic sentence pairs, substituting one or more
+(relative to human gradings) than other automatic metrics words of the original passage of text of the given synthetic
+such as the BLEU metric. In addition, some aspects, fol- 55 sentence pair to create the modified passage of text of the
+lowing fine-tuning, the evaluation medel may be distilled given synthetic sentence pair; and for cach given synthetic
+into a student model that can mimic the grades output by the sentence pair of a second subset of the synthetic sentence
+evaluation model. The student model may one thal is sim- pairs, removing one or more words of the original passage
+pler, smaller, optimized for different technology, and/or of text of the given synthetic sentence pair to create the
+trained on a smaller number of languages than the original 60 modified passage of text of the given synthetic sentence pair.
+evaluation model. In some aspects, generating the plurality of synthetic sen-
+In one aspect, the disclosure describes a method of tence pairs further comprises, for each given synthetic
+(raining a neural network, comprising: (i) generating, by one sentence pair of a third subset of the synthetic sentence pairs:
+or more processors of a processing system, for cach given translating, by the one or more processors, the original
+synthetic sentence pair of a plurality of synthetic sentence 65 passage of text of the given synthetic sentence pair from a
+pairs comprising an original passage of text and a moditied first language into a second language, to create a translated
+passage of text: a first training signal of a plurality of passage of text; and translating, by the one or more proces-
+
+US 12,073,189 B2
+3 4
+
+sors, the wanslated passage of text from the second language generate the plurality of graded sentence pairs further com-
+into the first language, to create the modified passage of text prises being configured to, for each given graded sentence
+of the given synthetic sentence pair. In some aspects, the pair of a second subset of the graded. sentence pairs, remove
+method further comprises generating, by the one or more one or more words of the original passage of text of the
+processors, for each given synthetic sentence pair of the 5 given graded sentence pair to create the modified passage of
+plurality of synthetic sentence pairs: one or more third text the modified passage of text of the given graded
+training signals of the plurality of training signals based on sentence pair. In some aspects, the one or more processors
+one or more scores generated by comparing the original being configured to generate the plurality of graded sentence
+passage of text of the given synthetic sentence pair to the pairs further comprises being configured to, for each given
+modified passage of text of the given synthetic sentence pair 10 graded sentence pair of a third subset of the graded sentence
+using one or more automatic metrics. In some aspects, the pairs: translate the original passage of text of the given
+method further comprises generating, by the one or more graded sentence pair from a first language into a second
+processors, for each given synthelic sentence pair of the language, to create a translated passage of text; and translate
+plurality of synthetic sentence puirs: one or more fourth the anslated passage of text from the second language into
+training signals of the plurality of training signals based on 15 the first language, to create the modified passage of text of
+a prediction from a textual entailment model regarding a the given graded sentence pair. In some aspects, the one or
+likelihood that the modified passage of text of the given more processors are further configured to generate the
+synthetic sentence pair entails or contradicts the original plurality of synthetic sentence pairs. In some aspects, the
+passage of text of the given synthetic sentence pair. In some one or more processors being configured to generate the
+aspects, training the neural network based on each given 20 plurality of synthetic sentence pairs comprises being con-
+synthetic sentence pair of the plurality of synthetic sentence figured to: for cach given synthetic sentence pair of a first
+pairs and the plurality of training signals, and further based subset of the synthetic sentence pairs, substitute one or more
+on a plurality of human-graded sentence pairs comprises: words of the original passage of text of the given synthetic
+pretraining, by the one or more processors, the neural sentence pair to create the modified passage of text of the
+network to predict, lor each given synthelic sentence pair of 25 given synthelic sentence pair; and lor each given synthelic
+the plurality of synthetic sentence pairs, the plurality of sentence pair of a second subset of the synthelic sentence
+training signals for the given synthetic sentence pair; and pairs, remove one or more words of the original passage of
+fine-tuning, by the one or more processors, the neural text of the given synthetic sentence pair to creale the
+network to predict, for cach given human-graded sentence modificd passage of text of the given synthetic sentence pair.
+pair of a plurality of human-graded sentence pairs. a grade 30 In some aspects, the one or more processors being config-
+allocated by a human grader to the given human-graded ured to generate the plurality of synthetic sentence pairs
+sentence pair. further comprises being configured to, for each given syn-
+
+In another aspect, the disclosure describes a processing thetic sentence pair of a third subset of the synthetic sentence
+system comprising: a memory; and one or more processors pairs: translate the original passage of text of the given
+coupled to the memory. The one or more processors are 35 synthetic sentence pair from a first language into a second
+configured lo: (1) generate, for each given synthelic sentence language, to create a translated passage of text; and uranslate
+pair of a plurality of synthetic sentence pairs comprising an the translated passage of text from the second language into
+original passage of text and.a modified passage of text: a first the first language, to creale the modified passage of text of
+training signal of a plurality of training signals based on the given synthetic sentence pair. In some aspects, the one or
+whether the given synthetic sentence pair was generated 40 more processors are further configured to generate, for each
+using backtranslation; and one or more second training given synthetic sentence pair of the plurality of synthetic
+signals of the plurality of training signals based on a sentence pairs: one or more third training signals of the
+prediction from a backtranslation prediction model regard- plurality of training signals based on one or more scores
+ing a likelihood that one of the original passage of text or the generated by comparing the original passage of text of the
+modified passage of text of the given synthetic sentence pair 45 given synthetic sentence pair to the modified passage of text
+could have been generated by backtranslating the other one of the given synthetic sentence pair using one or more
+of the original passage of text or the modified passage of text automatic metrics. In some aspects. the one or more pro-
+of the given synthelic sentence pair; (i) Wain a neural cessors are further configured to generale, for each given
+network based on each given synthetic sentence pair of the synthetic sentence pair of the plurality of synthetic sentence
+plurality of synthelic sentence pairs and the plurality of 50 pairs: one or more fourth training signals of the plurality of
+training signals, and further based on a plurality of human- training signals based on a prediction from a textual entail-
+graded sentence pairs; (iii) generate a plurality of graded ment model regarding a likelihood that the moditied passage
+sentence pairs, cach graded sentence pair of the plurality of of text of the given synthetic sentence pair entails or
+graded sentence pairs comprising an original passage of text contradicts the original passage of text of the given synthetic
+and a modified passage of text and a grade generated by the 55 sentence pair. In some aspects, the one or more processors
+neural network based on the original passage of text and the being configured to train the neural network based on cach
+modified passage of text: and (iv) train a student network to given synthetic sentence pair of the plurality of synthetic
+predict, for each given graded sentence pair in a plurality of sentence pairs and the plurality of waining signals, and.
+graded sentence pairs, the grade generated by the neural further based on a plurality of human-graded sentence pairs
+network. In some aspects, the one or more processors being 60 comprises being configured to: pretrain the neural network
+configured to generate the plurality of graded sentence pairs to predict, for each given synthetic sentence pair of the
+comprises being configured to, for each given graded sen- plurality of synthetic sentence pairs, the plurality of training
+tence pair of a first subset of the graded sentence pairs, signals for the given synthelic sentence pair; and fine-tune
+substitute one or more words of the original passage of text the neural network to predict, for cach given human-graded
+of the given graded sentence pair to create the moditied 65 sentence pair of a plurality of human-graded sentence pairs,
+passage of text of the given graded sentence pair. In some a grade allocated by a human grader to the given human-
+aspects, the one or more processors being, configured to graded sentence pair.
+
+US 12,073,189 B2
+5 6
+BRIEF DESCRIPTION OF THE DRAWINGS 106 may include a non-transilory medium such as a hard-
+drive, memory card, optical disk, solid-state, tape memory,
+FIG. 1 is a functional diagram of an example system in or the like. Computing devices suilable [or the roles
+accordance with aspects of the disclosure. described herein may include different combinations of the
+FIG. 2 depicts an example training protocol showing how 3 foregoing, whereby different portions of the instructions and
+an evaluation model may be pretrained and fine-tuned, data are stored on different types of media.
+according to aspects of the disclosure. In all cases, the computing devices described herein may
+FIG, 3 is a flow diagram showing an exemplary method further include any other components normally used in
+for pretraining the evaluation model using a masked lan- connection with a computing device such as a user interface
+guage modeling task, according to aspects of the disclosure. 10 subsystem. The user interface subsystem may include one or
+TG. 4 is a Mow diagram showing an exemplary method more user inputs (e.g.. a mouse, keyboard, touch screen
+for pretraining the evaluation model using a next-sentence and/or microphone) and one or more electronic displays
+prediction task, according to aspects of the disclosure. (e.g. a monilor having a screen or any other electrical device
+TG. § is a Mow diagram showing an exemplary method that is operable to display mformation). Output devices
+for generating a synthetic sentence pair using random sub- 15 besides an electronic display, such as speakers, lights, and
+stitutions, according to aspects of the disclosure. vibraling, pulsing, or haptic elements, may also be included.
+FIG. 6 is a flow diagram showing an exemplary method in the computing devices described herein.
+for generating a synthetic sentence pair using random omis- The one or more processors included in cach computing
+sions, according to aspects of the disclosure. device may be any conventional processors, such as com-
+FIG. 7 is a flow diagram showing an exemplary method 20 mercially available central processing units (“CPUs”),
+for generating a synthetic sentence pair using backtransla- graphics processing units (“GPUs”), tensor processing units
+tion, according to aspects of the disclosure. (“TPUs”), etc. Alternatively, the one or more processors may
+FIG. 8 is a flow diagram showing an exemplary method be a dedicated device such as an ASIC or other hardware-
+for generating distillation data for use in training a student based processor. Fach processor may have multiple cores
+model, according to aspects of the disclosure. 25 that are able to operate in parallel. ‘he processor(s),
+LIG. 9 is a flow diagram showing an exemplary method memory, and. other elements of a single computing device
+for training a student model to mimic the results of the | may be stored within a single physical housing, or may be
+evaluation model, according to aspects of the disclosure. distributed between two or more housings. Similarly, the
+memory of a computing device may include a hard drive or
+DETAILED DESCRIPTION 30 other storage media located in a housing different from that
+of the processor(s), such as in an external database or
+The present technology will now be described with networked storage device. Accordingly, references to a
+respect to the following exemplary systems and methods. processor or computing device will be understood to include
+Example Systems references to a collection of processors or computing
+A high-level system diagram 100 of an exemplary pro- 35 devices or memories that may or may not operate in parallel,
+cessing system for performing the methods described herein as well as one or more servers ofa load-balanced server farm
+is shown in FIG. 1. The processing system 102 may include or cloud-based. system.
+one or more processors 104 and memory 106 storing instruc- The compuling devices described herein may store
+tions 108 and data 110. ‘The instructions 108 and data 110 instructions capable of being executed directly (such as
+may include the evaluation model described herein, as well 40 machine code) or indirectly (such as scripts) by the proces-
+as some or all of the data used in pretraining and/or sor(s). The computing devices may also store data, which
+fine-tuning of the evaluation model. Similarly, the instruc- may be retrieved. stored, or modified by one or more
+tions 108 and data 110 may include the NLG model processors in accordance with the instructions. Instructions
+described herein. However, any of the evaluation model, may be stored as computing, device code on a computing
+NIG model, pretraining data, and/or fine-tuning data may 45 device-readable medium. In that regard, the terms “instruc-
+also be maintained on one or more separate processing, tions” and “programs” may be used interchangeably herein.
+systems or storage devices to which the processing system Tnstructions may also be stored in object code format for
+102 has access. or example, the evaluation model could be direct processing by the processor(s), or in any other com-
+stored on a cloud-compuling system, in which case the puling device language including scripts or collections of
+processing system 102 may provide input to, receive output 50 independent source code modules that are interpreted on
+from, and make changes to the evaluation model via one or demand or compiled in advance. By way of example, the
+more networks (not shown) in order to perform the pretrain- programming language may be C #, C++, JAVA or another
+ing and fine-tuning described herein. Likewise, the pretrain- computer programming language. Similarly, any compo-
+ing data and/or fine-tuning data may be stored on one or nents of the instructions or programs may be implemented in
+more remote servers, such as web servers, in which case the 55 a computer scripting language, such as JavaScript, PHP,
+processing system 102 may retrieve data from such web ASP, or any other computer scripting language. Further-
+servers and provide it to the evaluation model. more. any one of these components may be implemented
+Processing system 102 may be implemented. on any type using a combination of computer programming languages
+of computing, device(s), such as any type of general com- and computer scripting languages.
+puling device, server, or set thereo!, and may further include 60 Lixample Methods
+olher components typically present in general purpose com- Pretraining Evaluation Model Using NLG Pretraining Tasks
+puting devices or servers. Memory 106 stores information FIG. 2 depicts an example training protocol 200 showing
+accessible by the one or more processors 104, including hew an evaluation model may be pretrained and. fine-tuned
+instructions 108 and data 110 that may be executed or according to aspects of the disclosure. In the cxample of
+otherwise used by the processor(s) 104. Memory 106 may be 65 FIG. 2, the evaluation model is a decp neural network with
+of any non-transitory type capable of storing information any suitable number of layers, units, heads, ete. For
+accessible by the processor(s) 104. For instance, memory example, in some aspects of the technology, the evaluation
+
+US 12,073,189 B2
+7 8
+
+model may be based on a multi-layer bidirectional trans- run in parallel. In that regard, the training sleps shown in
+former such as the architecture used for the Bidirectional step 306 of T1G. 3 and step 406 of FIG. 4 may take place in
+Lncoder Representations [rom ‘lransformers (“BURL”) lan- parallel, and. the evaluation model may be trained through an
+guage model. In that regard, in some aspects, the evaluation iterative process of calculating and summing each of the
+model may be based on a BER'I-style transformer with 12 5 losses described above, and modifying the evaluation mod-
+layers, 768 hidden units, and 12 heads. Likewise, in some el’s parameters, until the mean combined loss valuc
+aspects, the evaluation model may be based on a BERT-style becomes minimized (or begins approaching a minimum
+transformer with 24 layers, 1024 hidden units, and 16 heads. value). The number of steps necessary to adequately pretrain
+
+As shown in clement 202 of FIG. 2, the evaluation model the evaluation model using such masked language modeling
+may be pretrained first using one or more types of NI.G 16 and next-sentence prediction tasks may vary depending on
+pretraining tasks 204. This may comprise any type or types the size of the passages and the number of possible tokens.
+of pretraining tasks suitable for imparting general language For example, adequate NIG pretraining may require 1,000,
+comprehension to the evaluation model. Tor example, as 000 training steps (or more or less).
+shown in the illustrative training protocol 200 of FIG. 2, the Pretraining Evaluation Model Using Synthetic Sentence
+evaluation model may be uained using a set of masked 15 Pairs
+language modeling tasks (as indicated in element 206) Vollowing pretraining on any NLG pretraining tasks 204
+and/or a set of next-sentence prediction tasks (as indicated in (to the extent such is employed), the evaluation model is
+element 208). pretrained using synthetic sentence pairs as shown in cle-
+
+With further regard to clement 206, FIG. 3 is a flow ment 210 of FIG. 2. The processing system 102 may
+diagram showing an exemplary method 300 for pretraining 20 generate these synthetic sentence pairs from a set of source
+the evaluation model using a masked language modeling documents (c.g.. webpages from Wikipedia, books, news
+task. according to aspects of the disclosure. In that regard, in articles), as reflected in element 212. Although the term
+step 302, a passage of text (e.g., a sentence fragment, “sentence pairs” is used in this context for simplicity, a
+sentence, multiple sentences) is harvested from a source synthetic sentence pair need not include two full sentences.
+document (¢.g., a webpage [rom Wikipedia, a book, anews 25 Rather, a synthetic sentence pair may in [uct be a pair of
+article). In step 304, one or more words from the passage are sentence fragments, or a pair of text passages thal each
+replaced with a mask token (e.g., “| MASK]”). Steps 302 and include more than one sentence, etc.
+304 may be performed manually (e.g., by a human), or AS shown in element 212, the processing system 102 may
+automatically (c.g.. by the evaluation model, by some other generate one or more different types of synthetic sentence
+component of processing system 102, by some other pro- 30 pairs from the set of source documents, such as: sentence
+cessing system). Finally, in step 306, the evaluation model pairs in which one or more words of an original passage A
+is trained to predict the original word corresponding to each are randomly replaced in order to create an altered passage
+mask token based at least in part on one or more additional B (as reflected in element 214); sentence pairs in which one
+documents from a knowledge corpus (e.g., other webpages or more words of an original passage A are randomly
+from Wikipedia, other books, other news articles). The 35 omitted to create an altered passage B (as reflected in
+evaluation model may be trained using any suitable loss element 216); and sentence pairs in which an original
+function, such as a cross-entropy loss between the evalua- passage A is translated into a dillerent language, and then
+Gien model’s prediction and the known answer of each retranslated back into the original language in order to creale
+masked language modeling task. an altered passage B (as reflected in element 218). Exem-
+
+With further regard to element 208, FIG. 4 is a flow 40 plary methods for generating the synthetic sentence pairs
+diagram showing an cxemplary method 400 for pretraining reflected in elements 214, 216, and 218 are sct forth in FIGS.
+the evaluation model using a next-sentence prediction task, 5, 6, and 7, respectively.
+according to aspects of the disclosure. In that regard, in step In that regard, FIG. 5 is a flow diagram showing an
+402. a first passage of text (“passage 1”) is selected from a exemplary method 500 for generating, a synthetic sentence
+source document (e.g., a webpage from Wikipedia, a book, 45 pair using random substitutions, according to aspects of the
+a news article). Likewise, in step 404, a second passage of disclosure. In step 502, the processing system 102 samples
+text (“passage 2”) is selected from the same source docu- a passage of text (passage A) from a source document. In
+ment. In the example of TIG. 4, in 50% of the cases, passage step 504, the processing system 102 randomly selects one or
+2 will be the text that directly follows passage 1 in the source more words from passage A to be replaced. Tinally, in step
+document, and in 50% of cases passage 2 will be some other 50 506, the processing system 102 replaces each selected word
+nonsequential passage of text selected at random from the in passage A with a replacement word, resulting in a second
+remainder of the source document. In this context, passages passage of text (passage B). In the context of FIG. 5, passage
+1 and 2 may be sentence fragments. single sentences, A and passage B together form a “sentence pair.” The
+passages containing more than one sentence, passages con- replacement words referred to in step 506 may be obtained
+taining a fixed number of words, etc. Here as well, steps 402 55 from any suitable source. For example, in some aspects of
+and 404 may be performed manually (c.g., by a human), or the technology, a separate NLG model may be trained to
+automatically (e.g.. by the evaluation model, by some other provide each replacement word, so that the sentence is
+component of processing sysiem 102, by some other pro- lexically altered while maintaining fluency. Likewise, in
+cessing, system). Finally, in step 406, the evaluation model some aspects of the technology, a thesaurus may be used to
+is trained to predict whether passage 2 directly follows 60 provide a replacement word that has a similar meaning (in
+passage 1 based on the words of passage 1 and. passage 2. In al least some contexts) to the selected. word. Further, in some
+this case as well, the evaluation model may be trained using aspects of the technology, replacement words may be chosen
+any suitable loss function, such as a cross-enlropy loss al random, without regard to maintaining Muency and/or
+between the evaluation model’s prediction and the known overall meaning of the sentence.
+answer of cach next-sentence prediction task. 65 => FIG. 6 is a flow diagram showing an exemplary method
+
+In the example of FIGS. 2-4, the masked language mod- 600 for generating a synthetic sentence pair using random
+eling tasks and the next-sentence prediction tasks may be omissions, according to aspects of the disclosure. In step
+
+US 12,073,189 B2
+9 10
+
+602, the processing system 102 samples a passage of text (e.g., one or more of the ROUGE scores themselves, nor-
+(passage A) from a source document. In step 604, the malized versions of one or more of ROUGE scores, etc.)
+processing system 102 randomly selects one or more words Further, in some aspects of the technology, each synthetic
+from passage A. Finally, in step 606, the processing system sentence pair may be evaluated using the BM-RTscore metric,
+102 deletes each selected word from passage A, resulting in 5 which is a metric that combines learned contextual embed-
+a second passage of text (passage B). In the context of FIG. dings with specific token alignment rules to produce a recall,
+6. passage A and passage B together form a “sentence pair.” precision, and F-score. Here as well, a training signal (e.g.,
+
+FIG. 7 is a flow diagram showing an exemplary method 4 vector) may be encoded into each sentence pair that
+700 for generating a synthetic sentence pair using backtrans- includes values based on one or more of the scores output by
+lation, according to aspects of the disclosure. In step 702, the 10 the BERTscore metric for that sentence pair (e.g., one or
+processing system 102 samples a passage of text (passage A) e he soy: h Hy Pp i dv
+from a source document, with passage A being written in a more of the BER Iscore scores themselves, normalized ver-
+first language (e.g., English). In step 704, the processing sions of one or more of BERTscore scores, ele.) :
+system 102 translates passage A from the first language into In some aspects of the technology, each sentence pair may
+a second language (¢.g., French, German), resulting in a 15 be encoded with a firs! (ramang signal based on the pair's
+second passage of text (passage A’). Vinally, in step 706, the BLEU score, a second training signal based on all three of
+processing system 102 translates passage A' from the second the pair’s ROUGE scores (recall, precision, and F-score),
+language back into the first language, resulting in a third and a third training signal based. on all three of the pair’s
+passage of text (passage B). In the context of FIG. 7, passage BERTscore scores (recall, precision, and F-score). In some
+A and passage B together form a “sentence pair.” With 20 aspects of the technology, additional training signals may be
+respect to steps 704 and 706, the processing system 102 may based on other calculated or learned aulomalic metrics, and.
+be configured to perform the translations between the first may be added to or substituted for one or more of those
+and second languages itself, or may be configured to obtain described herein.
+the translations from another processing system (e.g., a With respect to element 226, the processing system 102
+website available over one or more networks). 25 may also evaluate each synthelic sentence pair using a
+
+As shown in element 220, afler the processing system 102 learned backtranslation prediction model. In that regard, a
+has generated synthetic sentence pairs, it may encode them backtranslation prediction model may be trained to assess
+with a set of (raining signals. In that regard, the processing the probability that a first passage is a backtranslation of a
+system 102 may encode cach synthetic sentence pair with second passage, or vice versa. The backtranslation model
+training signals based on one or more of: a synthetic 30 may be trained to make such a prediction based on transla-
+sentence pair generation flag (clement 222); the output of tion between any two languages. For example, in some
+one or more automatic metrics (element 224); the output of aspects of the technology, the backtranslation prediction
+a learned backtranslation prediction model (element 226); model may be configured to analyze a sentence pair com-
+and the output of a learned textual entailment model (ele- posed of passage A and passage B and return one or both of
+ment 228). 35 the following scores: (1) a score representing the likelihood
+
+With respect to element 222, when the processing system that passage B is the result of translating passage A from
+102 generates each synthetic sentence pair, il may also English to French to get passage A', and. translating passage
+generale a Boolean Nay indicating whether or not backtrans- A' from Vrench back into Unglish: and (2) a score repre-
+lation was used to create the pair’s “passage B.” ‘hat senting the likelihood that passage A is the result of trans-
+Boolean flag may be encoded into the sentence pair as a 40 lating passage B from English to French to get passage B',
+training signal to be used in training the evaluation model, and translating passage B' from French back into English.
+as described further below. Likewise, in some aspects, the backtranslation prediction
+
+With respect to clement 224, the processing system 102 model may be configured to make predictions based on
+may also evaluate each synthetic sentence pair using one or translations between more than two languages. Thus, for
+more existing automatic metrics, and encode each sentence 45 example, the backtranslation prediction model may be con-
+pair with one or more training signals based on the score(s) figured analyze a sentence pair composed of passage A and
+produced by the one or more automatic metrics. Any suitable passage B and return one or more of the following scores:
+aulomalic metric or collection thereof may be used. in this (1) a score representing the likelihood thal passage B is the
+regard. result of translating passage A from English to French to get
+
+For example, in some aspects of the technology, each 50 passage A’, and translating passage A’ [rom French back into
+synthetic sentence pair may be evaluated using the BLEU English; (2) a score representing the likelihood that passage
+metric, which calculates a score based on n-gram overlap A is the result of translating passage B from English to
+between two passages. A training signal (c.g., a vector) may French to get passage B', and translating passage B' from
+be encoded into cach sentence pair that includes a valuc French back into English; (3) a score representing the
+based on the sentence pair’s BLEU score (e.g., the BLEU 55 likelihood that passage B is the result of translating passage
+score itself, a normalized version of the BLEU score, etc.) A trom English to German to get passage A’, and translating
+
+Likewise, in some aspects of the technology, each syn- passage A' from German back into English; and (4) a score
+thetic senience pair may be evaluated using the ROUGE representing the likelihood. thal passage A is the result of
+metric, which calculates three different scores based on translating passage B from Tinglish to German to get passage
+n-gram overlap between two passages: a recall score indi- 60 B', and translating passage B' from German back into
+caling how many n-grams of passage A are repeated in English. A training signal (e.g., a vector) may be encoded
+passage B; a precision score indicating the percentage of the into each sentence pair that includes values based on one or
+repeated n-grams relative to the total n-grams of passage B; more such scores oulput by the backtranslation prediction
+and an F-score, which is a harmonic mean of the recall and model for that sentence pair (¢.g., one or more values
+precision scores. A training signal (¢.g., a vector) may be 65 actually output by the backtranslation prediction model,
+encoded into cach sentence pair that includes valucs based normalized versions of one or more values output by the
+on one or more of the scores output by the ROUGE metric backtranslation prediction model, etc.).
+
+US 12,073,189 B2
+11 12
+
+With respect to element 228, the processing system 102 Ilere as well, the evaluation model may be fine-tuned
+may also evaluate cach synthetic sentence pair using a through an iterative process of calculating and summing
+learned textual entailment model. ‘he textual entailment each loss value, and modifying the evaluation model’s
+model may be trained to assign a probability that a first parameters, until the mean combined loss becomes mini-
+passage entails (tends to confirm or be in agreement with) a 5 mized (or begins approaching a minimum value). ‘The num-
+second passage, contradicts the second. passage, or neither ber of steps necessary to adequately fine-tune the evaluation
+entails nor contradicts the second passage and is thus model sing, encoded synthetic sentence pairs may vary
+neutral. A training signal (e.g.,a vector) may be encoded into depending on the size of the passages. For example,
+each sentence pair that includes values based on the entuil- adequate fine-tuning using human-graced sentence pairs
+
+. oo . ra _ 1 may require 40,000 training, steps (or more or less).
+ment, contradiction, and neutrality probabilities output by
+the textual entailment model for that sentence pair (e.g., the Th © present technology may be used to assess any type of
+
+te P NIG output such as data-to-text summaries, machine-trans-
+actual predictions outpul by the textual entailment model, lati voor varrenliene a ote .
+
+: : . > ation, conversational AT, etc., and. the dala used to fine-tune
+normalized versions of the textual entailment model’s pre- the evaluation model may be (ailored to such intended use.
+dictions, etc.) . 15 ‘Lhus, in some aspects of the technology, the human-graded
+
+After the processing system 102 has encoded each syn- sentence pairs may include ones in which the first “‘sen-
+thetic sentence pair with one or more training signals as just tence” is a reference passage created by a human based on
+described, (hey are used to train (he evaluation model. In that some data (¢.g.. a human-generated sentence based on data
+regard, the evaluation model is fed each synthetic sentence about a sports match, and summarizing the outcome of the
+pair (without the encoded training signals), and is trained to 2) sports match), the second “sentence” is a passage that was
+predict each score based on the text of the synthetic sentence synthetically generated by an NLG model based on that data,
+pairs. In each training step, the model’s predictions are and the human-allocated grade is a score that has been
+compared to each respective training signal and a loss value allocated by a different human assessing how well the
+is generated. Although any suitable loss function(s) may be NIG-generated passage compares to the human-generated
+used, in the example of L'IG. 2, the processing system 102 25 passage. Likewise, im some aspects of the technology, the
+calculates: (1) a multi-class loss between each of the evalu- human-graded sentence pairs may include ones in which the
+ation model’s predictions and any respective training signals first “sentence” is a source passage written in a first lan-
+based on synthelic sentence pair generation fags (element guage, the second “sentence” is a NLG-generaled machine-
+232 of FIG. 2): (2) a regression loss between cach of the translation of the first “sentence” into a second language,
+evaluation model’s predictions and any respective training 30 and the human-allocated grade represents how accurately
+signals based on automatic metrics (clement 234 of FIG. 2); the second passage is believed to capture the meaning of the
+(3) a regression loss between each of the evaluation model’s first passage.
+predictions and any respective training signals based on a In addition, in some aspects of the present technology, the
+backtranslation prediction model (element 236 of FIG. 2); “sentence pairs” used for fine-tuning need not be the only
+and (4) a multi-class loss between each of the evaluation 35 information provided to the evaluation model, and thus may
+model’s predictions and any respective taining signals be augmenied with further contexi. Tor example, for a
+based on a textual entailment model (element 238 of FIG. 2). “sentence pair” in which a human-graded reference sentence
+Lere as well, the evaluation model may be trained through and an NLG-model-generated candidate sentence were both
+an iterative process of calculating and summing each of the created by summarizing a passage of text, that passage of
+losses described above, and modifying the evaluation mod- 40 text may be provided to the evaluation model as additional
+el’s parameters, until the mean combined loss valuc input to be weighed in determining how well the NLG-
+becomes minimized (or begins approaching a minimum generated passage compares to the human-generated pas-
+value). The number of steps necessary to adequately pretrain sage. Likewise, for a “sentence pair” in which a human-
+the evaluation model using encoded synthetic sentence pairs graded reference sentence and an NI.G-model-generated
+may vary depending on the size of the passages, the number 45 candidate sentence both represent a responsive communica-
+of possible tokens, the number of training signals, etc. Tor tion in a written conversation, a log of that past conversation
+example, adequate pretraining using the tasks and training, may be provided to the evaluation model as additional input
+signals just described may require between 400,000 and to be weighed in determining how well the NLG-generated.
+800,000 training steps (or more or less). passage compares to the human-generated passage.
+Fine-Tuning Evaluation Model Using Human-Rated Sen- 50 Distilling Evaluation Model
+tence Pairs In some aspects of the technology, after the evaluation
+
+As shown in elements 240 and 242 of FIG. 2, after the model has been fine-tuned, it may be desirable to distill the
+evaluation model has been pretrained using NLG pretraining evaluation model into a student model trained to mimic the
+tasks and synthetic sentence pairs as described above, it may grades output by the evaluation model. This may be done for
+be further fine-tuned using human-graded sentence pairs. As 55 a variety of reasons. For example, in some aspects of the
+above, although the term “sentence pairs” is used for sim- technology, the evaluation model may be distilled into a
+plicity. a human-graded “sentence pair’ need not include student model that is simpler and/or smaller than the evalu-
+two full sentences, and may instead include sentence frag- ation model, and. thus takes less resources to store and use.
+ments, passages including more than one sentence, etc. In Likewise, in some aspects, where the evaluation model has
+this fine-tuning stage, the evaluation model is trained to 60 been optimized to run on a particular hardware platform
+predict the human-allocated grade for each sentence-pair. (e.g. a TPU, a GPU, an enterprise server, etc.), il may be
+‘Thus, the human-allocated grade may be used as a training distilled into a model that is optimized to run on a different
+signal, and. a loss may be calculated between the evaluation hardware platform (e.g.. a CPU, a mobile device, etc.).
+model’s prediction for cach sentence pair and the respective Further, in some aspects, the evaluation model may be
+human-allocated grade. Any suitable loss function may be 65 trained and fine-tuned using data in multiple different lan-
+used for this, such as a regression loss between the evalu- guages, and distillation may be used to train a student model
+ation model’s prediction and the human-allocated grade. using data in a single language (or a smaller number of
+
+US 12,073,189 B2
+13 14
+languages than the evaluation model was urained and fine- ation model may be optimized to run on a TPU, a GPU, or
+tuned on). In such cases, this may result in a student model an enterprise server, while the student model is one opti-
+that can be trained quickly and simply on only a single mized to run on a personal compuler, tablet, or mobile
+language, but which retains some of benefits of the evalu- phone, or vice versa. In that regard, in some cases, optimiz-
+ation model’s broader multi-lingual comprehension. 5 ing for a different hardware profile may result in the student
+FIG. 8 is a flow diagram showing an exemplary method model being as large and complex as, or even larger and
+800 for gencrating distillation data for use in training a more complex than the evaluation model. Further, in some
+student model, according to aspects of the disclosure. cases, the student model may be based on the same type of
+Method 800 begins with the creation of a collection of model as the evaluation model (same architecture and/or
+sentence pairs. 10 number of parameters), but may be distilled on a specific
+In step 802, the processing system 102 generates a first set type of data. Tor example, the evaluation model may be a
+of sentence pairs using, random substitutions. This may be BERT-large based model pre-trained and/or fine-tuned on
+done as described above according to method 500 of TIG. 5. multiple languages (e.g., fifleen languages), while the stu-
+In step 804, the processing sysiem 102 generates a second dent mode! may be a BERT-large based model trained using
+set of sentence pairs using random omissions. ‘This may be 15 a set of distillation data imcluding only a subset of those
+done as described above according to method 600 of L'IG. 6. languages (e.g., only Unglish, only French, Unglish and
+In step 806, the processing system 102 generates a third French, etc.).
+set of sentence pairs using backtranslation. This may be In any event, once a student model has been chosen and
+done as described above according to method 700 of FIG. 7. initialized, the exemplary method of FIG. 9 begins with step
+In step 808, the first, second, and third sets of sentence 20 902, where three variables are set to an initial value of 0. A
+pairs are provided to a learned evaluation model for grading. first variable referred to herein as t represents the number of
+The learned evaluation model in this instance is the model training steps completed. As will be explained below with
+to be distilled. Thus, where it is desired to create a student respect to steps 910 and 912, this t value will be incremented
+model to mimic the output of an evaluation model generated after each training cycle concludes so that the processing
+according to the method 200 of VIG. 2, step 808 would entail 25 system 102 can keep track of when each training cycle has
+providing the first, second, and third sets of sentence pairs to been completed, and initiate an evaluation of the student
+the evaluation model, which then grades each sentence pair model between cycles. A second variable referred to herein
+as il has been trained to do (as described above). as ¢ represents the number of training cycles completed. so
+In the cxample method 800, three different types of that training can be stopped atter a predetermined number of
+sentence pairs are generated in steps 802-806 and provided 30 cycles. A third variable referred to herein as past Kendall ‘Lau
+to the evaluation model in step 808. However, in some score represents the Kendall Tau score calculated following
+aspects of the technology, one or more of steps 802-806 may the previous training, cycle so that tt may be compared to the
+be omitted so that the collection of sentence pairs provided current Kendall Tau score to determine if the performance of
+to the learned evaluation model in step 808 includes fewer the student model improved over the last training, cycle.
+types of sentence pairs. Likewise, in some aspects of the 35 In step 904, the processing system 102 selects a batch of
+technology, one or more other sets of sentence pairs (e.g., a graded sentence pairs to be used. in the current training step.
+set of sentence pairs from an existing database such as the ‘This batch may be any suitable size (e.g., any number of one
+WMI Metrics Shared. ‘lask) may be included in the collec- or more graded. sentence pairs), and is selected. rom within
+tion of sentence pairs that is provided to the learned evalu- a first set of graded sentence pairs. In that regard, in the
+ation model in step 808. In that regard, these one or more 40 example of FIG. 9, the set of graded sentence pairs generated
+other sets of sentence pairs may be included in the collection in step 810 of FIG. 8 is split into a first sct of graded sentence
+along with the scts of sentence pairs gencrated in steps pairs used for training steps 904-908, and a second sct of
+802-806, or in place of one or more of the sets described in graded sentence pairs used for the evaluation step 914. Each
+steps 802-806. of the graded sentence pairs in the first and second sets of
+In step 810, the processing system 102 generates a set of 45 graded sentence pairs includes a sentence pair (e.g.. gener-
+graded sentence pairs. In that regard, each sentence pair ated in one of steps 802-806 of FTG. 8) and a grade allocated
+graded in step 808 is combined with the grade it received by the evaluation model (e.g., generated in step 808 of FIG.
+from the evaluation model to creale a graded sentence pair. 8). Llowever, as the second sel of graded sentence pairs may
+Together, this set of graded sentence pairs represents the set be reused in each pass through evaluation step 914, the first
+of distillation data to be used in training the student model so set of graded sentence pairs may be much larger than the
+to mimic the output of the evaluation model, as will be second set of graded sentence pairs. For example, the second
+described further below. set of graded sentence pairs may represent 5% of those
+FIG. 9 is a flow diagram showing an exemplary method generated in step $10 of FIG. 8, with the other 95% being
+900 for training a student model to mimic the results of the allocated to the first set of graded sentence pairs.
+evaluation model. Method 900 sets forth exemplary steps for 55 In step 906, the batch of graded sentence pairs is provided
+training a student model after it has been initialized. In that to the student model, and the student model generates its
+regard, as already mentioned above, the student model may own grade for the sentence pair in each graded sentence pair
+ulilize any suitable architecture, number of parameters, etc. of the batch.
+In some cases, the student model may be a simpler model In step 908, the processing system 102 calculates a loss
+than the evaluation model. or example. in some aspects of 60 value between the grades generated by the student model
+the technology, the evaluation model may be based. on a and the corresponding grades encoded in each graded sen-
+BER'-large model taking up 1.2 GB, while the student tence pair of the batch (the grades previously generated by
+model is based on a BER'I-base model taking up 390 MB, the evaluation model in slep 808 of FIG. 8), and then
+or on a BERT-tiny model taking up 15.8 MB. Likewise, in modifics one or more of the student modecl’s parameters
+some cases, the student model may be one optimized to run 65 based on that calculated loss value for the batch. In that
+on a different type of hardware than the evaluation model. regard, as steps 904-912 repeat for cach next batch of graded
+For example, in some aspects of the technology, the evalu- sentence pairs, the student model is tuned through an itera-
+
+US 12,073,189 B2
+15 16
+tive process of calculating and summing each loss value, and suilable number (e.g., 10 cycles, for a total of 5,000,000
+modifying, the student model’s parameters, until the mean steps). Step 920 thus represents a determination of whether
+combined loss becomes minimized (or begins approaching a training has been lully completed. Lf ¢ is less than the
+minimum value). Here as well. any suitable loss function predetermined number of cycles, then training has not yet
+may be used for this, such as a regression loss between the 5 been concluded, and the processing system returns to step
+student model’s grades and the grades encoded in the cach 904 as indicated by the “Yes” arrow. At that point, steps
+graded sentence pair of a given batch. 904-912 will be repeated for cach next batch of graded
+
+In step 910 the processing system 102 will inerement the sentence pairs in the first set of graded sentence pairs, and
+step counter t by one. In other words, the variable t is set to steps 914-918 will be repeated once that new training cycle
+tel. 10 has coneluded.
+
+In step 912, the processing system 102 determines On the other hand, if c is not less than the predetermined
+whether t is less than some predetermined number of steps. number of cycles. then training has been completed, and the
+As discussed above, this predetermined number of steps method. will end as indicated by the “Ne” arrow. Al that
+represents a taining cycle, and may be any suitable number point the resulting final student model may be compared to
+(e.g., 500,000 steps). As such, slep 912 represents a deler- 15 any previously stored copies (stored during each pass
+mination of whether a training cycle has been completed. If through step 916) to determine which is optimal.
+tis less than that predetermined number, then the cycle has Although the exemplary method 900 of FIG. 9 will repeat
+not yet been concluded, and the processing system returns to until a predetermined number of training steps have taken
+step 904 as indicated by the “Yes” arrow. At that point, steps place, in some aspects of the technology, the method may
+904-912 will be repeated for the next batch of graded 20 instead conclude when a predetermined target Kendall Tau
+sentence pairs from the first set of graded sentence pairs. score is achieved at step 914. For example, the method 900
+
+On the other hand, if t is not less than the predetermined may be modified to repeat until, at step 914. a Kendall Tau
+number, then the cycle has been completed, and the pro- score of 0.99 is calculated. Similarly, the method 900 may
+cessing, system will proceed from step 912 to step 914 as be modified to repeat until the current Kendal] Tau score
+indicated by the “No” arrow. 25 fails to exceed the past Kendall ‘lau score, or fails to improve
+
+In step 914, the student model will be evaluated using the the Kendall Tau Score by some predetermined threshold. For
+second set of graded sentence pairs. In that regard, the example, method 900 may be moditied to repeat until, at step
+student model will grade each of the sentence pairs in the 916, the diflerence between the current and past Kendall ‘Lau
+second set of graded sentence pairs. and the processing scores is calculated to be less than 0.01.
+system 102 will compare each of the student model’s grades 30 Unless otherwise stated, the foregoing alternative
+against the corresponding encoded grade in order to arrive at examples are not mutually exclusive, but may be imple-
+a Kendall Tau score. Although the exemplary method 900 of mented in various combinations to achieve unique advan-
+FIG. 9 uses the Kendall Tau rank coefficient for this evalu- tages. As these and other variations and combinations of the
+ation, any suitable method may be used for measuring the features discussed above can be utilized without departing
+ordinal association between the set of grades provided by the 35 from the subject matter defined by the claims, the foregoing
+student model and the encoded. set of grades, such as description of exemplary systems and methods should. be
+Spearman’s rho, Geodman and Kruskal’s gamma, Somers’ taken by way of illustration rather than by way of limitation
+D, ete. of the subject matter defined by the claims. In addition, the
+
+In step 916, the processing system 102 will compare the provision of the examples described herein, as well as
+current Kendall ‘lau score that was just generated to the past 40 clauses phrased as “such as,” “including,” “comprising.”
+Kendall Tau score variable. As explained above, in the first and the like, should not be interpreted as limiting the subject
+pass through step 914, the past Kendall Tau score variable matter of the claims to the specific examples; rather, the
+will be sct to 0. However, in the second pass and cach examples are intended to illustrate only some of the many
+successive pass thereafter, the past Kendall Tau score will possible embodiments. Further, the same reference numbers
+represent the score calculated during the previous pass. In 45 in different drawings can identify the same or similar ele-
+each case, if the current Kendall Tau score is greater than the ments.
+past Kendall Tau score variable, then it indicates that the
+preceding training cycle improved the student model, and The invention claimed is:
+the processing system 102 will create a copy of the student 1. A method of training a neural network, comprising:
+model to save thal progress. ‘The processing system 102 will 50 generaling, by one or more processors of a processing
+then sect the past Kendall Tau score to have the same value system, for cach given synthetic sentence pair of a
+as the current Kendall ‘lau score, thus saving it for com- plurality of synthetic sentence pairs comprising a first
+parison purposes during the next pass. passage of text and a second passage of text:
+
+In step 918, the processing system 102 will increment the a first training signal of a plurality of training signals
+cycle counter c by one, and reset the step counter t to 0. As 55 based on whether the given synthetic sentence pair was
+will be appreciated, any other suitable manner of keeping generated using backtranslation; and
+track of the number of training steps and the number of one or more second training signals of the plurality of
+cycles may be substituted into method 900. For example, training signals based on a model prediction regarding
+rather than maintaining a separate cycle counter variable, a a likelihood that one of the first passage of text or the
+single slep counter | may be used to determine both how 60 second passage of text of the given synthetic sentence
+many training steps have taken place, and whether the pair could have been generated. by backtranslating the
+current step indicates the end of a cycle (e.g., when t divided other one of the first passage of text or the second
+by the number of steps per cycle returns an integer value). passage of text of the given synthelic sentence pair;
+
+In step 920, the processing system 102 determines generating, by the one or more processors, a plurality of
+whether c is less than some predetermined number of cycles. 65 graded sentence pairs, cach graded sentence pair of the
+This predetermined number of cycles represents the total plurality of graded sentence pairs comprising an origi-
+number of training cycles to be undertaken, and may be any nal passage of text and a modified passage of text and
+
+US 12,073,189 B2
+17 18
+a grade generated by a trained neural network based on of text or the second. passage of text of the given
+the original passage of text and the modified passage of synthetic sentence pair could have been generated
+lext; and by backiranslating the other one of the first pas-
+training, by the one or more processors, a student network sage of text or the second passage of text of the
+to predict, for each given graded sentence pair in the 5 given synthetic sentence pair;
+plurality of graded sentence pairs, the grade gencrated generale a plurality of graded sentence pairs, each
+by the neural network. . . . graded sentence pair of the plurality of graded sen-
+- The method of claim 1, wherein the ae or tence pairs comprising an original passage of text
+synthetic sentence pairs comprises text in a plurality 0 and a modified passage of text and a grade generated
+different languages, and the plurality of graded sentence 10 by a trained neural network based on the original
+pairs comprises text in only a subset of the plurality of passage of text and the modified passage oftent: and
+different languages. we ‘ . ere 7s
+3. The method of claim 1, wherein generating the plurality tran a student network lo roils foreach del graded
+of graded. sentence pairs comprises, for each given graded sentence pair in the plurality of gra . sentence
+sentence pair of a first subset of the graded sentence pairs, 15 pairs, the grade generated by the traimed neural
+substituting one or more words of the original passage of network, . .
+text of the given graded sentence pair to create the modified 14. The system of claim 13, wherein the one or more
+passage of text of the given graded sentence pair. processors are further configured to, lor each given graded
+4. The method of claim 3, wherein generating the plurality sentence pair of a first subset of the graded sentence pairs,
+of graded sentence pairs includes removing one or more 20 substitute one or more words of the original passage of text
+words of the original passage of text to create the moditied of the given graded sentence pair to create the modified
+passage of text. passage of text of the given graded sentence pair.
+§. The method of claim 1, further comprising generating, 15. The system of claim 14, wherein the one or more
+the plurality of synthetic sentence pairs. processors are further configured to, for each given graded
+6. ‘The method of claim 5, wherein generating the plurality 25 sentence pair of a second subset of the graded sentence pairs,
+of synthetic semlence pairs comprises substituling one or remove one or more words of the original passage of text of
+more words of the first passage of text to create the second the given graded sentence pair to create the modified pas-
+passage of text, . . ; sage of text of the given graded sentence pair.
+. 7. tne method ot fim 1, further vad of the coat or _ 16. The system of claim 15, wherein the one or more
+for each given synthetic sentence pair o f the plurality of 30 processors are further configured to, for each given graded
+synthetic sentence pairs, one or more third training signals sentence pair of a third subset of the graded sentence pairs:
+of the plurality of training signals based on one or more B . gr : pairs:
+scores id translale the original passage of text of the given graded
+8. The method of claim 7, wherein the one or more scores eens pair from a fest language we a sevond
+are generated by comparing the first passage of text to the 35 anguage, to create a translated passage of text, an
+second passage of text using one or more automatic metrics. translate the wanslated passage of text from the second
+9. ‘The method of claim 1, further comprising training the language Into the first language. to create the modified
+neural network based on each given synthelic sentence pair passage of text of the given graded scntenec pair.
+and the plurality of raining signals. 17. The system of claim 13, wherein the one or more
+10. Ihe method of claim 1, wherein training the neural 40 processors are further configured to generate the plurality of
+network is further based on a plurality of human-graded synthctic scntence pairs.
+sentence pairs. 18. The system of claim 13, wherein the one or more
+11. The method of claim 10, wherein training the neural processors are further configured to generate, for cach given
+network includes: synthetic sentence pair of the plurality of synthetic sentence
+pretraining the neural network to predict, for each given 45 pairs:
+synthetic sentence pair of the plurality of synthetic one or morc third training signals of the plurality of
+sentence pairs, the plurality of training signals for the training signals based on one or more scores generated
+given synthetic senlence parr. . by comparing the first passage of text of the given
+12. The method of claim 11, wherein training the neural ; synthetic sentence pair to the second passage of text of
+network fur the includes ke diet. fi hoi 0 the given synthetic sentence pair.
+ne-tuning the neural network to predict, for cach given 19. The system of claim 18, wherein the one or more
+human-graded sentence pair of the plurality of human- . . : -
+. - processors are further configured to generate, for cach given
+graded sentence pairs, a grade allocated by a human . : a ; .
+i . synthetic sentence pair of the plurality of synthetic sentence
+grader to the given human-graded sentence pair. pa irs: -
+13. A processing system comprising: 55 . . oe . ° . °
+B . B 8 B ® one or more fourth training signals of the plurality of
+a memory; and oe : E signars or le B “
+one or more processors coupled to the memory and traning signals based on a prediction trom a textual
+conligured to: entailment model regarding a second likelihood that the
+generate, for each given synthetic sentence pair of a second Passage of text of the given synthetic sentence
+plurality of synthetic sentence pairs comprising a 60 pair entails or contradicts the first passage of text of the
+first passage of text and a second passage of text: given synt netic sentence parr. :
+
+a first training signal of a plurality of training signals 20. The “Y stem a claim 13, wh erein the one 1 h a
+based on whether the given synthetic sentence pair Processors are configured to train the neural network base
+was generated using backtranslation: and on each given synthetic sentence pair of the plurality of
+
+one or more second training signals of the plurality 6s synthetic sentence pairs, the plurality of training signals, and
+of training signals based on a model prediction a plurality of human-graded sentence pairs.
+regarding a likelihood that one of the first passage x kK koe ®

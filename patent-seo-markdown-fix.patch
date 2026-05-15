@@ -1,0 +1,244 @@
+diff --git a/components/UrlAnalysisV2/content/NewContentPanel.tsx b/components/UrlAnalysisV2/content/NewContentPanel.tsx
+index b0b8e81..6220f24 100644
+--- a/components/UrlAnalysisV2/content/NewContentPanel.tsx
++++ b/components/UrlAnalysisV2/content/NewContentPanel.tsx
+@@ -82,63 +82,141 @@ interface NewContentPanelProps {
+     onClose: () => void;
+ }
+ 
+-const SimpleMarkdown: React.FC<{ children: string }> = ({ children }) => {
+-    const parseMarkdown = (text: string) => {
+-        // --- Tables: extracted into placeholders BEFORE html escaping ---
+-        const parseTable = (block: string): string => {
+-            const lines = block.trim().split('\n').filter(l => l.trim());
+-            if (lines.length < 2) return block;
+-            const isSeparator = (l: string) => /^[\|\s\-:]+$/.test(l);
+-            const sepIdx = lines.findIndex(isSeparator);
+-            if (sepIdx < 1) return block;
+-            const headers = lines[sepIdx - 1].split('|').map(c => c.trim()).filter(Boolean);
+-            const rows = lines.slice(sepIdx + 1);
+-            const headerHtml = headers.map(h =>
+-                `<th class="px-3 py-2 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/50 bg-surface-container/60">${h}</th>`
+-            ).join('');
+-            const rowsHtml = rows.map((row, ri) => {
+-                const cells = row.split('|').map(c => c.trim()).filter(Boolean);
+-                const rowClass = ri % 2 === 0 ? '' : 'bg-surface-container-low';
+-                return `<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors ${rowClass}">${cells.map(c =>
+-                    `<td class="px-3 py-2 text-sm text-on-surface-variant">${c}</td>`
+-                ).join('')}</tr>`;
+-            }).join('');
+-            return `<div class="overflow-x-auto my-4 rounded-lg border border-outline-variant/30"><table class="w-full text-sm border-collapse bg-surface-container-low/40"><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
+-        };
+-
+-        // Step 1: Extract table blocks into placeholders (before any escaping)
+-        const tablePlaceholders: string[] = [];
+-        const withPlaceholders = text.replace(/((?:^\|.+\n?)+)/gm, (match) => {
+-            tablePlaceholders.push(parseTable(match));
+-            return `\x00TABLE_${tablePlaceholders.length - 1}\x00`;
+-        });
+-
+-        // Step 2: Escape HTML, then apply markdown transforms
+-        let html = withPlaceholders
+-            .replace(/</g, '&lt;')
+-            .replace(/>/g, '&gt;')
+-            .replace(/^### (.*$)/gim, '<h3 class="text-lg font-bold text-on-surface-variant mt-4 mb-2">$1</h3>')
+-            .replace(/^## (.*$)/gim, '<h2 class="text-xl font-bold text-on-surface mt-5 mb-3">$1</h2>')
+-            .replace(/^# (.*$)/gim, '<h1 class="text-2xl font-bold text-on-surface mt-6 mb-4">$1</h1>')
+-            .replace(/\*\*(.*?)\*\*/gim, '<strong class="text-on-surface font-semibold">$1</strong>')
+-            .replace(/\*(.*?)\*/gim, '<em class="italic text-outline">$1</em>')
+-            .replace(/```[\s\S]*?\n([\s\S]*?)```/gim, '<pre class="bg-surface-container-low p-3 rounded-lg my-3 overflow-x-auto text-xs text-blue-200 border border-outline-variant/30">$1</pre>')
+-            .replace(/`([^`]+)`/gim, '<code class="bg-surface-container-low px-1.5 py-0.5 rounded text-blue-300 font-mono text-xs border border-outline-variant/30">$1</code>')
+-            .replace(/^[*\-] (.*$)/gim, '<li class="ml-5 list-disc marker:text-tertiary py-0.5 text-on-surface-variant">$1</li>')
+-            .replace(/^(\d+)\. (.*$)/gim, '<li class="ml-5 list-decimal marker:text-emerald-400 py-0.5 text-on-surface-variant">$1</li>')
+-            .replace(/\n\n/gim, '</p><p class="my-3 text-on-surface-variant leading-relaxed">')
+-            .replace(/\n(?!(<h|<li|<ul|<ol|<p|<\/p|\x00TABLE))/gim, '<br />');
+-
+-        // Step 3: Restore table HTML (untouched, unescaped)
+-        html = html.replace(/\x00TABLE_(\d+)\x00/g, (_, i) => tablePlaceholders[parseInt(i)]);
+-
+-        return `<p class="mt-2 text-on-surface-variant leading-relaxed">${html}</p>`;
+-    };
++// ─── Markdown renderer ────────────────────────────────────────────────────
++// Block-aware: tables / headings / lists / hr / fenced code / paragraphs.
++// Inline pass runs INSIDE table cells too, so `**bold**` and `*italic*` work
++// in headers and rows. Italic regex requires non-space adjacent so it cannot
++// hijack list bullets like `*   Action:*` across spans.
++function escapeHtml(s: string): string {
++    return s
++        .replace(/&/g, '&amp;')
++        .replace(/</g, '&lt;')
++        .replace(/>/g, '&gt;')
++        .replace(/"/g, '&quot;');
++}
++
++function applyInline(s: string): string {
++    let out = s;
++    // inline code first so its body isn't touched by bold/italic
++    out = out.replace(/`([^`\n]+)`/g, '<code class="bg-surface-container-low px-1.5 py-0.5 rounded text-blue-300 font-mono text-xs border border-outline-variant/30">$1</code>');
++    // bold — non-space adjacent, single line
++    out = out.replace(/\*\*([^\s*][^*\n]*?[^\s*]|\S)\*\*/g, '<strong class="text-on-surface font-semibold">$1</strong>');
++    // italic — must be preceded by start or non-`*`, non-space adjacent inside
++    out = out.replace(/(^|[^*\w])\*([^\s*][^*\n]*?[^\s*]|\S)\*(?!\*)/g, '$1<em class="italic text-outline">$2</em>');
++    // links [text](url)
++    out = out.replace(/\[([^\]]+)\]\(([^)\s]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline hover:text-blue-300">$1</a>');
++    return out;
++}
++
++function renderTableBlock(block: string): string {
++    const lines = block.trim().split('\n').filter(l => l.trim());
++    if (lines.length < 2) return `<p class="my-3 text-on-surface-variant leading-relaxed">${applyInline(escapeHtml(block))}</p>`;
++    const isSeparator = (l: string) => /^\s*\|?[\s\-:|]+\|?\s*$/.test(l) && /-/.test(l);
++    const sepIdx = lines.findIndex(isSeparator);
++    if (sepIdx < 1) return `<p class="my-3 text-on-surface-variant leading-relaxed">${applyInline(escapeHtml(block))}</p>`;
++    const splitRow = (r: string) => r.replace(/^\s*\|/, '').replace(/\|\s*$/, '').split('|').map(c => c.trim());
++    const headers = splitRow(lines[sepIdx - 1]);
++    const rows = lines.slice(sepIdx + 1).map(splitRow);
++    const fmt = (c: string) => applyInline(escapeHtml(c));
++    const headerHtml = headers.map(h =>
++        `<th class="px-3 py-2 text-left text-xs font-bold text-on-surface-variant uppercase tracking-wider border-b border-outline-variant/50 bg-surface-container/60">${fmt(h)}</th>`
++    ).join('');
++    const rowsHtml = rows.map((cells, ri) => {
++        const rowBg = ri % 2 === 0 ? '' : 'bg-surface-container-low/40';
++        return `<tr class="border-b border-outline-variant/30 hover:bg-surface-container-low transition-colors ${rowBg}">${cells.map(c =>
++            `<td class="px-3 py-2 text-sm text-on-surface-variant align-top">${fmt(c)}</td>`
++        ).join('')}</tr>`;
++    }).join('');
++    return `<div class="overflow-x-auto my-4 rounded-sm border border-outline-variant/30"><table class="w-full text-sm border-collapse bg-surface-container-low/40"><thead><tr>${headerHtml}</tr></thead><tbody>${rowsHtml}</tbody></table></div>`;
++}
++
++const isUnorderedItem = (l: string) => /^\s*[*\-+]\s+/.test(l) && !/^\s*\*\*/.test(l);
++const isOrderedItem = (l: string) => /^\s*\d+\.\s+/.test(l);
++const isHr = (l: string) => /^\s*-{3,}\s*$/.test(l) || /^\s*\*{3,}\s*$/.test(l) || /^\s*_{3,}\s*$/.test(l);
++const isBlockStart = (l: string) =>
++    /^#{1,3}\s/.test(l) || isUnorderedItem(l) || isOrderedItem(l) || isHr(l) || /^\x00TBL\d+\x00/.test(l) || /^\s*```/.test(l);
++
++function renderMarkdown(text: string): string {
++    let src = (text || '').replace(/\r\n/g, '\n');
++
++    // Extract fenced code blocks first so nothing inside is reinterpreted.
++    const codeBlocks: string[] = [];
++    src = src.replace(/```[a-zA-Z0-9]*\n?([\s\S]*?)```/g, (_match, body) => {
++        codeBlocks.push(`<pre class="bg-surface-container-low p-3 rounded-sm my-3 overflow-x-auto text-xs text-blue-200 border border-outline-variant/30"><code>${escapeHtml(body.replace(/\n$/, ''))}</code></pre>`);
++        return `\x00CODE${codeBlocks.length - 1}\x00`;
++    });
++
++    // Extract tables (consecutive pipe-prefixed lines that contain a separator row).
++    const tables: string[] = [];
++    src = src.replace(/(?:^[ \t]*\|.*\n?){2,}/gm, (match) => {
++        if (!/\n[\s|\-:]+/.test(match)) return match; // not a table — leave alone
++        tables.push(renderTableBlock(match));
++        return `\x00TBL${tables.length - 1}\x00\n`;
++    });
++
++    const lines = src.split('\n');
++    const out: string[] = [];
++    let i = 0;
++
++    while (i < lines.length) {
++        const line = lines[i];
++
++        // Placeholder lines pass through untouched.
++        const codeMatch = line.match(/^\s*\x00CODE(\d+)\x00\s*$/);
++        if (codeMatch) { out.push(codeBlocks[parseInt(codeMatch[1])]); i++; continue; }
++        const tblMatch = line.match(/^\s*\x00TBL(\d+)\x00\s*$/);
++        if (tblMatch) { out.push(tables[parseInt(tblMatch[1])]); i++; continue; }
++
++        if (/^### /.test(line)) { out.push(`<h3 class="text-lg font-bold text-on-surface-variant mt-4 mb-2">${applyInline(escapeHtml(line.slice(4)))}</h3>`); i++; continue; }
++        if (/^## /.test(line))  { out.push(`<h2 class="text-xl font-bold text-on-surface mt-5 mb-3">${applyInline(escapeHtml(line.slice(3)))}</h2>`); i++; continue; }
++        if (/^# /.test(line))   { out.push(`<h1 class="text-2xl font-bold text-on-surface mt-6 mb-4">${applyInline(escapeHtml(line.slice(2)))}</h1>`); i++; continue; }
+ 
++        if (isHr(line)) { out.push('<hr class="my-4 border-outline-variant/30"/>'); i++; continue; }
++
++        if (isUnorderedItem(line)) {
++            const items: string[] = [];
++            while (i < lines.length && isUnorderedItem(lines[i])) {
++                items.push(lines[i].replace(/^\s*[*\-+]\s+/, '').replace(/^\[ \]\s*/, '☐ ').replace(/^\[x\]\s*/i, '☑ '));
++                i++;
++            }
++            out.push(`<ul class="list-disc ml-6 marker:text-tertiary my-3 space-y-1">${items.map(it => `<li class="text-on-surface-variant leading-relaxed">${applyInline(escapeHtml(it))}</li>`).join('')}</ul>`);
++            continue;
++        }
++
++        if (isOrderedItem(line)) {
++            const items: string[] = [];
++            while (i < lines.length && isOrderedItem(lines[i])) {
++                items.push(lines[i].replace(/^\s*\d+\.\s+/, ''));
++                i++;
++            }
++            out.push(`<ol class="list-decimal ml-6 marker:text-emerald-400 my-3 space-y-1">${items.map(it => `<li class="text-on-surface-variant leading-relaxed">${applyInline(escapeHtml(it))}</li>`).join('')}</ol>`);
++            continue;
++        }
++
++        // Blank line — paragraph break.
++        if (line.trim() === '') { i++; continue; }
++
++        // Collect a paragraph until a block starter or blank line.
++        const para: string[] = [];
++        while (i < lines.length && lines[i].trim() !== '' && !isBlockStart(lines[i])) {
++            para.push(lines[i]);
++            i++;
++        }
++        if (para.length > 0) {
++            const inner = para.map(p => applyInline(escapeHtml(p))).join('<br/>');
++            out.push(`<p class="my-3 text-on-surface-variant leading-relaxed">${inner}</p>`);
++        }
++    }
++
++    return out.join('\n');
++}
++
++const SimpleMarkdown: React.FC<{ children: string }> = ({ children }) => {
++    const html = React.useMemo(() => renderMarkdown(children || ''), [children]);
+     return (
+         <div
+-            className="prose prose-invert prose-sm max-w-none text-on-surface-variant leading-relaxed [&>p]:mb-4"
+-            dangerouslySetInnerHTML={{ __html: parseMarkdown(children || '') }}
++            className="prose prose-invert prose-sm max-w-none text-on-surface-variant leading-relaxed"
++            dangerouslySetInnerHTML={{ __html: html }}
+         />
+     );
+ };
+@@ -303,10 +381,16 @@ export const NewContentPanel: React.FC<NewContentPanelProps> = ({
+             )}
+ 
+             {/* Output Panels */}
+-            {state.progress > 0 && state.status !== 'idle' && (
+-                <div className={`grid grid-cols-1 ${isFullscreen ? 'lg:grid-cols-4' : 'lg:grid-cols-3'} gap-6 flex-1 min-h-0 overflow-hidden`}>
++            {state.progress > 0 && state.status !== 'idle' && (() => {
++                const hasArticle = !!state.finalArticle;
++                const splitCols = hasArticle ? (isFullscreen ? 'lg:grid-cols-4' : 'lg:grid-cols-3') : 'lg:grid-cols-1';
++                const leftColClass = hasArticle
++                    ? 'space-y-4 lg:col-span-1 border-r border-outline-variant/30 pr-4 flex flex-col min-h-0 overflow-hidden'
++                    : 'space-y-4 flex flex-col min-h-0 overflow-hidden';
++                return (
++                <div className={`grid grid-cols-1 ${splitCols} gap-6 flex-1 min-h-0 overflow-hidden`}>
+                     {/* Left Column: AI Stepper (hidden when complete) + Brief Tabs */}
+-                    <div className="space-y-4 lg:col-span-1 border-r border-outline-variant/30 pr-4 flex flex-col min-h-0 overflow-hidden">
++                    <div className={leftColClass}>
+ 
+                         {/* Vertical AI Stepper — visible only while process is running */}
+                         {state.status !== 'complete' && (
+@@ -423,7 +507,10 @@ export const NewContentPanel: React.FC<NewContentPanelProps> = ({
+                         </div>
+                     </div>
+ 
+-                    {/* Right Column: Final Article */}
++                    {/* Right Column: Final Article — only render once we actually
++                        have an article body. Before that, the left column stretches
++                        full-width so briefs and the AI stepper aren't squeezed. */}
++                    {hasArticle && (
+                     <div className={`${isFullscreen ? 'lg:col-span-3' : 'lg:col-span-2'} flex flex-col min-h-0 overflow-hidden`}>
+                         <div className="bg-surface border border-outline-variant/20 rounded-sm flex flex-col h-full overflow-hidden">
+                             {/* Editor Toolbar */}
+@@ -519,8 +606,10 @@ export const NewContentPanel: React.FC<NewContentPanelProps> = ({
+                             </div>
+                         </div>
+                     </div>
++                    )}
+                 </div>
+-            )}
++                );
++            })()}
+         </div>
+     );
+ };

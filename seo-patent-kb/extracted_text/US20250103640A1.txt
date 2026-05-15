@@ -1,0 +1,1909 @@
+US 20250103640A1
+as) United States
+a2) Patent Application Publication 0) Pub. No.: US 2025/0103640 Al
+Dicklin et al. (43) Pub. Date: Mar. 27, 2025
+(54) PROVIDING GENERATIVE ANSWERS (52) U.S. Cl.
+INCLUDING CITATIONS TO SOURCE CPC wu. GO6F 16/382 (2019.01); G@06F 163334
+DOCUMENTS (2019.01)
+(71) Applicant: Google LLC, Mountain View, CA (US) (37) ABSTRACT
+(72) Inventors: Zachary Dicklin, Boulder, CO (US); . . .
+Michael Colayrosso, Arvada, CO (US); Systems and methods include pre-processing documents in
+Remy Burser. Boulder, CO (Us): ' cloud storage using, query embeddings, providing personal-
+Michacl Bendersky Cupertino CA ized prompts to users based on documents in cloud storage,
+(US); Brandon Vareo Boul der. rare) real-time anticipation of user interest in information con-
+(US) Be , tained in documents in cloud storage, and providing gen-
+eralive answers including citation to source documents in
+(21) Appl. No.: 18/472,190 cloud storage. ‘he system and methods generate generative
+machine learning model (MLM) prompts based on docu-
+(22) Filed: Sep. 21, 2023 ment portions of documents in a cloud-based content man-
+gs eae us agement platform. The systems and methods use the gen-
+Publication Classification erative MLM to generate responses to prompts, and the
+(51) Int. Cl. responses include citations to the document portions used to
+GO6F 16/38 (2019.01) generate the responses in order for users to verify the
+GOGF 16/33 (2025.01) responses.
+200
+210
+Select a partion of a document stored in a cloud-based
+management platform
+220
+Input a set of example statement-prompt pairs and the
+portion of the document into a generative MLM
+230
+Obtain generative MLM prompt associated with the
+portion of the document
+240
+Generate, using an embedding model, a query
+embedding based on the generative MLM prompt
+250
+Store an association of the query embedding with the
+portion of the document for subsequent use by the
+generative MLM
+
+Patent Application Publication Mar. 27,2025 Sheet 1 of 15 US 2025/0103640 Al
+100
+Cloud Content Management System 110
+Document Pre- Real-time Anticipation
+processing Subsystem Subsystem Generative
+112 116 ;
+Machine
+Learning Model
+; ; (MLM)
+Personalized Prompt Generative Response
+120
+Subsystem Subsystem
+4114 118
+aS
+Pe
+Cloud Storage
+Server
+130-1
+Computer Network .
+150 :
+_ aN
+a,
+Cloud Storage
+Server
+130-n
+Client Client
+140-1 nt 140-m
+FIG. 1
+
+Patent Application Publication Mar. 27,2025 Sheet 2 of 15 US 2025/0103640 Al
+200
+210
+Select a portion of a document stored in a cloud-based
+management platform
+220
+Input a set of example statement-prompt pairs and the
+portion of the document into a generative MLM
+230
+Obtain generative MLM prompt associated with the
+portion of the document
+240
+Generate, using an embedding model, a query
+embedding based on the generative MLM prompt
+250
+Store an association of the query embedding with the
+portion of the document for subsequent use by the
+generative MLM
+
+Patent Application Publication Mar. 27,2025 Sheet 3 of 15 US 2025/0103640 Al
+300
+310
+Select a document stored in a cloud-based management
+platform
+320
+For each document portion of the document:
+322
+Input a set of example statement-prompt
+pairs into a generative MLM
+Generate, using the generative MLM, a
+generative MLM prompt associated with the
+document portion
+Generate, using an embedding model, a
+query embedding based on the generative
+MLM prompt
+328
+Store an association of the query
+embedding with the portion of the
+document for subsequent use by the
+generative MLM
+
+Patent Application Publication Mar. 27,2025 Sheet 4 of 15 US 2025/0103640 Al
+400
+410
+Select a portion of a document stored in a cloud-based
+management platform
+420
+Generate, using a generative MLM, a generative MLM
+prompt associated with the portion of the document
+430
+Generate, using an embedding model, a query
+embedding based on the generative MLM prompt
+440
+Store an association of the query embedding with the
+portion of the document for subsequent use by the
+generative MLM
+
+Patent Application Publication Mar. 27,2025 Sheet 5 of 15 US 2025/0103640 Al
+500
+510
+Obtain a generative MLM prompt from a user interface
+520
+Generate, using an embedding model, a first query
+embedding based on the generative MLM prompt
+530
+Select, from multiple documents stored on a cloud-
+based content management platform, a subset of the
+multiple documents
+540
+Input the generative MLM prompt and the subset of the
+multiple documents into a generative MLM
+550
+Generate, using the generative MLM, a generative MLM
+response
+
+Patent Application Publication Mar. 27,2025 Sheet 6 of 15 US 2025/0103640 Al
+
+600
+610
+
+Obtain a generative MLM prompt from a user interface
+620
+
+Input the generative MLM prompt and one or more
+documents into a generative MLM
+
+630
+
+Generate, using the generative MLM, a generative MLM
+
+response
+640
+Generate, using an embedding model, a query
+embedding based on the generative MLM response
+
+650
+
+Select a subset of the one or more documents portions
+
+of the one or more documents where the query
+embedding of each document portion is within a
+predetermined threshold similarity from the query
+embedding of the response
+
+660
+
+Include one or more citations to one or more document
+
+portions of the subset
+
+Patent Application Publication Mar. 27,2025 Sheet 7 of 15 US 2025/0103640 Al
+700
+110
+Generate, using an embedding model, a first query
+embedding based on a generative MLM prompt
+720
+Select, from multiple documents stored on a cloud-
+based content management platform, a first subset of
+multiple documents
+230
+Select, from the subset of documents, a second subset
+based on an access permission of each document in the
+first subset
+740
+Input the generative MLM prompt and the second subset
+of the one or more documents into a generative MLM
+£50
+Generate, using the generative MLM, a generative MLM
+response
+
+Patent Application Publication Mar. 27,2025 Sheet 8 of 15 US 2025/0103640 Al
+a 800
+IX
+802-1
+What has changed on Project X in the last week?
+From Weekly Notes, Project Plan, and Email from jsmith: 808
+The project is currently in the development phase and is on track
+to be completed in the next 3 months. 804-1
+Some recent changes include:
+- The addition of a new feature that allows users to 806
+update their contact information.
+-The addition of a new feature that allows users to work
+offline and synchronize their changes with the cloud when they
+are back online.
+The project team received approval from John Smith to move to
+sub-phase 4 of the development phase.
+802-2
+Summarize sub-phase 4 of the development phase.
+D4 From Project Plan and Sub-phase 4 Plan: ~#——— 808 804-2
+Sub-phase 4 includes the following tasks:
+- Add features related to importing spreadsheets.
+- Add features related to bulk updating user profiles.
+- Unit testing of features added in sub-phase 3.
+806
+FIG. 8
+
+Patent Application Publication Mar. 27,2025 Sheet 9 of 15 US 2025/0103640 Al
+900
+910
+Select multiple documents stored in a cloud-based
+content management platform
+920
+Select a portion of a document of the multiple
+documents
+930
+Generate, using a generative MLM, a first generative
+MLM prompt based on the portion of the document
+940
+Associate the first generative MLM prompt with the
+portion of the document
+950
+Cause the first generative MLM prompt to be presented
+to one or more users of the platform
+
+Patent Application Publication Mar. 27,2025 Sheet 10 of 1S =US 2025/0103640 Al
+a 1000
+a PO [=| bd
+1002
+D4 What changes have been made to Project X 1004-1
+in the last week?
+a 1006
+Document Name Qwner Last Modified
+Sales Report 7 jsmith18&9 2023-01-07
+Project Notes mlopez 2023-01-12
+Development Chart mlopez 2023-01-12
+FIG. 10
+
+Patent Application Publication Mar. 27,2025 Sheet 11 of 15 US 2025/0103640 Al
+1100
+1110
+Identifying an action of a user of a cloud-based content
+management platform with respect to content of one or
+more first documents in a plurality of documents
+1120
+Predict user interest in content of one or more second
+documents in the plurality of documents:
+1122
+Select, based on a selection criterion, the one
+or more second documents
+1124
+Select, based on the action of the user, a
+portion of a document
+1126
+Generate, using a generative MLM, a first
+generative MLM prompt based on the portion
+of the document
+1130
+Cause the first generative MLM prompt to be presented
+to the user in relation to the action of the user
+
+Patent Application Publication Mar. 27,2025 Sheet 12 of 1S US 2025/0103640 Al
+
+1200
+1210
+
+Receive, at a user interface of a client device, an action
+
+of a user of a cloud-based content management platform
+1220
+
+Send, over a computer network, data identifying the
+action of the user to the cloud-based content
+management platform
+
+1230
+
+Receive, over the computer network, a generative MLM
+
+prompt from the platform
+
+1240
+
+Presenting, on the user interface, a selectable option to
+
+send the generative MLM prompt to the platform
+
+Patent Application Publication Mar. 27,2025 Sheet 13 of 1S US 2025/0103640 Al
+a 1300
+a PO [=| bd
+1302
+D4 What is the maximum file size allowed by 1304
+the website?
+A 1306
+Document Name Qwner Last Modified
+Sales Report 7 jsmith18&9 2023-01-07
+Project Notes mlopez 2023-01-12
+Development Chart mlopez 2023-01-12
+FIG. 13A
+
+Patent Application Publication Mar. 27,2025 Sheet 14 of 1S US 2025/0103640 Al
+a 1300
+ee Pa (=) bd
+1302
+A 1306
+Document Name 1308 Qwner Last Modified
+Sales Report 7 te RORY _()1-07
+Open 7771310
+Development Chart Download B-01-12
+Share
+1312-1
+we Summarize this document 3
+; 1312-2
+D4 Show me all related files
+FIG. 13B
+
+Patent Application Publication Mar. 27,2025 Sheet 15 of 1S US 2025/0103640 Al
+2 1400
+1402 1410
+PROCESSING
+DEVICE VIDEO DISPLAY
+oN
+. PROCESSING 4422 UNIT
+1430
+1404 1412
+VOLATILE
+MEMORY ALPHA-NUMERIC
+[Y neraacrione 1496 INPUT DEVICE
+1406 1414
+NON-VOLATILE CURSOR
+MEMORY CONTROL
+DEVICE
+1408 1416
+NETWORK DATA STORAGE DEVICE
+INTERFACE
+DEVICE COMPUTER-READABLE| | 4 y9q
+STORAGE MEDIUM
+MNS
+Y
+20 1418
+SIGNAL
+GENERATION
+DEVICE
+FIG. 14
+
+US 2025/0103640 Al Mar. 27, 2025
+1
+PROVIDING GENERATIVE ANSWERS citations to documents stored on the platform so the user can
+INCLUDING CITATIONS TO SOURCE verify the response or obtain further information.
+DOCUMENTS [0005] In one embodiment, systems and methods for pro-
+cessing, documents in cloud storage for query embeddings
+TECIINICAL FIELD may include selecting a portion of a document stored in a
+: : : cloud-based content management platform, inputting a set of
+[0001] Aspects and implementations of the present disclo- example slatement-prompl pairs and the selected portion of
+sure relate to a cloud-based content management platform, the document into a generative MLM, obtaining an output
+and more specifically, lo providing generative answers (hat from the generative MLM (which includes a generative
+include cilalions lo source documents at the cloud-based MLM prompt), generating query ombeddings based on the
+conten! management platform. generative MLM prompt, and storing an association of the
+query embeddings with the selected document portion for
+BACKGROUND subsequent use by the generative MLM to provide informa-
+. . . ap : tion related to content of the documents to user of the
+[0002] During online collaboration, users utilize various cloud-based management platform
+collaborative tools provided by a cloud based content work [0006] Systems and methods for providing personalized
+oe fh ca tlaborati . P include d prompis based on decuments in cloud storage may include
+tev ati cola emtye tools can tat ude ee selecting multiple documents stored in the cloud-based
+applicalions (C.g., Word processor, presenialion, anc sprcad- content management platform based on a selection criterion.
+sheet applications), a cloud-based document storage service, selecting a portion ots document of the multiple documents.
+an online calendar service, an email service, or a messenger. generating a first generative MLM prompt based on the
+The collaborative tools allow users to, over the network, i er oe _ oer
+share, edil, and comment on documents, schedule project document P Sue MEMS 2 oe ith ue associating the
+sant > : . * inst gencrative rompt with the document portion,
+limelines, communicate over emails or messenger messages, and causing the first generative MLM prompt to x pre-
+etc. With conventional collaborative tools, information a sented to one or more users of the cloud-based content
+user needs to make a decision or take action may be Jound management platform when the one or more users access the
+m disparate. vont f 8, offen nd documents in different loca- cloud-based management platform.
+tions, wr ferent ne wit ifs ent ount. oe time [0007] In some embodiments, systems and methods for
+sions. A user may spend a significant amount of time real-lime anticipation of user i in doe sin cloud
+. : : . cmt ymee we a a pation of user interest in documents in cloud
+Bathering the information from the disparate sources when storage may include identifying an action of a user of a
+: cloud-based content management platform with respect to
+action. content of one or more first documents stored at the platform
+and predicting user interest in content of one or more second
+SUMMARY documents stored at the platform. Predicting user interest
+[0003] The following is a simplified su ary of the may include selecting, based on a selection criterion, the onc
+disclosure in order to provide a basic understanding of some or more second documents. selecting a ae onat of the one vd
+aspects of the disclosure. ‘This summary is nol an extensive more second documents based on the action of the user, ant
+overview of the disclosure. It is not intended to either generating a generative MIM prompt using a generative
+identify key or critical elements of the disclosure, nor MIM based on the document portion. The systems and
+delineate any scope of the particular implementations of the methods i" ne na © causing the generative Mt M oon fo be
+disclosure or any scope of the claims. Its sole purpose is to presented lo the user in relation lo the action Of Ine user.
+present some concepts of the disclosure in a simplified form [0008] Systems and methods for providing generative
+as a prelude to the more detailed description that is presented answers may’ include obtaining a generative MIM prompt
+later from a user interface, generating a first query embedding
+[0004] Systems and methods are disclosed for processing basedon pee aeieetice MEM pomp using an embedding
+documents in cloud storage for query embeddings, provid- model, selecting a subset of mulliple documents stored in the
+ing personalized. generative machine learning model (MLM) cloud basis] Content management platform fe secon the Dist
+prompts to users based on documents in cloud storage, a ‘t , ee MLM p 1 th ine P r ‘ae
+real-time anticipation of user interest in information con- ung the generative N Prompt and the subset of docu-
+tained in documents in cloud storage, and providing gen ments into a generative MLM, and. generating a response
+. . woe , a using the generative MLM. ‘he response may include one or
+erative answers that include citations to source documents in ees resp yn
+cloud storage. Processing the documents for query embed. more citations to one or more of the documents in the subset
+, . = ’ “ of documents.
+dings helps gather cloud storage documents together that are
+similar to each other and similar to generative MI.M BRIEF DESCRIPTION OF THE DRAWINGS
+prompts submitted by a user. Providing personalized
+prompts helps preemptively generate generative MI.M [0009] Aspects and implementations of the present disclo-
+prompts based on recent user aclivily on the cloud-based sure will be understood more fully from the detailed deserip-
+content management platform. Real-time anticipation of tion given below and from the accompanying drawings of
+user interest helps generate generative MLM prompts based. various aspects and implementations of the disclosure,
+on recent user activily and. on inpul provided by the user. which, however, should not be taken to limit the disclosure
+Providing generative answers allows the platform to usc a —to:_ the specific aspects or implementations, but are for
+gencrative MLM to answer questions about information on explanation and understanding only.
+the platform and perform tasks related to documents stored. [0010] FIG. 1 schematically illustrates an example cloud-
+on the platform, and the generative MT.M’s response include based content management platform in which selected
+
+US 2025/0103640 Al Mar. 27, 2025
+2
+aspects of the present disclosure may be implemented, in example, a user may comment on a document, and in
+accordance with various implementations. response to the commenting action, another user may reply
+[0011] FIG. 2 depicts a flowchart illustrating an example to the comment or resolve the comment to close a comment
+method for practicing selected aspects of the present disclo- thread. In another example, a user may schedule a calendar
+sure. event to collaboratively edit a document with another user,
+[0012] FIG. 3 depicts a flowchart illustrating an example and the other user may need to review the document to
+method for practicing selected aspects of the present disclo- prepare for the pending calendar event. In another example,
+sure. a user may send an email or messenger message to a user
+[0013] FIG. 4 depicts a Nowchart illustrating an example with information relevant to documents in the cloud-based
+nicthod for practicing selected aspects of the present disclo- storage system. In another example, multiple users may
+sure. work on the documents stored on the platform concurrently
+[0014] FIG. 5 depicts a flowchart illustrating an example and see cach other’s edits to or comments on the documents
+method for practicing selected aspects of the present disclo- in real-time (c.g., within a few milliseconds of an occurrence
+sure. of an edit or a comment).
+[0015] FIG. 6 depicts a flowchart illustrating an example [0026] The cloud-based dala storage system may store
+method for practicing selected aspects of the present disclo- numerous documents having information relevant (o a user
+sure. when making a decision or taking some other type of action.
+[0016] TG. 7 depicts a flowchart illustrating an example he different documents may be stored in different locations
+method Lor practicing selected aspects of the present disclo- (e.g., in different folders in a cloud storage file system), in
+sure. documents with different formats (c.g., word processing
+[0017] FIG. 8 illustrates an example user interface with documents, emails, spreadsheets, and image files), and in
+generative machine learning model (MLM) prompts and documents with differing permissions (¢.g., some documents
+generative MLM responses in accordance with implemen- may only be shared with certain users and may not be
+tations of the present disclosure. viewable by other users). However, to locate relevant docu-
+[0018] FIG. 9 depicts a flowchart illustrating an example ments, the user may need to spend a significant amount of
+method for practicing selected aspects of the present disclo- time searching through and reviewing documents to find the
+sure. relevant documents and the relevant portions of the docu-
+[0019] FIG. 10 illustrates an example user interface with ments. Such searching and reviewing may unduly delay
+personalized generative MLM prompts in accordance with collaboration, may be disruptive lo the user experience and
+implementations of the present disclosure. may result in use of a large amount of computing resources.
+[0020] FIG. 11 depicts a flowchart illustrating an example Further, the numerous documents stored at the cloud-based
+method Lor practicing selected aspects of the present disclo- data storage system may include documents that reflect an
+sure. organization’s wealth of knowledge (c.g., strategy docu-
+[0021] FIG. 12 depicts a flowchart illustrating an cxample ments, competitive analysis documents, design idea docu-
+method for practicing sclected aspects of the present disclo- ments, cte.), which lies dormant until users know what to
+sure. look for and where to find it. Tf the user is lacking this
+[0022] FIG. 134 illustrates an example user interface with context, searching would not help ihe user with finding the
+real-time anticipated generative MI.M prompts in accor- documents containing, information that can assist the user
+dance with implementations of the present disclosure. with making a decision or taking a particular action. As a
+[0023] FIG. 13B illustrates another cxample user interface result, the user ofien has to recreate information that already
+with further real-time anticipated generative MLM prompts _ exists in some of the documents stored at the cloud-based
+in accordance with implementations of the present disclo- dala storage system, which leads to unnecessary consump-
+sure. tion of storage and processing resources.
+[0024] FIG. 14 depicts an example computer system in [0027] Aspects and implementations of the present disclo-
+accordance with sclected aspects of the present disclosure. sure address the above deficiencies, among others, by using
+. a generative machine learning model (MI.M) to provide a
+DETAILED DESCRIPTION user with information needed to make a decision or take a
+[0025] A cloud-based content management platform may particular action, based on relevant documents stored al the
+provide collaborative tools such as document applications cloud-based data storage system and without relying on the
+(¢.g.. word processor, presentation, and spreadsheet appli- user’s knowledge of and searching lor those documents. In
+cations): a cloud-based document storage service that can some implementations, the generative MLM is trained to
+store document application documents, image files, video gather and analyze numerous documents stored at the cloud-
+files, audio files, or other file formats; an online calendar; an _- based data storage system, derive meaning of content in the
+email service; a messenger, etc. The cloud-based content documents, and/or generate relevant information needed by
+management platform allows users to collaborate on a a user to make a decision or perform an action.
+document stored on the platform. Such collaboration may [0028] The generative MI.M model can use other machine
+include, for example, reviewing, sharing, ediling, or com- learning models, including an enceder-decoder architecture
+menting on a document. or example, a user may share a that can include one or more self{-attention mechanisms and.
+document with another user, and in response to the sharing one or more feed-forward mechanisms. In some embodi-
+action, (he other user may open and view the document, or ments, the generative MLM model can include an encoder
+edit the document. In another example, a user may edit a that can encode input textual data into a vector space
+document, and in response to the editing action, the other representation; and a decoder that can reconstruct the data
+user may respond by further editing the document, accepting from the vector space, generating outputs with increased
+the suggested edit, or commenting on the edit. In another novelty and uniqueness. The self-attention mechanism can
+
+US 2025/0103640 Al Mar. 27, 2025
+3
+compute the importance of phrases or words within a text sufficiently similar to a document's or a document portion’s
+data with respect to all of the text data. A generative MLM query embedding, then the platform can determine that the
+model can also utilize the deep learning techniques, includ- document or document portion is likely relevant to the user’s
+ing recurrent neural networks (RNNs), convolutional neural text prompt.
+networks (CNNs), or transformer networks. Turther details [0032] The document pre-processing subsystem can cause
+regarding generative MI-Ms are provided herein. the generative MLM to use a document of the cloud-based
+[0029] In some implementations, the generative MLM is data storage system, or portions of the document, as input
+trained to generate information for a user based only on the and generate generative MLM prompts about the document
+documents the user has access to (documents associated or the document portions (c.g., questions about the docu-
+with a user account of the user), and not the other documents ment or document portions, summaries of the document or
+stored at the cloud-based data storage system or facts document portions, etc.). The document pre-processing suh-
+learned by the generative MLM from other sources. In some system may then input these generated prompts into the
+implementations, the generative MIM is trained to distin- embedding model to generate query embeddings that are
+guish between different versions of a document and to digital representations of the prompts. The document pre-
+account for recent activity wilh respect to the document processing subsystem may then associate these prompts or
+(e.g., opening of the document, editing of the document, prompl query embeddings with the document or the relevant
+commenting on the document, resharing of the document, decument portions. As discussed above, the platform can use
+etc.) when determining which documents to use for provid- these query embeddings to determine if a document or a
+ing the information for the user. portion of the document is relevant to a user’s text prompt
+[0030] In some implementations, the cloud-based content or other user needs.
+management platform converts a user’s query into a struc- [0033] In some implementations, the cloud-based data
+tured query so the platform can search for relevant docu- storage system additionally or alternatively includes a per-
+ments in the cloud-based data storage system. This may be sonalized prompt subsystem that may provide personalized
+because the documents the user has access to at the cloud- prompts to users of the cloud-based content management
+based data storage is larger Lhan what the generative MLM platform based. on documents in the cloud storage. The
+can efficiently process. In response to user queries, the platform may select multiple documents in the cloud storage
+generalive MLM provides information with citations so that based on a selection criterion (¢.g.. documents that have
+a user can verify the information. The information provided been recently created, viewed. or modified) and designate
+by the generative MLM can include links to documents in the selected documents as a “working set.” ‘The platform
+the cloud-based data storage system that support the content may then input a decument or a portion of the document
+of the information. The information can include content in from the working sct into the generative MLM, and the
+various forms such as text answers, lists of users that may generative MLM may generate prompts based on the docu-
+have relevant information, folders or documents or other ment, portions of the documents, multiple documents in the
+locations at the cloud-based storage system, calendar working, set, or multiple document portions from different
+appointments, emails, or other data. decuments in the working sel. Generated prompis may
+[0031] In some implementations, the cloud-based data include queries such as, “What is new on the project?”
+storage system includes a document pre-processing subsys- “Summarize the documents in this folder,” or “What needs
+tem that prepares the documents stored at the cloud-based — my allention?”
+data storage system for use by the generative MLM. Prepa- [0034] In addition or alternatively, the cloud-based data
+ration of the documents can be important duc to the large storage system includes a real-time anticipation subsystem
+number of documents stored at the cloud-based data storage that, in real time, anticipates a user’s interest in information
+because such size would make it difficult, if not impossible, contained in documents in the cloud-based content manage-
+for a conventional MI.M to use. The preparation may ment platform’s cloud storage. The platform may detect an
+include inputting a document into an embedding, model to action of a user at a user interface of the platform (e.g., text
+generale a query embedding based on the document. The data input inte a search bar or generative MLM prompt text
+query embedding is a digital representation of the document. field, a user right-clicking on a document, etc.), and. perform
+‘The preparation can also include inputting a portion of the an anticipatory assessment lo predict what additional infor-
+document (¢.g., a sentence, paragraph, or section of the mation the user may need based on the detected user action.
+document) into the embedding model to generate a query Specifically, in some embodiments, the platform may select
+embedding for the portion of the document, and, similarly, one or more documents in the cloud storage based on a
+the query embedding for the document portion is a digital selection criterion and designate the selected documents as
+representation of that document portion. The document a “working set.” The platform may then use the action of the
+pre-processing subsystem then associates these query user and a document or portion of the document from the
+embeddings with the document or the document portions. working, set as input to the generative MI.M, and the
+These embeddings are used by other portions or subsystems generative MLM may create, for presentation to the user,
+of the cloud-based content management platform to deter- generative MI.M prompts based on the action of the user and
+mine if a document or document portion is relevant to a the document, portions of the documents, multiple docu-
+user’s actual query or predicted needs. For example, a user ments in the working sel, or multiple document portions
+of the platform may submit a text prompt to the system, and from different documents in the working set, which are
+the system may input the text prompt into the embedding indicative of the user’s additional information needs in
+model to obtain a query embedding for the text prompt. The relation to the detected action. For example, in response to
+text prompt’s query embedding can be compared to the (1) the user typing “passport” into a search bar of the user
+query embeddings associated with a document or portions of interface, and (2) an image of the user’s passport being
+that document. If the text prompt’s query embedding is stored in the cloud storage, the generative MI.M may create
+
+US 2025/0103640 Al Mar. 27, 2025
+4
+
+the generative MLM prompt, “Would you like to know when ing of numerous documents and by using generative MLMs
+your passport expires?” and present this prompt on the user to perform tasks on the platform, the use of computer
+interface. In some implementations, the prompt is presented resources is improved, and memory consumption is reduced.
+to the user immediately after (e.p., within a few (or a [0039] In addition, some benefits of the present disclosure
+threshold number of) milliseconds of) the user’s performing, may provide a technical effect caused by or resulting from
+or requesting to perform the action while the user is still a technical solution to a technical problem. For example, one
+focused on the action. technical problem may relate to significant use of network
+[0035] In addition or alternatively, some implementations bandwidth and processing resources in the cloud-based
+of the present disclosure may include a generative response content management environment when locating and load-
+subsystem that provides generative MLM response. Such ing documents for user review of documents in the cloud
+responses can include cilalions to documents in the cloud storage. Such locating and loading of documents in a con-
+storage of the cloud-based content management. platform. ventional cloud-based content management environment
+Providing generative MLM responses may include obtain- may include many documents that the user has no interest in,
+ing 4 generative MLM prompt from a user. ‘he generative resulting in wasteful use of resources. One of the technical
+response subsystem may process the prompt for intent or solutions to the technical problem may include determining,
+structured search terms, which may result in weighing using query embeddings from an embedding model, a
+different terms higher when searching for documents rel- smaller set of relevant documents, and generaling responses
+evant to the prompt. The generative response subsystem can to a user’s prompts using a generative MLM. As a conse-
+re-rank or refine the search results based on the searching quence, computing resources and network bandwidth
+user’s permissions, a time threshold, a query embedding of required by unnecessary transfer of documents inside the
+the prompt as compared to a query embedding, associated cloud-based content management platform and downloads
+with a document or document portion, or other search trom server to client are reduced or eliminated.
+
+crileria. The generative response subsyslem may input the [0040] T'IG. 1 schematically depicts an example cloud-
+generative MLM prompt and the documents or document based content management platform 100 (the “platform
+portions from the scarch results into the generative MLM to 100”) in which selected aspects of the present disclosure
+generate a generative MLM response to the user’s prompt. may be implemented, in accordance with various implemen-
+The response may include citations to the documents or tations. Any computing devices depicted in FIG. 1 or
+document portions from the scarch results. These citations elsewhere in the figures may include logic such as one or
+may allow the user to view the content that supports the more processing device (e.g, central processing units or
+generative MLM’s response and verify the response or “CPUs”, graphical processing units or “GPUs”) that exceute
+obtain further information. The generative response subsys- computer-readable instructions stored in memory, or other
+tem can analyze the generative MLM’s response to verily types of logic such as application-specific integrated circuits
+that the response is consistent with the contents of the cited (“ASIC”), field-programmable gate arrays (“FPGA”), and
+decuments. Such verification can include comparing the so forth. Some of the systems depicted in FIG. 1, such as a
+content overlap of the lext of the response and content of the cloud content management system 110, may be imple-
+cited documents, which may include using the query embed- mented using one or more server computing, devices that
+dings and other textual overlap methods. form what is sometimes referred to as a “cloud infrastruc-
+[0036] Accordingly, aspects of the present disclosure pro- ture,” although this is nol required.
+
+vide a user of a cloud-based content management platform [0041] In implementations, the platform 100 may include
+with veriliable responses lo a prompt. A generative MLM a cloud content management system 110 that implements a
+processes the prompt and focuses on relevant and accessible content management application that is accessible from
+documents in a user’s cloud storage on the cloud-based various client devices, including clients 140-1, .. . , 140-17
+content management platform. Existing MLM systems with that may be included in the platform 100, through either a
+chat interfaces can answer questions by drawing on an thin client interface, such as a web browser (e¢.g., a web-
+external body of knowledge that the MLM is trained on, but based cloud. storage application), or a program interface. In
+these MILMs are unable to provide answers with citations to implementations, the cloud storage application that is imple-
+a user’s cloud storage on a cloud-based content management mented by the cloud content management system 110 may
+platform. be a software as a serviec (SaaS) cloud content management
+[0037] Furthermore, conventional information retrieval application. ‘he cloud content management system 110 and
+methods rely on conventional ranking algorithms to return the clients 140-1, ..., 140-7 may be in data communication
+ranked lists of content that may be relevant to a user’s via a computer network 150, which may be any suitable
+search, and the user should consume the search results to network including any combination of a local area network
+find information relevant to the user’s interests. The present (LAN), wide area network (WAN), or the Internet. The
+disclosure, on the other hand, provides a user with informa- cloud content management system 110 may include, among
+Hien synthesized from multiple cloud storage documents, other things, a document pre-processing subsystem 112, a
+and the information can contain links to specific portions of personalized prompt subsystem 114, a real-time anticipation
+those documents that support the information. subsystem 116, a generative response subsystem 118, and a
+[0038] In addition or alternatively, aspects of the present generative MLM 120 to perform selected. aspects of the
+disclosure predict a user’s interest in documents in the cloud present disclosure in order to enable more computationally
+storage and generale (preemptively or in real time) prompts ellicient generation of responses [or users of the platform
+for the user to execute using the generative MLM. As such, 100. Additionally, the cloud content management system
+the efficiency of cloud-based content management platforms 110 may reduce usage of network bandwidth and processing
+is inereased, and user collaboration is expedited. In addition, resources in the platform 100 when locating and loading
+by eliminating time-consuming user searching and review- documents for user review of documents in cloud storage.
+
+US 2025/0103640 Al Mar. 27, 2025
+5
+[0042] Each of the clients 140-1, ... , 140-m may include, part of the word processing document. In a spreadsheet, a
+for cxample, a user computing device that is used by a user portion may include a row, a column, an individual cell, or
+to access a cloud content management application via a other parts of the spreadsheet. In a presentation, a portion
+cloud storage application user interface, such as a SaaS may include a slide. a text box, an image, or parts of the
+cloud storage application, that is provided by the cloud presentation. In a PDI, a portion may include a sentence, a
+content management system 110, e.g., through a web paragraph, a page, a section, an image, a text box, or some
+browser. In an example, the clients 140-1, ... , 140-7 may otber part of the PDT. A portion of calendar data may include
+include user computing devices associated with an indi- a date, a time, a location, subject text data, a body of the
+vidual or an enlily or organization such as a business (e.g., calendar data, or other parts of the calendar data. A portion
+financial institution, bank, etc.), non-profit, club, university, of an email may include a sender ficld, a recipient field, a
+government agency, or any other organization that may use subject line, an attachment (which may be its own docu-
+a cloud storage application. For example. a business may ment), a body of the email, a sentence, paragraph, or other
+operate a cloud storage application to create, store, access, part of the body, or other email data. A portion of an image
+and/or modify one or more files to manage financial records, may include a subsection of the image or other image data.
+business records, client lists, and so forth. A portion of audio may include a specific playback interval
+[0043] In various implementations, the platform 100 may (e.g. the audio content between playback times 00:00:00
+include cloud storage servers 130-1, ... , 130-7. Miles that and 00:00:05), a portion of the text of the transcript, or other
+are created, stored, accessed, and/or modified by one or audio data. A portion of a video may include a specific
+more of the clients 140-1, ..., 140-m using the cloud storage playback interval (¢.g., the video or audio content between
+application that is implemented by the cloud content man- _Playback times 01:30:00 and 01:31:15), a portion of the text
+agement system 110 may be stored in the cloud content of the transcript, or other video data. A portion of a docu-
+management system 110 or in one or more of the cloud ment may include a comment associated with the document,
+storage servers 130-1... .. 130-1. In some implementations, where the comment may include text data or other data
+the cloud storage servers 130-1... . , 130-2 along with the generated by a user of the platform 100.
+cloud content management system 110 may form a distrib- [0046] A document may include metadata. The metadata
+uted storage system, and the cloud content management may be stored in a metadata storage as part of the file of the
+system 110 may create a plurality of data slices from a single document or may be stored in a separate part of the cloud
+file, and. divide up the slices from the single file to be stored storage servers 130-1... . , 130-7 designated for document
+across different cloud storage servers 130-1, ... , 130-2. metadata. The metadata may include data indicating an
+Upon receipt of a request to access the file, the cloud content owner of the document; permission data, which may indi-
+management system 110 may retrieve the slices from the cate which users of the platform 100 may open, view, edit,
+cloud storage servers 130-1... ., 130-7 and reassemble the or otherwise access the document; data indicating when the
+file from the slices. In some implementations, the distributed document was created, last opened, last modified, last com-
+storage system may provide a degree of redundancy and mented upon, elc.; or olher metadata.
+fault tolerance, such that fewer than all of the slices may be [0047] Throughout this disclosure, referring to a document
+reassembled into the file. Accordingly, the risk of data loss may refer to the contents of the document. Similarly, refer-
+may be minimized, even in a case where one of the cloud ring to a document portion may refer to the contents of that
+storage servers 130-1, ..., 130-7 has a failure or is otherwise decument portion. The centenis of the document may
+inaccessible. include the data that comprises the body of the document.
+[0044] In some embodiments, a file may store a document. lor example, the contents of a word processing document
+A document may store data or other information. Documents — may include the text of the document. In some implemen-
+stored on the cloud storage servers 130-1, ..., 130-7 may tations, the contents of a document may not include the
+store data or information in various formats. For example,a metadata of the document. For cxample, the system input-
+document may include a word processing document, a ting a document portion into a generative MLM may include
+spreadsheet, a presentation, a portable document format the system inputting the contents of that document portion
+(PDF) document, or other text data. A document may into the generative MIM.
+include calendar data, such as a calendar invile, an appoint- [0048] The document pre-processing subsystem 112 may
+ment, a meeting, or other calendar dala. A document may include a subset or a component of the cloud content
+include an email. A document may include an image, which management system 110. The document pre-processing, sub-
+may include additional data, such as content of the image in system 112 may be configured to pre-process documents
+text form generated by optical character recognition (OCR). stored on the platform 100. Pre-processing a document may
+A document may include audio, which may include addi- include generating one or more query embeddings based on
+tional data such as text corresponding to a transcript of the the document or based on a portion of the document. The
+audio data. A document may include a video, which may query embeddings may be used by other components of the
+include additional data such a text corresponding to a cloud. content management system 110 to provide generative
+transcript of the video. information to a user of the platform 100.
+[0045] In one or more implementations, a document may [0049] ‘The personalized prompt subsystem 114 may also
+include one or more portions. A portion of a document include a subset er a component of the cloud content
+(sometimes called a “document portion”) may include con- management system 110. ‘he personalized prompt subsys-
+tent that is part of the document and that is less than the tem 114 may be configured to generale generalive MLM
+entircty of the document, or a document portion may include prompts personalized to one or more users of the platform
+the entire contents of the document. For example, in a word 100. Generating the personalized generative MLM prompts
+processing document, a portion of the document may may be based on documents stored on the platform 100 to
+include a sentence, a paragraph, a page, a section, or another which a user has access or documents that the user has
+
+US 2025/0103640 Al Mar. 27, 2025
+6
+
+recently viewed, edited, or otherwise accessed, or may be input and past inputs. The RNN will address past and future
+based on documents selected using some other selection measurements and make predictions based on this continu-
+criteria. The cloud content management system 110 may ous measurement information. One type of RNN that may he
+provide the personalized generative MI.M prompts to the used is a long short term memory (STM) neural network.
+user on a user interface displayed on the user’s client 140-1 [0054] The generative MLM 120 may include a machine
+so the user can submit the generative MIM query to the learning model configured to accept an input and generate an
+generative MLM 120 and receive information from the output by repeatedly predicting the next word in the output
+platform 100. based on the input and the current output. In some embodi-
+[0050] The real-time anticipation subsystem 116 may also ments, the generative MI.M 120 may be based on or include
+include a subset or a component of the cloud content one or more deep learning machine learning models. One or
+management system 110. ‘he real-time anticipation subsys- more of those deep learning models may include a trans-
+tem 116 may be configured to predict, in real-time, a user’s former-based. large language model (LLM), which may
+interests and generate generative MLM prompts based on include one or more transformer models. A transformer may
+those interests. he real-time anticipation subsystem 116 have been pretrained using selfsupervised learning, semi-
+may predict the interests based on action of a user regarding supervised learning, or unsupervised training. The pretrain-
+the platform 100 (c.g., inputting text into a user interface, ing may be followed by supervised fine-tuning. The training
+right-clicking on a document, ctc.). The cloud content man- may include using a datasct that may include text data in
+agement system 110 may provide the generative MI.M order to train the transformer on what words, phrases, or
+prompts to the user on a user interface displayed on the other text data follow certain words or phrases. The trans-
+user’s client 140-1 so the user can submit the generative former may include an attention mechanism configured to
+MLM query to the generative MI.M 120 and receive infor- determine which parts of the input should be weighed more
+mation from the platform 100. and to which other parts of the input a certain word relates.
+[0051] The generative response subsystem 118 may The cloud. content management system 110 may include one
+include a subset or a component of the cloud content or more generative MLMs 120, which may include diferent
+management system 110. The generative response subsys- generative LLMs or diffcrent instances of the same genera-
+tem 118 may be configured to accept user input from a user tive LLM.
+
+of the platform 100 in the form ofa generative MLM prompt [0055] In some embodiments, the generative MLM 120
+and utilize embedding models and generative MLM 120s to may accept, as input, a generative MLM prompt. ‘lhe
+generate a response to the user’s prompt. Ihe generative generative MLM prompt may include text or other data. A
+response subsystem 118 may input one or more documents user may generate the generative MLM prompt using user
+or document portions or query embeddings as context into interface components, such as a text input ficld. The gen-
+the generative MLM 120 in order to generate the response. erative MLM 120 may accept, as input, context. Context
+The response may include citations to documents or docu- may include text or other data that may be separate from the
+ment portions in the cloud storage that the generative MI.M user input and is used in generating the generative MI.M
+120 used to generate the response. 120’s output. In some embodiments, the generative MI.M
+[0052] The generative MLM 120 may include an artificial prompt may explicitly include context. In some embodi-
+neural network. Artificial neural networks generally include ments, the generative MLM 120 may receive the context
+a feature representation component with a classifier or separately from the generative MLM prompt and may
+regression layers that map features to a target output space. synthesize the generative MLM prompt and the context into
+ACNN, for example, hosts multiple layers of convolutional an input format that a transformer of the generative MLM
+filters. Pooling is performed, and non-linearities may be 120 can use. ‘The output of the generative MLM 120 may
+addressed, at lower layers, on top of which a multi-layer include text data or other data, and the output is sometimes
+perceptron is commonly appended, mapping top layer [ea- referred to as a “response” or “generative MLM response.”
+tures extracted by the convolutional layers to decisions (e.g., [0056] As an example, a generative MLM prompt may
+classification outputs). The neural network may be a deep include the text input, “Summarize the Sales-Report-7 file”
+network with multiple hidden layers or a shallow network where “Sales-Report-7” is a file on the cloud-based content
+with zero or a few (c.g., 1-2) hidden layers. Deep learning management platform 100. The generative MLM 120 may
+is a class of machine learning algorithms that use a cascade use the generative MLM prompt as input and may use the
+of multiple layers of nonlinear processing units for feature contents of the “Sales-Report-7” file as context. The gen-
+extraction and transformation. Each successive layer uses erative MLM 120 may synthesize the generative MLM
+the output from the previous layer as input. Neural networks prompt and context into an input for a transformer of the
+may leam in a supervised (e.g., classification) and/or unsu- generative MLM 120. The generative MLM 120 may pro-
+pervised (e.g., pallern analysis) manner. Some neural net- cess the input by executing the transformer and. other
+works (e.g., such as deep neural networks) include a hier- machine learning models and components to predict based
+archy of layers, where the different layers learn dilTerent on their training, the next word or phrase in the generative
+levels of representations that correspond to different levels MLM 120’s response.
+
+of abstraction. In deep learning, each level learns to trans- [0057] ‘The platform 100 may prepare documents in the
+form its input data into a slightly more abstract and com- cloud. storage of the platform 100 for use in providing
+posite representation. generative answers. ‘his preparation may include an embed-
+[0053] In some embodiments, the generative MLM 120 ding model generating (1) embeddings based on a docu-
+may be one or more RNNs. An RNN is a type of neural ment, (2) embeddings based on a portion of the document,
+network that includes a memory to enable the neural net- or (3) embeddings based on prompts generated by the cloud
+work to capture temporal dependencies. An RNN is able to content management system 110 about the document or
+learn input-output mappings that depend on both a current document portions. The cloud content management system
+
+US 2025/0103640 Al Mar. 27, 2025
+7
+110 may use these embeddings to compare to embeddings of [0071] Statement: The file must contain between 256
+other data, such as prompts input by a user, in order for the kB and 4 MB of data. Valid file extensions for the file
+cloud content management system 110 to determine if that include .txt, .pdf, and .nrt. The file can be stored either
+other data is similar to the documents or document portions in the “T.ocations” folder or the “Miscellaneous” folder.
+stored in the cloud storage. Multiple files can be accepted.
+[0058] FIG. 2 is a flowchart illustrating an example [0072] Prompt: ‘lell me about the constraints on the file
+method 200 of pre-processing documents in cloud storage configuration.
+using query embeddings, in accordance with implementa- [0073] Statement: The mecting originally scheduled for
+Gions disclosed herein. For convenience, the operations of Wednesday morning has been rescheduled to Thursday
+the flowchart are described with reference to a system that afternoon to better fit with everyone’s schedules. We
+performs the operations. ‘his system may include various will be discussing, upcoming deadlines and assigning
+components of various computer systems, such as the docu- employees to various projects. Please submit any edits
+ment pre-processing subsystem 112 or one or more other to the timeline before Thursday at 12 p.m.
+components of the cloud content management system 110. [0074] Prompt: °
+Moreover, while operations of method 200 are shown in a [0075] In one embodiment, the set of example statement-
+particular order, this is not meant to be limiting. One or more prompt pairs may further include a context portion. ‘Ihe
+rac O50) At hy be roomier omitted, or added. _ b context portion may provide context to the document portion
+I ‘sl 1 12 “oes lect ; oats eta k eee ened he selected in block 210. The context portion may include a
+alo Nab hi Select a portion oF a ¢ lator are othe document portion that appears before or after the selected
+S vee Z 4 ic content een ccien plat odo . the document portion in the document. The context portion may
+weieta 4 Sement portion may ye the entire ee e include a predetermined number of lines of text that appears
+of he a ocument rae may he ts answ he dl portion before or after the selected document portion in the docu-
+of tae et n vm 112 1 odiments, ha Hae ment (e.g., the previous 20 lines of text). The context portion
+vocltament port su a sen may dott oly ih cet tho 4 may include some other data that may provide context to the
+oO th Pp oon t doc pcumen ae perform the metho: decument portion selected in block 210. In one embodiment,
+on the selected document portion. . the context portion may be indicated in the few-shot prompt
+[0060] At block 220, the document pre-processing sub- in the form of the text “Context.” followed by the context
+system 112 may input a sct of cxample statement-prompt portion
+pairs into a generative MLM 120. The set of cxample [0076] In one or more embodiments, at block 220, the
+statement-prompt pairs may include a generative MLM - .
+: document pre-processing subsystem 112 may input a single-
+prompt configured to generate one or more other generative . . .
+2 . . shot prompt into the generative MI.M 120. The single-shot
+MLM prompts about the document portion selected in block a A . -
+: prompt may include a single example statement and a single
+210. The set of example statement-prompt pairs may include : Re . ‘
+. A , example prompt, in addition to the selected document por-
+a few-shol prompt, which may include multiple example A ake . A ' .
+rohan tion of block 210. In some embodiments, a single-shot
+statements that may be similar in length or style to the — : : . oe
+. 5 nan prompl may be less computationally intensive to process
+decument portion selected in block 210. The few-shot ak , 4 or
+: than a few-shot prompt, or the document pre-processing
+prompt may include one or more example prompts, and each “ecere | | ° . 4 .
+
+: ; = subsystem 112 may have fewer example slalements or
+example prompt may be associated with one of the example d thi , imolo-sh ‘ dof
+tatements. In some embodiments, the example statements prompts, and thus, tay use a single-shot prompt instead 0
+s - , > P . a few-shot prompt. In some embodiments, at block 220, the
+
+and corresponding example prompts may help provide con- ds . bsy: 112 ft
+text for the generative MLM when generating responses ocument pre-processing subsystem may input a no-
+0061) | bod L. the few-shol lmay b *. shot prompt into the generative MLM 120. The no-shot
+ie Sof embodiment, Me few: sho! prompt may © mn prompt may include no example statements or example
+he format of: prompts. The no-shot prompt may include a command to
+[0062] Statement: [fir st example statement] . generate a generative MIM prompt about the selected
+[0063] Prompt: [first example prompt about the first document portion.
+statement] . ; [0077] At block 230, ihe document pre-processing sub-
+[0064] Statement: [second example statement system 112 may obtain an oulput [rom the generative MLM
+[0065] Prompt: [second example prompt about the sec- 120. The output may include a generative MLM prompt
+ond statement] . . associated with the portion of the document. ‘Ihe generative
+[0066] Statement: [document portion selected in block 4. 120 may use the one or more example statements, the
+210] one or more example prompts, and the sclected document
+[0067] Prompt: oo portion of block 210 as context; use other portions of the
+The last “Prompt” in the few-shot prompt may indicale lo input as a generative MLM prompt; synthesize these inputs
+the generative MLM 120 that the generative MLM 120 is into a format for the generative MI.M 120 and other machine
+being prompted to follow the first and second examples and learning models and components, and input them into the
+generate a prompt about the document portion selected in generative MI.M 120 and other machine learning models
+block 210. and components in order for the generative MLM 120 to
+[0068] An example few-shot prompt may include: generate the predicted text as the response in the form of a
+[0069] Statement: A cat is a four-legged, carnivorous generative MLM prompt. For example, responsive to the
+mammal. It belongs to the family Felidae and is often few-shot prompt in the previous example, above, the gen-
+kept as a house pet. Cats catch and eat mice, rats, birds, erative MLM 120 may gencrate the gencrative MLM
+and other small animals. Cats do not make much noise prompt, “What time is the meeting on Wednesday?”, “Help
+other than by purring and occasionally meowing. me prepare for my upcoming Thursday meeting,” or “When
+[0070] Prompt: What is a cat? do T need to submit my timeline edits?”
+
+US 2025/0103640 Al Mar. 27, 2025
+8
+[0078] At block 240, the document pre-processing sub- MLM prompt and the document portion are similar and,
+system 112 may generate, using an embedding model, a thus. the document portion may assist in generating a
+query embedding based on the generative MI.M prompt generative MI.M response to the generative MI.M prompt.
+generated at block 230. The embedding mode! may include [0081] In some implementations, the subsequent use by
+a piece of software or hardware that accepts a piece of data the generative MLM may include the generative response
+as an input and generates a query embedding as an output. subsystem 118 selecting the portion of the document based
+The query embedding may include a data representation of on a similarity between the query embedding generated in
+the input, ¢.g., in the case of block 240, the generative MLM block 240 and a query embedding of a user input to the
+prompt. The embedding model produces similar query platform 100. The generative response subsystem 118 may
+embeddings for similar inputs. The similarity of two or more then input the portion of the document into the generative
+query embeddings can be determined using various meth- MI-M 120 and generate, using the generative MI.M 120, a
+ods. The auery embedding may include a vector. The vector generative MLM response thal includes a citation to the
+may include multiple floats. It should be noted that while the document portion, as discussed further below.
+term “query embedding” is used herein, this should not be
+interpreted as restricting a query embedding to only be [0082] In one embodiment, the method 200 may further
+associated with a query. generative MI.M prompt, etc. The include inputting the document that contains the document
+lerm “query embedding” may refer to an embedding asso- portion selected in block 210 into the embedding model. The
+ciated with other data, such as an embedding generated embedding model may generate a query embedding, and the
+based on a document. ‘he document pre-processing subsys- document pre-processing subsystem. 112 may store an asso-
+tem 112 may use the query embedding to determine whether ciation of this query embedding with the document. Input-
+the generative MLM prompt is semantically similar to ting the document into the embedding model may include
+another piece of content, which may include a document inpulling the entire document or a subset of the document.
+portion, a document, or multiple documents in the cloud ‘Lhe subset of the document may include a threshold number
+storage. of document portions, a threshold number of pages (e.g. the
+; . . . veces first five pages of the document), a document portion that the
+[0079] In some embodiments, the document pre-process- - ° - -
+ing, subsystem 112 may perform a compression operation on document Bre-Proce: ssing subsystem 112 has determined is a
+. | : ; . _ representative portion of the document, or some other subset
+the vector. In some embodiments, the vector may include a of the document
+large number of floats (e.g., hundreds or thousands of floats). :
+‘The document pre-processing subsystem 112 may compress [0083] In some embodiments, the method 200 may further
+the vector to reduce the number of floats or otherwise reduce include grouping the document portion selected in block 210
+the size of the vector. The document pre-processing subsys- and the generative MLM prompt generated in block 230 into
+tem 112 may use fewer computing resources when process- a statement-prompt pair. The document pre-processing sub-
+ing or storing a compressed vector versus the uncompressed system 112 may then be able to use this statement-prompt
+vector. pair in a future set of example statement-prompt pairs. The
+[0080] At block 250, the document pre-processing sub- plattorm 100 may include a statement-prompt library that
+system 112 may store an association of the query embedding may include multiple example statement-prompt pairs. The
+with the portion of the document selected in block 210. ‘The document pre-processing subsystem 112, at block 220 may
+association may be subsequently uscd by the generative select one or more of the example statement-prompt pairs in
+MLM 126 to provide information related to content of the the statement-prompl library to use to generate a few-shot
+documents to users of the platform 100. The document prompl, a one-shol Prompt, or some other generalive MLM
+pre-processing subsystem 112 associating the query embed- prompt. hus, the platform 100 may increase the number of
+ding with the document portion may include creating a examples that the document pre-processing subsystem diz
+logical link on the platform 100 between the query embed- can usc to generate example statements and prompts, which
+ding, and the document portion. The document pre-process- may improve the accuracy and performance of the platform
+ing subsystem 112 storing the association may include 100.
+storing the query embedding in metadala associated with the [0084] In some embodiments, the document pre-process-
+document portion or the document containing the document ing subsystem 112 may execute the method. 200 in response
+portion. In one embodiment, as part of block 250, the to a document being created in or uploaded to the platform
+document pre-processing subsystem 112 may associate the 100 or in response to the document being modified while on
+query embedding with the document that contains the docu- the platform 100. For cxample, responsive to a document
+ment portion. The query embeddings associated with the being created, uploaded. or modified, the document pre-
+document portion or the document may allow a component processing subsystem 112 may place the document in a
+of the cloud content management system 110 to determine queue, and the document pre-processing subsystem 112 may
+whether a generative MI.M prompt, another document por- execute the method 200 on each document in the queue. In
+tion, or another document is similar to the document portion one embodiment, the document pre-processing subsystem
+selected in block 210. For example, the generative response 112 may execute the method 200 in response to a document
+subsystem 118 may receive a generalive MLM prompt and portion being created or modified. In some embodiments,
+may inpul that prompt into the embedding model to generate the document pre-processing subsystem 112 may asynchro-
+another query embedding. ‘lhe generative response subsys- nously execute the method 200, which may include the
+tem 118 may compare the query embedding of the newly decument pre-processing subsystem 112 executing the
+inputted generative MLM prompt to the query embedding method 200 not responsive to the document or document
+generated at block 240. If the two query embeddings are portion being ercated, modified, or uploaded. In some
+within a certain distance threshold, then the generative embodiments, in order to reduce use of computational
+response subsystem 118 determines that the generative resources, the document pre-processing subsystem 112 may
+
+US 2025/0103640 Al Mar. 27, 2025
+9
+wait to prepare documents with some query embeddings system 110 may free the portion of the memory that stores
+until the document is needed in order to respond to a prompt the one or more query embeddings generated in the itera-
+or other query. tions of block 326. Storing the query embeddings for the
+[0085] The document pre-processing, subsystem 112 may various document portions may consume cloud content
+repeatedly execute the method 200 and may select the same management system 110 memory or data storage space (e.g.,
+decument portion in block 210 in each execution. ‘This the cloud storage servers 130-1, .. . , 130-2). In order to
+repeated execution on the same document portion may allow reduce memory and. slorage space usage, the document
+the document pre-processing subsystem 112 to generate pre-processing subsystem 112 may generate the query
+multiple different generative MLM prompts for the same embeddings temporarily in response to a user query, and. the
+document portion. In some embodiments, during a repeated document pre-processing subsystem 112 may free the
+execution of the method 200, the document pre-processing memory or storage space after the document pre-processing
+subsystem 112 may use different example statements and subsystem 112 has used the query embeddings to respond to
+prompts at block 220. the user query.
+[0086] FIG. 3 is a flowchart illustrating an example [0091] As an example, a user of the platform 100 may
+method 300 of pre-processing documents in cloud storage inpul, into a user interface of the platform 100, a user query
+using query embeddings, in accordance with implementa- that includes the generative MLM prompt, “Prepare me for
+Giens disclosed. herein. l’or convenience, the operations of my upcoming meeting.” Al the time the user inputs the user
+the flowchart are described with reference to a system that query, the document pre-processing subsystem 112 may not
+performs the operations. his system may include various have generated query embeddings for one or more document
+components of various computer systems, such as the docu- portions that are used to generate a response to the user
+ment pre-processing subsystem 112. Moreover, while opera- query. The document pre-processing subsystem 112 may
+tions of method 300 are shown in a particular order, this is execute the method 300 to generate a generative MLM
+not meant to be limiting. One or more operations may be response to the user query, and part of executing the method
+reordered, omitted, or added. 300 may include generating the query embeddings at block
+[0087] At block 310, the document pre-processing sub- 326. After the document pre-processing subsystem 112
+system 112 may select a document stored in the cloud-based generates the response and presents the response to the user,
+content management platlorm 100. ‘The document may the query embeddings may no longer be needed, and the
+include one or more document portions. Selecting the docu- cloud content management system 110 may [ree the memory
+ment may be based on a user query input into the platform or data storage space storing the query embeddings. In some
+100. For cxample, the document pre-processing subsystem embodiments, the cloud content management system 110
+{12 may select the document in response to determining the ‘may not free the memory or data storage space occupied by
+document is relevant to the user query. the query embeddings and, instead, may store the query
+[0088] At block 320, for each document portion of the one embeddings in data storage for future use.
+or more document portions of the document determined in [0092] FIG. 4 is a flowchart illustrating an example
+block 310, the document pre-processing subsystem 112 may method. 400 of pre-processing documents in cloud storage
+execute blocks 322-328. At block 322, the document pre- using query embeddings, in accordance with implementa-
+processing subsystem 112 may input a set of slalement- tions disclosed herein. or convenience, the operations of
+prompt pairs and the document portion into a generative the flowchart are described with reference to a system that
+MLM 120. Block 322 may include similar functionality to performs the operations. ‘his system may include various
+block 220 of FIG. 2. componcnts of various computer systems. such as the docu-
+[0089] At block 324, the document pre-processing sub- ment pre-processing subsystem 112. Morcover, while opera-
+system 112 may generate, using the generative MLM 120, a tions of method 400 are shown in a particular order, this is
+generative MI.M prompt associated with the document not meant to be limiting. One or more operations may be
+portion. Block 324 may include similar functionality to reordered, omitted, or added.
+block 230 of TIG. 2. At block 326, the document pre- [0093] In block 410, the document pre-processing subsys-
+processing subsystem 112 may generate, via an embedding tem 112 may select a portion of a document stored in the
+model, a query embedding based on the generative MLM cloud-based content management platform 100. Block 410
+prompt. Block 326 may include similar functionality to may include similar functionality to block 210 of FIG. 2. In
+block 240 of FIG. 2. At block 328, the document pre- block 420, the document pre-processing subsystem 112 may
+processing subsystem 112 may store an association of the generate, using a generative MLM 120, a gencrative MLM
+query embedding with the document portion for subsequent prompt associated with the portion of the document selected
+use by the generative MLM 120 to provide a response to the in block 410. The generative MLM may generate the gen-
+user query. Block 328 may include similar functionality to erative MLM prompt responsive to an input generative
+block 250 of FIG. 2. MIM prompt and the selected portion of the document. The
+[0090] In some embodiments, the document pre-process- inpul generative MLM prompt may include a no-shot
+ing, subsystem 112 may store the query embeddings gener- prompt, an example statement-prompt pair (e¢.g., a one-shot
+ated in each ileration of block 326 on the cloud content prompl), or a set of example stalement-prompt pairs (¢.g., a
+management system 110. This may include storing the query few-shot prompt). Block 420 may include similar function-
+embeddings in a memory of the cloud content management ality to block 230 of FIG. 2. At block 430, the document
+system 110. The cloud content management system 110 may pre-processing subsystem 112 may generale, using an
+periodically determine a complction status of the user query embedding model, a query embedding based on the genera-
+of the block 310. Responsive to the cloud content manage- tive MLM prompt generated in block 420. Block 430 may
+ment system 110 determining that the user query of the block include similar functionality to block 240 of FIG. 2. At block
+310 has been completed, the cloud content management 440, the document pre-processing subsystem 112 may store
+
+US 2025/0103640 Al Mar. 27, 2025
+10
+an association of the embedding generated in block 430 with be compressible. The embedding model may be the same
+the portion of the document selected in block 410 for embedding model as, or may be another instance of the same
+subsequent use by the generative MI.M 120 to provide embedding model as, the embedding model of block 240 of
+information related to content of the document to users of the method 200.
+the platform 100. Block 440 may include similar function- [0099] At block 530, the generative response subsystem
+ality to block 250 of FIG. 2. . 118 may select, multiple documents stored on the cloud-
+[0094] By processing and preparing documents stored by phased content management platform 100, a subsct of the
+the platform 100 as discussed. herein, the documents may be multiple documents. The generative response subsystem’s
+ready to be used by a generative MLM 120 to provide 118 selection at block 530 may include various steps that
+generative answers, provide personalized gencrative MLM seduce, refine, or re-rank the multiple documents stored on
+prompts to users based on the documents, or provide real- the platform 100 in order to arrive at a subset of the
+time generative MLM prompt suggestions: based on the decuments thal is workable by the generative MLM 120 and
+documents. For example, the query embeddings associated that is relevant to the generative MLM prompt.
+with the documents or document portions generated by . .
+methods 200, 300, or 400 may be used to determine what [0100] In one embodiment, at block 530, the generative
+documents of the platform 100 are relevant to a user’s Tesponse subsystem 118 may input the generative MLM
+generative MLM prompt. The relevant documents may be prompt into a scarch term-gencrating generative MHLM.
+input into a generative MLM 120 to provide a generative The search term-generating MI.M may include a generative
+MLM response or lo generate generative MLM prompts that MLM 120 of the cloud. content management system 110.
+a user may find helpful. The search term-generating generative MI.M may include a
+[0095] FIG. 5 is a flowchart illustrating an cxample generative MLM that has been trained and configured to
+method 500 of providing generative answers, including generale search lerms thal the generative response subsys-
+citations to source documents, in accordance with imple- tem 118 can use to search the documents of the platform 100
+mentations disclosed herein. For convenience, the opera- for documents relevant to the search terms. ‘The search
+tions of the flowchart are described with reference to a tcm-generating generative MLM may generate a response
+system that performs the operations. This system may with one or more search terms.
+include various components of various computer systems, [0101] In some embodiments, the search term-generaling
+such as the generative response subsystem 118. Moreover, generative MLM may generate a response with one or more
+while operalions of method 500 are shown in a particular synonyms of a tenm or similar terms to a term in the
+order, this is not meant to be limiting. One or more opera- generative MLM prompt. For cxample. in response to the
+tions may be reordered, omitted, or added. generative MLM prompt including the word “cat,” the
+[0096] At block 510, the generative response subsystem scarch term-generating generative MLM’s response may
+118 may obtain a generative MLM prompt from a user include words such as “cat,” “feline,” or “kitten.” In certain
+interface. The user interface may include a user interface of | embodiments, the search term-generating generative MLM
+the platform 100. The user interface may include a user may generate a response with a word stem of a word in the
+interface displayed on a client 140-1. The generative generative MI.M prompt. For example, in response to the
+response subsystem 118 may obtain the generative MLM generative MLM prompt including the word “publication,”
+prompt over the computer network 150. the search term-generating generative MITI.M’s response
+[0097] In one implementation, the generative MI.M may include words such as “publish,” “public,” “publicize,”
+prompt may include text data. Tor example, the generative or “publisher.” In some embodiments, the search lerm-
+MIM prompt may be, “What is the maximum file size you generating generative MLM may generate a response in a
+can upload to the website?” ‘he generative MLM prompl! Boolean search format. For example, in response to the
+may include a reference to a user of the platform 100. Tor generative MLM prompt being, “What documents should I
+example, the generative MLM prompt may be, “What is review for my upcoming mecting?”, the search term-gener-
+jsmith182 working on today?” Where “jsmith182” is a ating generative MLM may generate a response such as
+uscrame of a user of the platform 100. The generative “(document OR file) AND (review OR analyze) AND [after:
+MLM prompt may include a reference to a document, folder, 2023 -09-01] AND [before:2023-09-14]” where the current
+or file on the platform 100. For cxample, the generative date is Sep. 1, 2023.
+MIM prompt may be “What is a key insight of /Docs/ [0102] ‘The generative response subsystem 118 may input
+SalesReports/?” where “/Docs/SalesReports” is a reference data into the search term functionality of the cloud content
+to a folder stored on the platform 100. The generative MI.M management system 110 to weigh certain scarch terms as
+prompt may be “Summarize Sales-Report-7” where “Sales- more important than other search terms. For example, the
+Report-7” is a document stored.on the platform 100. Insome —_generative response subsystem 118 may indicate that certain
+embodiments, a reference to a document, [older, or file on common words (e.g., “the,” “of.” “a,” “an,” “he,” “to,” “in,”
+the platform 100 may include a uniform resource locator etc.) should receive less weight than other word. in the search
+(URL), uniform resource identifier (URI), a file system path, terms. The generative response subsystem 118 may input the
+or some other data that may identify a location in the generative MLM prompt or search terms into a search
+platform 100. term-weighing generative MLM, which may include a gen-
+[0098] At block 520, the generative response subsystem erative MLM 120 of the cloud content management system
+118 may generale, using an embedding model, a first query 110 trained and configured to determine which words in a
+embedding based on the gencrative MLM prompt. The search query are important. The output of the search term-
+query embedding may include a data representation of the weighing generative MLM may include data indicating
+generative MLM prompt. The query embedding may which words of the scarch terms are important and their
+include a vector, which may include multiple floats and may relevant weights.
+
+US 2025/0103640 Al Mar. 27, 2025
+11
+[0103] The generative response subsystem 116 may then documents with a timestamp within the last week are
+perform a keyword search on the one or more documents included in the subset. Third, the generative response sub-
+stored on the platform 100, and the search may be based on system 118 may perform a keyword search on the refined
+the search terms generated by the search term-generating subset of documents based on the user’s generative MI.M
+generative MI.M, the search term-weighing generative prompt to further refine the subset. Tourth, the generative
+MLM, or other search components of the cloud content response subsystem 118 may re-rank the documents in the
+management system 110. The keyword search may select a further subset based on the similarity between a query
+subset of the documents stored on the platform 100. ‘The embedding associated with a document and the query
+generalive response subsystem 118 may rank the documents embedding of the generative MLM prompt. Other orders of
+in the subsct such that more relevant documents are listed these various functions are contemplated within the scope of
+before less relevant documents. the disclosure.
+[0104] In one embodiment, the generalive response sub- [0108] Although the above discussion includes the gen-
+system 118 may rank a document higher or lower based on erative response subsystem 118 performing the keyword
+a timestamp associated with the document. For example, the searching, ranking, and other functionality, such actions
+metadata associated with the document may include a time- may, in some cases, be performed by other components of
+stamp of the last time the document was opened. modified, the cloud content management system 110. The other com-
+commented on, or created. Documents with a more recent ponents may include the document pre-processing subsys-
+timestamp may be ranked higher than a document with a tem 112, the personalized prompt subsystem 114, the real-
+later timestamp. In some embodiments, in response to a lime anticipation subsystem 116, or another component of
+document’s timestamp not being within a threshold time the cloud content management system 110 specifically con-
+range, the cloud content management system 110 may not figured to perform such searching and ranking actions (e.g.,
+include the document in the subset. a document scarching subsystem (not shown in FIG. 1)).
+[0105] The generative response subsystem 118 may rank a [0109] At block 540, the generative response subsystem
+document higher or lower based on a query embedding 118 may input the generative MIM prompt and the subset
+associated with the document. A query embedding associ- of the one or more of documents into a generative MI.M
+ated with a document may include a query embedding, 120. The generative MI.M 120 may be a different generative
+generated during the preparation process for the document MLM 120 than the search lerm-generaling generative MLM
+(e.g., during the method 200 of FIG. 2, the method 300 of or the search term-weighing generalive MLM of block 530.
+FIG. 3, the method 400 of FIG. 4). A query embedding ‘The generative MLM 120 of block 540 may include a
+associated with a document may include a query embedding generative MLM trained and configured to generate a
+of a gencrative MLM prompt generated during the method _ response to the generative MLM prompt of block 510 based
+900 of FIG. 9 or the method 1100 of FIG. 11, discussed on the subset selected in block 530. The generative MLM
+below. A query embedding associated with a document may 120 may use the contents of the subsct as context for the
+include a query embedding generated using some other generative MLM 120.
+process. In some implementations, the metadata associated [0110] Tn some embodiments, using the contents of the
+with the document may include a query embedding based on subset as context may include using one or more document
+the document or one or more query embeddings based on the portions of the one er more decuments of the subset as
+one or more document portions contaimed in the document. context. In seme contexts, using the entire contents of a
+Documents with query embeddings thal are more similar to decument or multiple documents in the subsel may be
+the query embedding of the generative MLM prompt of compulationally intensive or may use a large amount of
+block 510 may be ranked higher than a document with less memory or other storage. ‘Thus, in some embodiments, the
+similar query embeddings. In response to a document’s generative MLM 120 may use one or more document
+query embedding(s) not being within a threshold similarity portions of the subsct as context for the generative MLM
+to the generative MLM’s prompt’s query embedding, the 120. In some embodiments, the generative response subsys-
+generative response subsystem 118 may not include the tem 118 may select the one or more document portions of the
+document in the subset. subset based on various criteria, such as a document por-
+[0106] Inone embodiment, a document may include meta- tion’s associaled query embedding being within a threshold
+data that indicates whether a certain user or group of users similarity to the generative MIM prompt, or some other
+has permission to open, edit, or perform other actions related crileria.
+to the document. In response to the user that submitted the [0111] At block 550, the generative response subsystem
+generative MI.M prompt not having permission to open, 118 may generate, using the generative MI.M 120, a gen-
+edit, or perform another action related to the decument (as eralive MLM response. The generative MLM 120 may use
+indicated by the permissions metadata), the cloud content the generative MLM prompt as a prompt and the subset of
+management system 110 may not include the document in one or more documents as context, synthesize these inputs
+the subset. into a format lor a transformer of the generative MLM 120
+[0107] The various searching, refining, and ranking func- and other machine learning models and components, and
+Gionalily discussed above in relation to block 530 may occur input them into the transformer and other machine learning
+in diferent orders. Tor example, (he generalive response modcls and components in order for the gencrative MLM
+subsystem 118 may first determine a subset of documents 120 to generate the predicted text as the generative MLM
+that the user has permission to view or edit, based on the tesponse,
+permissions metadata of cach document. Second, the gen- [0112] In some embodiments, the response generated by
+erative response subsystem 118 may refine the subset based the generative MLM 120 may include one or more citations
+on the timestamps of the documents that indicate the last to one er more documents of the subset. The citation may
+time a document was opened, modified, etc. such that only allow a user to view the content that supports the generative
+
+US 2025/0103640 Al Mar. 27, 2025
+12
+MLM response, verify the generative MLM response, or [0116] The method 500 may further include obtaining a
+obtain further information. A citation may include a link to second generative MLM prompt from the user interface. The
+a document in the subset. The linked document may include second generative MI.M prompt may include a follow-up
+the document providing support for the generative MI.M query from the user after obtaining the generative MI.M
+response. The link may include a URI., URI, a file system response in black 550. The follow-up query may include a
+path, or some other data that can identify the location of the follow-up question about the content of the generative MI.M
+linked document. The link may allow a user to interact with response generated. in block 550, a request for more infor-
+the link and open the referenced document on a user mation similar to the generative MLM response, or some
+interface (e.g., a user interlace of a client 140-1). In some otber query. ‘The generative response subsystem 118 may
+embodiments, a citation to the one or more documents of the input the second generative MLM prompt into the genera-
+subset may include a citation to one or more specific tive MLM 120. ‘lhe generative response subsystem 118 may
+document portions of the one or more documents. In such an input the subset of documents selected in block 530 and the
+embodiment, the link to a document may include a link to generative MLM response generated in block 550 as context
+the specific document portion. for the generative MLM. The generative response subsystem
+[0113] The method 500 may further include providing, on 118 may determine that a different subset of documents is
+a user interface of the platform 100, the generalive MLM needed to respond to the follow-up query and, thus, may
+response generated in block 550. [he generative MLM select a different subset of documents. The generative MLM
+response may include a highlighting of a portion of the 120 may use these inputs to generate another generative
+generative MLM response. In some embodiments, the gen- MLM response to the follow-up query.
+erative response subsystem 118 may include, in the genera- [0117] FIG. 6 is a flowchart illustrating an example
+tive MLM response, data that may indicate to the user method 600 of providing generative answers, including
+interface to highlight certain portions of the gencrative cilations to source documents, in accordance with imple-
+MLM response. In response to processing this data, the user mentations disclosed herein. For convenience, the opera-
+interface may highlight the portion of the generative MI.M tions of the flowchart are described with reference to a
+response as indicated by the data. The highlighting may system that performs the operations. This system may
+assist a user in quickly determining which parts of the include various components of various computer systems,
+generalive MLM response are supported by the document in such as the generative response subsystem 118. Morcover,
+the subset. while operations of method 600 are shown in a particular
+[0114] In some embodiments, the user interface may use order, this is not meant to be limiting. One or more opera-
+dittcrent colors or other visual indications in its highlighting tions may be reorderod, omitted. or added.
+to indicate that different parts of the generative MLM [0118] At block 610, the generative response subsystem
+response are supported by different documents in the subset 118 may obtain a generative MLM prompt from a user
+or different document portions. For example, the first sen- interface. Block 610 may include similar functionality to
+tence of the generative MI.M response may be supported by block 510 of FIG. 5. At block 620, the generative response
+Document A, and the user interface may highlight the first sub system 118 may input the generative MI.M prompt from
+sentence in blue. The second sentence of the generative block 610 and one or more documents into a generative
+MLM response may be supported by Document B, and the MLM 120. The one or more documents may include docu-
+user interface may highlight the second sentence in yellow. ments stored on the cloud-based content management plat-
+‘These different colors for the different sentences may form 100. One or more of the documents may include one
+quickly signal to a user that these sentences are supported by er more document portions, and one or more of these
+different documents. document portion may include an associated query embed-
+[0115] In some embodiments, responsive to the generative ding. In some embodiments, block 620 may include similar
+MLM response generated in block 550 having a link to a functionality to block 340 of FIG. 5.
+supporting document, and in response to a user interacting [0119] At block 630, the generative response subsystem
+with the link, the user interface may open the supporting 118 may gencratc, using the gencrative MLM 120. a gen-
+document in the user interface and highlight the document crative MLM response. Block 630 may include functionality
+portion in the document that supports the generalive MLM similar to block 550 of the FIG. 5. At block 640. the
+response. For example, the generative MLM response may generative response subsystem 118 may generate, using an
+include a link to Document A because a paragraph in embedding model, a query embedding based on the response
+Document A supports the generative MLM response. A user generated in block 630. The embedding model may be the
+may click on the link, and the user interface may open same embedding model as, or may be another instance of the
+Document A in another browser tab, browser window, same embedding model as, the embedding model of block
+software application window, or other user interface arca. 240 of the method 200.
+The user interface may highlight the paragraph in Document [0120] At block 650, the generative response subsystem
+A that supports the generative MLM response. The high- 118 may select a subset of the one or more document
+lighting may allow the user to quickly locate the portion of portions of black 620 where the query embedding of each
+Document A that supports the generative MLM response so decument portion in this subset is within a threshold simi-
+the user can verify the contents of the generative MLM larity from the query embedding generated in block 640.
+response or obtain further information from the source ‘Thus, the generative response subsystem 118 may select
+document. In another implementation, a middle portion of decument portions thal may be semantically similar to the
+an image in Document C may support the generative MLM generative MLM response. At block 660, the generative
+response, and the user interface may position a box around response subsystem 118 may include one or more citations
+the middle portion to quickly signal to a user that this portion to one or more document portions of the subset in the
+of the image supports the response. generative MI.M response generated at block 630. Block
+
+US 2025/0103640 Al Mar. 27, 2025
+13
+660 may include similar functionality to block 550 of FIG. [0125] The generative response subsystem 118 may gen-
+5 regarding citations to documents or document portions. erate, via an embedding model (c.g., the embedding model
+[0121] TIG. 7 is a flowchart illustrating an example of, or instance of the embedding model of, block 710), a
+method 700 of providing generative answers. including query embedding based on the pene) tative MLM response
+citations to source documents, in accordance with imple- generated in block 750. The generative response subsystem
+mentations disclosed herein. For convenience, the opera- 118 may determine whether the query embedding bas ed on
+tions of the flowchart are described with reference to a the generative MLM response 1S within a threshold similar.
+system that performs the operations. This system may ity to a query embedding of a document of the multiple
+include various components of various computer systems, documents, or 1s within a threshold similarity to a query
+such as the generative response subsystem 118. Moreover, embe dding ofa document portion of the subset of document
+while operations of method 700 are shown in a particular portions. Responsive to the generative Tesponse subsystem’s
+order, this is nol meant to be limiting. One or more opera- 8 dete mination that the query embedding based on the
+tions may be reordered, omitted, or added. generative MLM response is not within the threshold simi-
+° larity of any embedding of the one or more documents or the
+[0122] At block 710, the gencrative response subsystem subset of document portions, the generative response sub-
+118 may generate, using an embedding model, a query system 118 may reject the generative MI.M response. This
+embedding based on a generative MLM prompt. Block 710 functionality may previde an automatic verification of the
+may include functionality similar to block 520 of FIG. 5. At generative MI.M response. If the generative MT.M response
+block 720, the generative response subsystem 118 may is not similar to any of the relevant documents selected by
+select, from multiple documents stored in the cloud-based the generative response subsystem 118 during the selection,
+content management platform 100, a subset of the multiple re-ranking, or refining process, or similar to any of the
+documents. One or more documents in the subsel may document portions, then the generative MLM response may
+include an associated query embedding. ‘lhe selection of the not be of’ sufficient quality or relevancy, and thus, the
+subset may be based on the query embedding of the gen- generative response subsystem 118 may reject the generative
+crative MLM prompt of block 710 being within a threshold MLM response. The generative response subsystem 118
+similarity from a query embedding associated with a docu- may then reattempt the method 700 to generate a generative
+ment of the multiple documents. Block 720 may include MLM response that is more relevant, accurate, or of a higher
+functionality similar to block 530 of FIG. 5. At block 730, quality.
+the generative response subsystem 118 may select, from the : a
+subset of documents of block 720, a second subset of 10126] In some embodiments, determining whether two
+documents. The selection of the second. subset may be based query embeddings are within a threshold similarity nay
+on an access permission of a document in the first subset of include p crf ormung a nearest neighbor search, d Ctermuming a
+documents. Block 730 may include functionality similar to cosine similarity between the query embeddings, or some
+block 530 of LG. 5. other calculation that can determine a distance between
+multiple query embeddings.
+[0123] At block 740, the generative response subsystem “ a
+118 may input the generative MI.M prompt from block 710 [0127] the generative response subsystem us may accept
+and the second subset of documents [rom block 730 into a multiple types of user queries as prompts for a generative
+generative MI.M 120. Block 740 may include functionality MLM 120 in order to provide generative answers. One type
+similar to block $40 of VIG, 5. At block 750, the generative of user query may include a prompt to generate meaning
+response subsystem 118 may generale, using the generative from content. Generating meaning from content may include
+MLM, a generative MLM response. Block 750 may include generating text or other data, based on documents on the
+functionality similar to block 550 of EIG. 5. platform 100, that helps the prompting user to use content on
+. the platform 100 without having, to consume a large amount
+[0124] In some embodiments, a document from the first of the content manually. Prompts of this type may include
+subset of documents in block 720, or from the second subset commands such as “summarize,” “prepare,” “explain,”
+of documents in block 730, may include one or more “catch me up,” or other commands. For example, these types
+document portions. A document portion of the one or more of prompts may include “Summarize Sales-Report-7” where
+document portions may include an associated query embed- Sales-Report-7 is a file, “Prepare me for my upcoming
+ding. An embedding modcl—which may be the same meeting,” “Catch me up on Project Blue,” etc.
+embedding model as, or may be another instance of the same . :
+embedding model as, the embedding model of block 710— 0128] Another type of user query may include answerlng
+may have generated the query embedding associated with a specific question. about the content. These types of prompts
+the document portion. The method 700 may further include may provide a Spee fic answer to a question where the
+the generative response subsystem 118 selecting, from the answer can be found in one or more of the documents on the
+one or more documents, a subset of document portions. The platform 100 ae r omipts of this type may include What is the
+generalive response subsystem’s 118 selection of this subset maximum file size you cane load tot he website?"" “Where
+of document portions may be based on the query embedding, can I find the sales reports?” “Who is in charge of document
+of block 710 being within a threshold similarity [rom a query support services?” cte.
+embedding of a document portion in the subset of document [0129] Another type of user query may include informa-
+portions. In some embodiments. block 740 may include the tion synthesis. These types of prompts request the generative
+generalive response subsystem 118 inpulling the generative response subsystem to gather information from multiple
+MLM prompt of block 710 and the subset of document documents on the platform 100 and combine the gathered
+portions into the generative MLM 120. The generative information in a concise manner to answer the query.
+MLM 120 may then generate the generative MLM response Prompts of this type may include “Show me all files related
+in block 750 based on these inputs. to sales.” “Summarize the folder /documents/sales-reports/,”
+
+US 2025/0103640 Al Mar. 27, 2025
+14
+“Explain Project Blue to me,” “Prepare me for my meeting model, a smaller set of relevant documents (as compared to
+on Tuesday about project timelines,” “Organize my files,” all documents accessible to a user), and gencrating responses
+etc. to the user’s generative MI.M prompts using a generative
+[0130] FIG. 8 illustrates one example of a user interface MIM 120. As a consequence, computing resources and
+800. The user interface 800 may include a user interface of network bandwidth required by unnecessary transfer of
+the platform 100 that is displayed on a client 140-1. Lhe user documents inside the cloud-based content management plat-
+interface 800 may be configured to allow a user to submit a form and downloads from server to client are reduced or
+generative MLM prompt and receive a generative MLM eliminated.
+response according to the disclosure regarding the methods [0135] In some implementations of the disclosure, the
+500. 600, or 700. platform 100 may preemptively generate personalized gen-
+[0131] The user interface 800 may include atext input box erative MLM prompts for a user based on the documents in
+802-1. A user of the platform 100 may input the generative cloud storage that the user can access. These personalized
+MLM prompt in the text input box 802-1 and submit the prompts may include generative MIM prompts that the user
+generative MI.M prompt to the cloud content management may find useful or helpful because they are tailored to the
+system 110. The generative response subsystem 118 may user and may be based on recent activity in documents of the
+perform one or more steps of the methods 500, 600, or 700 platform 100 that the user can access. The user may then
+and generate a generative MLM response. ‘he cloud content user a user interface of the platform 100 to submit one of
+management system 110 may send the generative MLM these generative MLM prompts to the platform 100 so the
+response to the client 140-1, which may display the genera- platform 100 can generate a generalive MLM response using
+tive MLM response in a text box 804-1. The text box 804-1 a generative MLM 120.
+can include text content 806 that provides a response to the [0136] FIG. 9 is a flowchart illustrating an cxample
+user's generative MLM prompt from the text input box method 900 of providing personalized prompts to users
+802-1. based on documents in cloud storage, in accordance with
+[0132] The text box 804-1 may include text content 808 implementations disclosed herein. For convenience, the
+that includes one or more citations lo documents in the cloud operations of the flowchart are described with reference to a
+storage of the platform 100 that support the text content 806 system that performs the operations. This system may
+ol the generative MLM response. ‘I'he cilations text content include various components of various computer systems,
+808 may include links to those documents, and the user may such as the personalized prompt subsystem 114. Moreover,
+interact with those links using the user interface 800 (e.g., by while operations of method 900 are shown in a particular
+clicking on the links) to open up the documents in the user order, this is not meant to be limiting. One or more opera-
+interface 800 or some other user interface provided on a tions may be reordered, omitted, or added.
+display device of the client 140-1. In some cases, the text [0137] At block 910. the personalized prompt subsystem
+content 806 or the citation text content 808 may include 114 may select one or more documents stored in a cloud-
+highlighting or some other indication that may indicate based content management platform based on a selection
+which document(s) support which text content 806 of the criterion. These one or more documents may be referred to
+generative MI.M response. as the “working set.” In response to a document not con-
+[0133] As can be seen in FIG. 8, the user may input, into forming to the selection criterion, the personalized prompt
+a second text input box 802-2, another generative MI.M subsystem 114 may exclude the document from the working
+prompt. This second generative MI.M prompt may include, sel,
+as is shown in FIG. 8, a follow-up prompt that seeks more [0138] In some embodiments, the personalized prompt
+information about the first generative MI.M response shown subsystem 114 may select documents for inclusion in the
+in the first text box 804-1. ‘The generative response subsys- working sel in response to the personalized prompt subsys-
+tem 118 may use the generative MLM 120 to generate tem 114 determining thal one or more users may have
+another generative MLM response and provide it to the interest in that specific set of documents. A user may have
+client 140-1, to display on the user interface 800 in text box more interest in documents that have been created, opened,
+804-2. As can also be seen in FIG. 8, the citation text content or modified more recently than documents that were created
+808 of the second text box 804-2 contains a different subset long ago or documents that have not been opened or
+of documents than those of the first text box 804-1. This modified recently. A user may have more interest in docu-
+indicates that a different subset of documents were used to ments that the user itself created. opened, or modified. A user
+generate the second generative MLM response. may have interest in documents that other users created,
+[0134] Providing generative answers using a generative opened, or modified. A user may have more interest in
+MLM 120, as discussed herein, may provide a user with documents that relate to documents that were created,
+verifiable responses to a prompt processed by a generative opened, or modified recently. The selection criterion may
+MI.M 120 and that focuses on relevant and accessible assist the personalized prompt subsystem 114 in determining
+documents in a user’s cloud storage on a cloud-based which documents may interest a user.
+content management platform 100. As such, the efficiency of [0139] In one embodiment, the selection criterion may
+cloud-based content management platforms 100 is include the metadata associated with the document including
+increased, and user collaboration is expedited. In addition, a last modified date that is within a predetermined. time
+by eliminating time-consuming user searching and review- threshold. ‘Thus, the personalized prompt subsystem 114
+ing of numerous documents and. by using generative MLMs may exclude a document if the document was last modified
+120 to perform tasks on the platform. the use of processing beyond the predetermined time threshold. The selection
+resources is improved, and memory consumption is reduced. criterion may include the metadata associated with the
+In addition, providing generative answers may include document including a last opened date that is within a
+determining, using query embeddings from an embedding predetermined time threshold. The selection criterion may
+
+US 2025/0103640 Al Mar. 27, 2025
+15
+include the metadata associated with the document including In one embodiment, the document may include multiple
+acreation date that is within a predetermined time threshold. pages (c.g., the document may include a word processing
+The creation date may include the date or time when the document or a PDF file). The selected document portion
+document was generated on the platform 100 or uploaded to may include a predetermined number of pages. For example,
+the platform 100. the predetermined number of pages may include one page,
+[0140] In some embodiments, the selection criterion may two pages, three pages. four pages, or five or more pages.
+include the metadata associated with the document including The pages may include the first pages in the document, or
+a date when the document was last commented on by a user pages indicated by the metadata of the document. In some
+that is within a predetermined time threshold. ‘The cloud embodiments, the portion of the document selected in block
+content management system 110 may allow users to com- 920 may include a paragraph, a sentence. a section, or some
+ment ona document. A comment may include a portion of other portion of the document. In some embodiments, the
+data that may include text and may be associated with a selected portion of the document may include the entire
+document or a document portion. The comment may allow contents of the document.
+a user to provide data relating to a document without [0146] In one embodiment, block 920 may include the
+modifying the document’s contents. In some embodiments, personalized prompt subsystem 114 retrieving a query
+the document’s metadata may not store a date or time at embedding associated with a document in the working sct.
+which the document was last commented. on, but the cloud The query embedding may include the query embedding
+content management system 110 may process the comments generated by an embedding model as part of a document
+associated with a document to determine the dale and Gime preparation process performed by the cloud content man-
+of the last comment associated with the document. agement system 110, as discussed herein. Block 920 may
+[0141] The scloction criterion may include a query embed- include the personalized prompt subsystem 114 generating,
+ding associated with a document being within a threshold via the embedding model, a query embedding based on a
+similarity to a query embedding of a document that a user portion of the document in the working set. Block 920 may
+has created, opened, or modified within a threshold time include, responsive to the query embedding of the document
+period. The selection criterion may include a query embed- portion being within a threshold similarity from the retrieved
+ding, associated with a document being within a threshold query embedding associated with the document, selecting
+similarity to a query embedding of search terms thal a user the portion of the document. This process of selecting a
+has recently searched on the platform 100. In response to a document portion only if the document portion’s query
+document’s query embedding being within the threshold embedding is similar to the document may help prevent the
+similarity, the document may be included in the working set. personalized prompt subsystem 114 from selecting docu-
+[0142] In one embodiment, a predetermined time thresh- ment portions that are not similar to the document they are
+old may be a week. Thus, any document that has not been. contained in and, thus, may prevent the personalized prompt
+modified within the last week may be excluded from the subsystem 114 from expending computing resource on using
+working set. The predetermined time threshold may include decument portions that may nol be relevant to the docu-
+any amount of time or time period. For example, the time ments in the working sel.
+threshold may include within the last day. within the last two [0147] In some embodiments, block 920 may include the
+days, within the last three days, within the last week, within personalized prompt subsystem 114 retrieving query embed-
+the last two weeks, within the last month, or within the last dings associated. with the documents im the working set, and
+year, or other length of time. ‘he time threshold may include each document in the working has at least one associated
+a specified day, two days, three days, week, two weeks, query embedding. Block 920 may include the personalized
+month, year, or other time period. prompt subsystem 114 generating, using the embedding
+[0143] A document in the working sct may include mcta- model, a query embedding based on a portion of the docu-
+data that may indicate an owner of the document. The ment in the working sct. Block 920 may include, responsive
+document owner may be a user of the platform 100 that has to the query embedding of the document portion being
+ownership over the document. Tlaving ownership over the within a threshold similarity from at Ieast one of the
+document may include having permissions to open, modify, retrieved query embeddings associated with the documents
+delete, or otherwise act on the document. [aving, ownership in the working set, the personalized prompt subsystem 114
+may include having permissions to determine which users of selecting the document portion. This process of selecting a
+the platform 100 can open, modily, delete, or otherwise act decument portion based on its similarity to al least one of the
+on the document. In some embodiments, the metadata of the documents’ query embeddings in the working sel may help
+documents in the working set may indicate that at least two select document portions that are similar to documents in the
+documents in the working set have different owners. Thus, working sel.
+the working set may include multiple documents, some of [0148] At block 930, the personalized prompt subsystem
+which may have different owners. This may allow the 114 may generale a generalive MLM prompt using a gen-
+personalized prompt subsystem 114 to generate personalized eralive MLM 120. Generating the generative MLM prompt
+prompts based on documents other than those owned by a may be based on the selected portion of the document from
+single user. block 920. In some embodiments, the generative MLM
+[0144] Insome embodiments, the working set may include prompt may be based on a second generative MLM prompt.
+one or more documents stored in the same [older on the The second generative MLM prompt may include a com-
+platform 100. ‘The working set may include all documents mand to gencrate a generative MLM prompt about the
+stored in the folder. Documents stored outside of the folder selected portion of the document of block 920.
+may be excluded from the working set. [0149] In some embodiments, the command to generate
+[0145] At block 920, the personalized prompt subsystem the generative MLM prompt about the selected document
+114 may select a portion of a document in the working set. portion may include a command to generate a generative
+
+US 2025/0103640 Al Mar. 27, 2025
+16
+MLM prompt to summarize the working set. For example, ment or folder icon. The selectable option may appear in a
+the generated generative MLM prompt may be the text toolbar of the user interface. The toolbar may appear above
+“Summarize the following files:” appended with a list of or to the side ofa list of document or folder icons in the user
+documents that make up the working set. The command to interface of the cloud file system. The selectable option may
+generate the generative MI.M prompt may include a com- appear in a sharing configuration pop up of the user inter-
+mand to generate a generative MIM prompt to identify face. A sharing configuration pop up may include a user
+modifications to the working set. For example, the generated interface component thal appears in response to a user
+generative MLM prompt may be the text “What changes attempting to give another user permission to view, modity,
+have been made to X in the last week?” where “X” is or otherwise access a document or folder of the cloud
+replaced. with a list of documents in the working sect. The storage. The generative MLM prompt of these selectable
+generative MLM prompt may include other types of com- options may include a generative MLM prompt that was
+mands discussed herein, such as commands to prepare the associated with the document, document portion, folder, or
+user for an upcoming moecting using the working sct, com- other group of documents at block 940.
+mands to generate a response to a question about the [9154] In some implementations, a generative MI.M
+working, set. showing the user files related to the working prompt generated using the method 900 may apply to a
+set, or other commands. single user. In other implementations, the generative MI.M
+[0150] At block 940, the personalized prompt subsystem promp! may apply to multiple users. The multiple users may
+114 may associate the generative MT.M prompt generated in belong to the same organization, a team within the organi-
+block 930 with the document portion selected in block 920. zation, or some other group. he multiple users may include
+Associating the generative MI.M prompt with the document users that have the same or a similar working sct.
+portion may include associating the generative MI.M [0155] FIG. 10 illustrates one cxample of a user interface
+prompt with the document that contains the document 1000. The user interface 1000 may include a user interface
+portion. Associating the generative MLM prompt with the of the platform 100 that is displayed on a client 140-1, ...
+decument portion may include associating the generative , 140-m. The user interface 1000 may be configured to
+MLM prompt with the working sct (c.g., associating the display one or more personalized generative MI.M prompts
+document portion with each document of the working set). that were generated according, to the method 900.
+Associating the gencrative MLM prompt with the document [0156] ‘The user interface 1000 can include a text input
+portion. document, or working sct may include generating field 1002. ‘The text input tield 1002 may include a search
+and storing a logical link or other reference data between the field or some other type of text input field. As can be seen
+prompt and the document portion, document, or working sct in FIG. 10, the user has not provided any input to the text
+so that the cloud content management system 110 can input ficld 1002. However, the user interface 1000 has still
+quickly and efficiently find one from the other. By associ- caused sclectable options 1004-1, . . . , 1004-3 to be
+ating the generative MI.M prompt with the document por- presented to the user that is using the user interface 1000
+tion, document, or working sel, the personalized prompt when the user accesses the platform 100 though the user
+subsystem 114 may quickly determine what document por- interface 1000. Tach selectable option 1004-1, ... , 1004-3
+tions or documents the personalized prompt subsystem 114 may include a generative MI.M prompt. The generative
+can use as the context for the generative MLM prompt when MLM prompt may have been generated according to the
+inputting the gencrative MLM prompt into a generative method 900. A user of the user interface 1000 may select one
+MLM 120 to provide gencrative answers. of the selectable options 1004-1, . .. , 1004-3. In response,
+[0151] In one embodiment, at block 950, the cloud content the user interlace 1000 may automatically populate the text
+management system 110 may cause the generative MLM ioput field 1002 with the text of the selected generative
+prompt of block 940 to be presented to one or more users of MLM prompt so the user can submit the generative MLM
+the cloud-based content management platform 100 when the prompt to the cloud content management system 110 in
+one or more users access the platform 100. This may include order to receive a generative MLM response, as discussed
+the cloud content management system 110 providing. on a herein.
+user interface, a selectable option to input the generative [0157] The user interface 1000 may include a list 1006 of
+MLM prompt into a text input field of the user interface. The one or more documents stored on the platform 100 that are
+user interface may include a user interface of a client 140-1. accessible to the user. Thus. the functionality of presenting
+‘The text input field may capture the generative MLM generative MT.M prompts to the user and allowing the user
+prompt and submit it to the cloud content management to submit generative MLM prompts to the cloud content
+system 110 over the computer network 150. management system 110 may be integrated into other func-
+[0152] The selectable option may appear below a search tionality of the platform 100.
+field of the user interface. The search field may include a text [0158] In some embodiments, the platform 100 may gen-
+input field used lor performing searching [unctionalily on erate suggested generative MI.M prompts for a user in real
+the cloud file system of the platform 100. The selectable time based on a variety of factors, including data that the
+option may appear underneath a search result of the user user has input into a user interface of the platform 100 or
+interface. decuments in cloud storage of the platform 100 that the user
+[0153] The selectable option may appear in a hover card. can access. These suggested generative MLM prompts may
+A hover card may include a user interface component that include prompts that the user may find helpful because they
+pops up on the user interface in response to a user hovering may improve the user’s interaction with the platform 100 by
+a mouse cursor over a document or a folder icon in the user providing prompts in real time that may improve on the
+interface of the cloud file system. The selectable option may prompts the user is currently inputting into the platform 100
+appear in a context menu that may appear on the user or prompts that the user has recently input. The user may
+interface in response to the user right-clicking on a docu- then user a user interface to submit one of these generative
+
+US 2025/0103640 Al Mar. 27, 2025
+17
+MLM prompis to the platform 100 so the cloud content one or more selected second documents may be referred to
+management system 110 can generate a generative response as the “working set.” In response to a document of the one
+using, a generative MI.M 120. or more first documents not conforming, to the selection
+[0159] FIG. 11 is a flowchart illustrating an example criteria, the real-time anticipation subsystem 116 may
+method 1100 of providing real-time anticipation of user exclude the document from the working set. Selecting the
+interest in information contained in documents in cloud working set may include functionality similar to block 910
+storage, in accordance with implementations disclosed of FIG, 9. For example, the selection criterion may include
+herein. For convenience, the operations of the flowchart are _ criteria related to a last modified date of a document, a last
+described with reference to a system that performs the opened date of a document, or a last commented-on date of
+operations. This system may include various components of — a document. The sclection criterion may include a query
+various computer systems, such as the real-time anticipation | embedding of a document being similar to a query embed-
+subsystem 116. Morcover, while operations of methed 900 — ding of a document the user has recently accessed, or the
+are shown in a particular order, this is not meant to be query embedding of the document being similar to search
+limiting. One or more operations may be reordered, omitted, terms the user has recently searched on the platform 100.
+or added. The selection criterion may include selecting fram docu-
+[0160] At block 1110, the real-time anticipation subsystem ments that a user has permission to open, modify, or other-
+116 may identify an action of a user of the cloud-based wise access. The selection criterion may include selecting
+content management platform 100 with respect to one or documents that are in the same folder in the cloud storage.
+more first documents of multiple documents. ‘he multiple [0165] Inone implementation, where the action of the user
+documents may be stored at the platform 100. The action of includes text data input into the user interface, the selection
+the user may include an action of a user on a user interface. criterion of block 1122 may include a similarity to the text
+The user interface may include a user interface of a client data. The real-time anticipation subsystem 116 may identify
+140-1, .. . , 140-12. one or more documents stored in the cloud-based content
+[9161] Tn one implementation, the action of the user may management platform 100 and may rank these one or more
+include the user inputting text data into a text input field of documents based on the text data. For example, the real-time
+the user interface. The text data may include a search term anticipation subsystem 116 may input a search query, based
+being input into a search field of the user interface or some on the text data, into a search functionality of the platform
+other text input field. ‘he action of the user may include the 100. The search functionality may return a list of search
+user selecting a document or a folder displayed by the user results. ‘The list of search resulls may include documents
+interface. The action of the user may include the user stored in the cloud storage of the platform 100. The cloud
+opening a document or folder displayed by the user inter- content management system 110 may rank the documents
+face. The action of the user may include the user hovering based on the text data, which may include ranking the results
+a mouse cursor over a document or folder. The action of the from most relevant to the text data to the least relevant. The
+user may include some other action using the user interface cloud content management system 110 may determine rel-
+in order to interact with the platform 100. The client 140-1 evancy by comparing a query embedding of the text data to
+may send the data identifying, the action of the user to the a query embedding associated with the document (which
+cloud. content management system 110 over the computer may include a query embedding of a document portion of the
+network 150. document). The cloud content management system 110 may
+[0162] ‘Lhe one or more first documents of the multiple then select a threshold number of highest-ranked documents
+documents stored at the platform 100 may include docu- from the one or more documents. The threshold number of
+ments that pertain to a user's organization. For example, the documents may include one document, two documents,
+user may pertain to an organization. and the one or more first three documents, four documents, five documents, or six or
+documents may include the documents on the platform that more documents. These selected highest ranked documents
+have been created, uploaded, or otherwise provided by the may form the working sct.
+organization or the users of the platform 100 that pertain to [0166] Atblock 1124, the real-time anticipation subsystem
+the organization. 116 may select a portion of a document in the working set.
+[0163] At block 1120, the real-time anticipation subsystem The selection may be based on the action of the user of block
+116 may predict user interest in content of one or more 910. Fer example, where the action of the user includes input
+second documents of the plurality of documents stored at the text dala, an embedding model may generate a query embed-
+platform 100. The one or more second documents may at ding based on the text data and may compare the query
+least partially overlap with the one or more first documents. embedding to a query embedding of a portion of a document
+The real-time anticipation subsystem 116 may anticipate, in in the working set. If the query embeddings are within a
+real-time, information or documents the user may be inter- threshold similarity, the portion of the document may be
+ested in based on the action of the user. This may allow the _ selected. In another example, where the action of the user
+user to retrieve relevant information from the platform 100, includes a sclection of a document, an embedding model
+in real time, without having to search the documents stored may generate a query embedding based on the document and
+by the platform 100 or without having to be familiar with the may compare the query embedding to a query embedding of
+documents or the arrangement of the documents on the a portion of a document in the working set. If the query
+platform 100. embeddings are within a threshold. similarity, the portion of
+[0164] Block 1120 may include one or more subblocks the document may be selected.
+1122-1126. At block 1122, the real-time anticipation sub- [0167] In some implementations, block 1124 may include
+system 116 may select the one or more second documents generating a query embedding based on a portion of the
+stored in the cloud-based content management platform 100. document. Block 1124 may include retrieving a query
+The selection may be based on a selection criterion. These embedding associated with the document that includes the
+
+US 2025/0103640 Al Mar. 27, 2025
+18
+portion of the document. Block 1124 may include compar- may allow the cloud content management system 110 to
+ing the query embedding of the document portion to the provide the generative MLM prompt to other users of the
+query embedding of the document and calculating a simi- platform 100 as a suggested prompt.
+larity of the two query embeddings. Ifthe query embeddings [0174] As an example of the method 1100, at block 1110,
+are within a threshold similarity, the real-time anticipation the real-time anticipation subsystem 116 may identify an
+subsystem 116 may select the document portion. This selec- action of the user. The action of the user may include the
+lion process may help select document portions that are user inputting text data into a user interface of the platform
+similar to the documents that they are contained within, 100. The text data may be the words “file size.” At block
+which may indicate that the document portion is relevant to 1120, the real-time anticipation subsystem 116 may predict
+the action of the user of block 910. the user’s interest in content in one or more documents that
+[0168] In onc embodiment, real-time anticipation subsys- the user’s organization hosts on the platform 100. ‘This may
+tem 116 may compare the query embedding of the document include, at block 1122, the real-time anticipation subsystem
+portion to the respective query embedding of each document 116 selecting one or more sccond documents stored in the
+in the working set. The real-time anticipation subsystem 116 cloud storage of the platform 100. ‘hese selected documents
+may determine whether the query embedding of the docu- may form the working set. The selection criteria may include
+ment portion is within a threshold similarity to any of the documents that have been opened within the past week and
+documents’ respective query embeddings. If so, the real- documents that the user has permission to view. At block
+time anticipation subsystem 116 may select the document 1124, the real-time anticipation subsystem 116 may select a
+portion. his selection process may help select document document portion from the working set, and the document
+portions that are similar to at least one of the documents in portion may include a paragraph that includes information
+the working set. about file sizes. The real-time anticipation subsystem 116
+[0169] Insome embodiments, the portion of the document may select this document portion in response to a query
+may include multiple document portions. The multiple embedding of the document portion being within a threshold
+document portions may be contained in different documents similarity to a query embedding of the text data, i.e., the
+of the working set. In some embodiments, each document words “file size.” At block 1126, the real-time anticipation
+portion may be contained in a different document of the subsystem 116 may input the paragraph selected in block
+working set. In one embodiment, the portion of the docu- 1124 into the generative MLM 120. For example, the input
+ment selected. in block 930 may be the enlire document. may be in the format:
+[0170] At block 1126, the real-time anticipation subsystem [0175] Statement: [the paragraph selected in block
+116 may generate a generative MLM prompt via a genera- 1124]
+tive MLM 120. The generative MLM 120 may generate the [0176] Prompt: Generate a question about the previous
+gencrative MLM prompt based on the selected portion of the statement
+document of block 1124. The generative MLM prompt may —_ .
+include a generative MI.M prompt that the user may find The generative MLM 120 may generate a generative MLM
+helpful and relevant to the action of the user of block 1110. prompt based on this input. The generative MLM prompt
+[0171] Tn one embodiment, block 1126 may include gen- may include ‘What is the maximum file size allowed by the
+eraling a second generative MLM prompt. ‘This second website?” At block 1130, the real-time anticipation subsys-
+generative MLM prompt may include context for the gen- tem 116 may cause this generative MIM Prompt to be
+erative MLM 120. ‘The context may include data identifying presented to the user in relation to the action of the user, Tn
+the user action and the portion of the document selected in this example, this includes the client 140-1 receiving, the
+block 1124. The second generative MLM prompt may generative MLM prompl over the computer network 150.
+include a command for the generative MLM 120 to generate The client's 140-1 user interlace may display the generalive
+a generative MLM prompt about the action of the user. MLM prompt as a selectable option below the text input
+Block 1126 may include the real-time anticipation subsys- field where the user inputted the text data so the user Can
+tem 116 inputting the second prompt into the generative submit the generative MLM prompt to a generative MLM
+MIM 120. In response, the generative MIM 120 may 120 of the platform 100 and receive a generative MLM
+generale the first generative MLM prompt. response.
+[0172] At block 1130, the real-time anticipation subsystem [9177] FIG. 12 is a flowchart illustrating an example
+116 may cause the generative MLM prompt generated in method 1200 ofa client-side method of providing real-time
+block 1126 to be presented to the user in relation ta the anticipation of user interest in information contained in
+action of the user. Block 1130 may include the cloud content documents in cloud storage, in accordance with implemen-
+management system 110 sending the generative MLM tations disclosed herein. For convenience, the operations of
+prompt to the user interface on the client 140-1 so the user _ the flowchart are described with reference to a system that
+interface can display the generative MILM prompt to the performs the operations. This system may include various
+user. The user interface may display the prompt as a select- components of various computer systems. such as the real-
+able option. time anticipation subsystem 116. Moreover, while opera-
+[0173] In some embodiments, the real-time anticipation tions of method 1200 are shown in a particular order, this is
+subsystem 116 may be further configured to store the not meant to be limiting. One or more operations may be
+generative MLM prompt that the real-time anticipation reordered, omitted, or added.
+subsystem 116 generated. during block 1126. ‘Lhe real-time [0178] At block 1210, a user interlace of a client 140-1
+anticipation subsystem 116 may store the generative MLM may receive an action of a user. The user input may include
+prompt in the cloud storage servers 130-1, . .. , 130-%. The text data, the selection of a document or folder, etc. As
+real-time anticipation subsystem 116 may store the genera- discussed above in relation to block 1110 of FIG. 11, the user
+tive MI.M prompt in a generative MT.M prompt library. This interface may include a text field where a user of the client
+
+US 2025/0103640 Al Mar. 27, 2025
+19
+140-1 may enter the text data, a list of documents where the 140-1 providing the selectable option may include the user
+user can select a document or folder, cte. interface displaying the selectable option in response to the
+[0179] At block 1220, the client 140-1 may send data user selection of the folder. For example, in response to the
+identifying the action of the user to the cloud content — user right-clicking on the folder, the user interface may
+management sysiem 110. The client 140-1 may send the data display a context menu with the selectable option “xplain
+identifying the action of the user over the computer network the changes that occurred in this folder within the past
+150. The cloud content management system 110 may receive week.”
+the data identifying the user action at block 1110 of FIG. IL. [0184] ‘The user interface may display the selectable
+‘The cloud content management system 110 may perform option in other areas of the user interface. For example, the
+one or more blocks 1110-1130 of the method 1100 of FIG. user interface may display the selectable option in a hover
+11. At block 1130, the cloud content management system ecard. A hover card may include a user interface component
+110 may provide a gencrative MLM prompt to the client that, in response to the user selecting the document on the
+140-1. user interface, displays part of the selected document or
+[0180] At block 1230, the client 140-1 may receive, over information about the selected document in a small window
+the computer network 150, the generative MLM prompt (the “card”). The selectable option may be included in the
+from the cloud content management system 110. At block hover card. The user interface may display the selectable
+1240, the client 140-1 may provide, on the user interlace of option in a selection toolbar. The selection toolbar may
+the client 140-1, a selectable option. he selectable option include a toolbar at the top of a list of documents or at the
+may include an option to send the generative MLM prompt top of a window. ‘The selection toolbar may include options
+to the cloud content management system 110 over the such as “Create a new document.” “Upload a document,”
+computer network 150. “Delete a document,” “Share a document,” etc.
+[0181] In one embodiment, the client 140-1 may display [0185] The method 1200 may include the clicnt 140-1
+the user interface of the platform 100, and the user interface sending the generative MILM prompt received in block 1230
+may include a search field wherein the user of the client to the cloud content management system 110 over the
+140-1 can input text or other data to perform searches of the computer network 150. The methed 1200 may include the
+documents or other data on the platform 100. At block 1240, client 140-1 receiving, from the cloud content management
+the user interface may provide the selectable option as a text system 110, a generative MLM response. The generative
+box. ‘lhe text box may include the generative MLM prompt. MLM response may include a generative MLM response as
+In some embodiments, the user interface may display the discussed in relation to block 550 of FIG. 5. The generative
+text box below a scarch ficld of the user interface. For MLM response may include a citation to a document stored
+example, in response to the user typing the user input in the on the platform L00.
+search field, even before the user submits the user input to [0186] FIG. 13A illustrates an example of a user interface
+the platform 100, the client 140-1 may send the user input 1300. The user interface 1300 may include a user interface
+to the platform 100 (block 1210) and receive the generative of the platform 100 that is displayed on a client 140-1. The
+MLM prompt (block 1230) and display the generative MI.M user interface 1300 may be configured to receive a user
+prompt in a text box below the search field so the user can action and present a generative MI.M prompt as a selectable
+easily see the suggested generative MLM prompt. In one option to the user.
+embodiment, the user interface may display the text box [0187] As can be seen in FIG. 13A, the user interface 1300
+below one or more search results. For example, after the user may include a text input box 1302 where a user may input
+has submitted the user input to the platform 100 and received text. In PIG. 13, the user has input the text data “file size”
+search results in response, the client 140-1 may display the into the text input box 1302. Even before the user submits
+gencrative MLM prompt below the received scarch results. the lext data to the cloud content management system 110 as
+The clicnt 140-1 may send the uscr input in block 1010 or a search query, the user interface 1300 has sent the text dala
+receive the generative MLM prompt in block 1230 asyn- to the cloud content management system 110 as data iden-
+chronously from a search that the user of the client 140-1 tifying an action of a user in order to generate a generative
+performs using the user interface. MLM prompt as discussed in relation to the method 1100.
+[0182] The user interface may include a list of documents Hore, the generative MLM prompt may include “What is the
+or folders stored by the platform 100. The documents may maximum file size allowed by the website?” The user
+include documents stored in the same folder or may include interface 1300 receives the generative MIM response as
+documents listed in search results in response to a user’s presents it as a selectable option 1304. The user may then see
+search of the platform 100. At block 1240, the client 140-1 the selectable option 1304 and select it (e.g. by clicking on
+providing the selectable option may include the user inter- the selectable option 1304). In response, the user interface
+face displaying the selectable option in response to a user 1300 may send the generative MLM response to the gen-
+selection of a document in the list of documents. ‘The user eralive response subsystem 118. The user interlace 1300
+selection may include the user leli-clicking on the docu- may include a list 1306 of one or more documents stored on
+ment, tapping the document on a touchscreen, right-clicking the platform 100 that are accessible to the user. ‘hus, the
+on the document, tapping and holding the document on a functionality of presenting generative MLM prompts to the
+touchscreen, or some other user selection. For example. in user and allowing the uscr to submit generative MLM
+response to the user right-clicking on a document in the list, prompts to the cloud content management system 110 may
+the user interface may display a context menu, and the be integrated into other functionality of the platform 100.
+context menu may include the selectable option of “Sum- [0188] FIG. 13B depicts another example of the user
+marize this document.” interface 1300. In this example, the action of the user is the
+[0183] In one embodiment, the user interface may include user right-clicking on a document 1308 in the list 1306 of
+a folder stored by the platform 100. At block 1240, the client documents. Tn response, the user interface 1300 may display
+
+US 2025/0103640 Al Mar. 27, 2025
+20
+a context menu 1310. The context menu may include processor implementing other instruction sets or processors
+multiple options pertaining to the document 1308. As can be implementing a combination of instruction sets. The pro-
+seen in FIG. 13B, the context menu 1310 may include cessing, device 1402 can also be one or more special-purpose
+multiple selectable options that include generative MI.M processing devices such as an application specific integrated
+prompts 1312-1, 1312-2 that are associated with the docu- circuit (ASIC), a field programmable gate array (MPGA), a
+ment 1308. These selectable options 1312-1, 1312-2 include digital signal processor (DSP), network processor, or the
+“Summarize this document” and “Show me all related files.” like. The processing device 1402 is configured to execute
+In response to the user selecting one of these selectable instructions 1426 (e.g., for providing generative answers
+options 1312-1, 1312-2, the user interface may submit the using a generalive MLM) for perlorming the operations
+generative MLM prompt of the selected selectable option discussed herein.
+1312-1, 1312-2 to the generative response subsystem 118. [0193] ‘The computer system 1400 can lurther include a
+[0189] Lt should be noted that although the cloud content network interface device 1408. he computer system 1400
+management system 110 is depicted herein as including one also can include a video display unit 1410 (e.g., a liquid
+generative MLM 120, the cloud content management system crystal display (LCD) or a cathode ray tube (CR1)), an input
+110 may include multiple generative MLMs 120. Each device 1412 (c.g., a keyboard, and alphanumeric keyboard,
+generative MLM 120 of the multiple generative MLMs 120 a motion sensing input device, touch screen), a cursor
+may have different configurations. Dittcrent methods 200, control device 1414 (c.g., a mouse), and a signal generation
+300, 400, 500, 600, 700, 900, 1100, or 1200 may use device 1418 (e.g.. a speaker).
+different generative MI.Ms 120, and different blocks of the [0194] ‘Lhe data storage device 1416 can include a non-
+same method 200, 300, 400, 500, 600, 700, 900, 1100, or transitory machine-readable storage medium 1424 (also
+1200 may use different generative MI.Ms 120. For example, computer-readable storage medium) on which is stored one
+the generalive MLM 120 discussed in relation to block 230 or more sets of instructions 1426 (e.g., for providing gen-
+of the method 200 may be a different generative MLM 120 erative answers and other functionality disclosed herein)
+than the generative MLM 120 discussed in relation to block embodying any one or more of the methodologies or func-
+250. In another example, the generative MLM 120 discussed tions described herein. The instructions 1426 can also reside,
+in relation to block 230 of the method 200 may be a different completely or at least partially, within the volatile memory
+generative MLM 120 than the generative MLM 120 dis- 1404 and/or within the processing device 1402 during
+cussed in relation to blocks 540 or 550 of the method 500. execution thereof by the computer system 1400, the volatile
+[0190] FIG. 14 is a block diagram illustrating an example memory 1404 and the processing device 1402 also consti-
+computer system 1400, in accordance with implementations tuting machine-readable storage media. The instructions
+of the present disclosure. The computer system 1400 can be 1426 can further be transmitted or received over a network
+the cloud content management system 140, a cloud storage 1420 (c.g., computer network 150 of FIG. 1) via the network
+server 130-1, ... , 130-n, or a client 140-1, ..., 140-m in interface device 1408.
+FIG. 1. The machine can operate in the capacity of a server [0195] In one implementation, the instructions 1426
+or an endpoint machine in endpoint-server network envi- include instructions for pre-processing documents in cloud
+ronment, or as a peer machine in a peer-to-peer (or distrib- storage for query embeddings, providing personalized gen-
+uled) network environment. The machine can be a televi- erative MLM prompts to users based on cloud storage
+sion, a personal computer (PC), a tablet PC, a set-top box documents, real-time anticipation of user interest of infor-
+(STB), a Personal Digital Assistant (PDA), a cellular tele- mation contained in cloud storage documents, or providing
+phone, a web appliance, a server, a network router, swilch or generative answers that include citation lo source documents
+bridge, or any machine capable of executing a set of in cloud storage. While the computer-readable storage
+instructions (sequential or otherwise) that specify actions to medium 1424 (machine-readable storage medium) is shown
+be taken by that machine. Further, while only a single in an example implementation to be a single medium, the
+machine is illustrated, the term “machine” shall also be terms “computer-readable storage medium” and “machine-
+taken to include any collection of machines that individually readable storage medium” should be taken to include a
+or jointly execute a set (or multiple sets) of instructions to single medium or multiple media (c.g., a centralized or
+perform any one or more of the methodologies discussed distributed database, and/or associated caches and servers)
+herein. that store the one or more sets of instructions. The terms
+[0191] The example computer system 1400 includes a “computer-readable storage medium” and “machine-read-
+processing device 1402, a volatile memory 1404 (e.g., able storage medium” shall also be taken to include any
+read-only memory (ROM), flash memory, dynamic random medium that is capable of storing, encoding or carrying a set
+access memory (DRAM) such as synchronous DRAM of instructions for execution by the machine and that cause
+(SDRAM), double data rate (DDR SDRAM), or DRAM the machine to perform any one or more of the methodolo-
+(RDRAM), etc.), a non-volatile memory 1406 (¢.g., Hash gies of the present disclosure. The terms “computer-readable
+memory, slalic random access memory (SRAM), etc.), and storage medium” and “machine-readable storage medium”
+a data storage device 1416, which communicate with each shall accordingly be taken to include, but not be limited to,
+other via a bus 1430. solid-state memories, optical media, and magnetic media.
+[0192] The processing device 1402 represents one or more [0196] In the foregoing description, numerous details are
+general-purpose processing devices such as a microproces- set forth. It will be apparent. however, to one of ordinary
+sor, central processing unit, graphics processing unil, or the slall in the art having the benefit of this disclosure, that the
+like. More particularly, the processing device 1402 can be a present disclosure can be practiced without these specific
+complex instruction set computing (CISC) microprocessor, details. In some instances, well-known structures and
+reduced instruction set computing (RISC) microprocessor, devices are shown in block diagram form, rather than in
+very long instruction word (VILIW) microprocessor, or a detail, in order to avoid obscuring the present disclosure.
+
+US 2025/0103640 Al Mar. 27, 2025
+21
+[0197] Some portions of the detailed description have characteristic described in connection with the implemen-
+been presented in terms of algorithms and symbolic repre- tation or embodiment is included in at least one implemen-
+sentations of operations on data bits within a computer tation or embodiment. Thus, the appearances of the phrase
+memory. These algorithmic descriptions and representations “in one implementation” or “in an implementation” or other
+are the means used by those skilled in the data processing, similar terms in various places throughout this specification
+arts to most effectively convey the substance of their work are not necessarily all referring to the same implementation.
+to others skilled in the art. An algorithm is here, and Tn addition, the term “or” is intended to mean an inclusive
+generally, conceived to be a self-consistent sequence of steps “or” rather than an exclusive “or.” Moreover, the word
+leading to a desired result. ‘The steps are those requiring “example” or a similar term are used herein to mean serving
+physical manipulations of physical quantitics. Usually, as an example, instance, or illustration. Any aspect or design
+though not necessarily, these quantities take the form of described herein as an “example” is not necessarily to be
+electrical or magnetic signals capable of being stored, trans- construcd as preferred or advantageous over other aspects or
+ferred, combined, compared, and otherwise manipulated. It designs. Rather, use of the word “cxample” or a similar term
+has proven convenient at times, for reasons of common is intended to present concepts in a concrete fashion.
+usage, to refer to these signals as bits, values, elements, [0202] To the extent that the terms “includes,” “includ-
+symbols, characters, terms, numbers, or the like. ing,” “has,” “contains,” variants thereof, and other similar
+[0198] It should be borne in mind, however, that all of words are used in cither the detailed description or the
+these and similar terms are to be associated with the appro- claims, these terms are intended to be inclusive in a manner
+priate physical quantities and are merely convenient labels similar to the term “comprising” as an open transition word
+applied to these quantities. Unless specifically stated other- without precluding any additional or other elements.
+wise as apparent from the following discussion, it is appre- [9203] As used in this application, the terms “component,”
+ciated that throughout the description, discussions utilizing “module,” “system,” or the like are generally intended to
+terms such as “receiving”, “displaying”, “moving”, “adjust- refer to a computer-related entity, either hardware (e.g., a
+ing”, “replacing”, “determining”, “playing”, or the like, circuit), software, a combination of hardware and software,
+refer to the actions and processes of a computer system, or or an entily related to an operational machine with one or
+similar electronic computing device, that manipulates and more specific functionalities. or example, a component can
+transforms data represented as physical (¢.g., electronic) be, but is not limited to being, a process running on a
+quantitics within the computer system’s registers and memo- processor (e.g., digital signal processor), a processor, an
+ries into other data similarly represented as physical quan- object, an executable, a thread of execution, a program,
+tities within the computer system memories or registers or and/or a computer. By way of illustration, both an applica-
+other such information storage, transmission or display tion running on a controller and the controller can be a
+devices. component. One or more components can reside within a
+[0199] For simplicity of explanation, the methods are process and/or thread of execution and a component can be
+depicted and described herein as a series of acts. However, localized on one computer and/or distributed between two or
+acts in accordance with this disclosure can occur in various more computers. Further, a “device” can come in the form
+orders and/or concurrently, and with other acts not presented of specially designed hardware; generalized hardware made
+and described herein. Furthermore, not all illustrated acts specialized by the execution of software thereon that enables
+can be required to implement the methods in accordance hardware to perform specific functions (e.g., generating
+with the disclosed subject matter. In addition, those skilled interest points and/or descriptors), sollware on a compuler
+in the art will understand and appreciate that the methods readable medium; or a combination thereol!.
+could alternatively be represented as a series of interrelated [0204] The aforementioned systems, circuits, modules,
+states via a state diagram or events. Additionally, it should and so on have been described with respect lo interact
+be appreciated that the methods disclosed in this specifica- between several components and/or blocks. It can be appre-
+tion are capable of being stored on an article of manufacture ciated that such systems, circuits, components, blocks, and
+to facilitate transporting and transferring such methods to so forth can inelude those components or specified sub-
+computing devices. The term article of manufacture. as used components, some of the specified components or sub-
+herein, is intended to encompass a computer program acces- components, and/or additional components, and according
+sible from any computer-readable device or storage media. to various permutations and combinations of the foregoing.
+[0200] Certain implementations of the present disclosure Sub-components can also be implemented as components
+also relate to an apparatus for performing the operations communicatively coupled to other components rather than
+herein. This apparatus can be constructed for the intended included within parent components (hierarchical). Addition-
+purposes, or if can comprise a general purpose compuler ally, it should be noted thal one or more components can be
+selectively activated or reconfigured. by 4 computer program combined into a single component providing aggregate
+stored. in the computer. Such a compuler program can be functionality or divided. into several separate sub-compo-
+stored. in a computer readable storage medium, such as, bul nents, and any one or more middle layers, such as a
+not limited to, any type of disk including floppy disks, management layer, can be provided to communicatively
+optical disks, CD-ROMs, and magnetic-optical disks, read- couple to such sub-components in order to provide inte-
+only memories (ROMs), random access memorics (RAMs), grated functionality. Any components described herein can
+EPROMs, EEPROMs, magnetic or optical cards, or any type also interact with one or more other components not spe-
+of media suitable for storing electronic instructions. cifically described herein but known by those of skill in the
+[0201] Reference throughout this specification to “one art.
+implementation,” “an implementation,” “some implementa- [0205] It is to be understood that the above description is
+tions,” “one embodiment,” “an embodiment,” or “some intended to be illustrative, and not restrictive. Many other
+embodiments” mean that a particular feature, structure, or implementations will be apparent to those of skill in the art
+
+US 2025/0103640 Al Mar. 27, 2025
+22
+upon reading and understanding the above description. The selecting the subset of the plurality of documents com-
+scope of the disclosure should, therefore, be determined with prises selecting a document of the plurality of docu-
+reference to the appended claims, along with the full scope ments based on the metadata, and including the
+of equivalents to which such claims are entitled. selected document in the subset.
+What is claimed is: 7. The method of claim 1, wherein a citation of the one or
+1. A method, comprising: more cilalions comprises a link to a decument in the subset.
+obtaining, a generative machine learning model (MI.M) 8. Uhe method of claim 1, wherein a citation of the one or
+prompt, wherein the generative MI.M prompt includes more citations comprises a link to a document portion of a
+an indication of a user request to generate content based document in the subset.
+on one or more documents stored in a cloud-based 9. A method, comprising:
+content management platform, obtaining a first generative machine learning model
+generating, using an embedding model, a first query (MLM) prompt from a user interface, wherein the first
+embedding based on the generative MI.M prompt; generative MLM prompt includes an indication of a
+selecting, from a plurality of documents stored in the user request lo generate content based. on one or more
+cloud-based content management platform, a subset of documents stored. on a cloud-based content manage-
+the plurality of documents, wherein the selection of the ment plattorm;
+subset is based one generative MIM prompt and the inputting the first generative MLM prompt and a plurality
+rst query em| IN; of documents into a first generative MLM, wherein:
+inputting the generative MLM prompt and the subset of the plurality of documents comprises documents stored
+the plurality of documents into a first gencrative MLM; on the cloud-based content management platform,
+an and
+generating, using the first generative MLM, a response, each document of the plurality of documents comprises
+whercin the response comprises content gencrated by a plurality of document portions, and each document
+the first eonerve MIM. and oaibeet more citations to portion includes an associated first query embed-
+one or more documents of the subset. ding:
+2. The method of claim 1, wherein selecting the subset of generating, using the first generative MLM, a first gen-
+the plurality of documents comprises: erative MT.M response;
+impulting ae aeneratve MLM prompt into a second generating, via an embedding model, a second query
+generative ; f + on iv
+responsive to inputting the generative MLM prompt into vecporve. based on the first generative MLM
+the second generative MI.M, generating, via the second , , . .
+generative MLM, one or more search terms: and selecting a subsct of the one or more document portions,
+. . wherein the first query embedding of cach document
+performing a keyword search on the plurality of docu- portion in the subset is within a threshold similarity
+ments based. on the one or more search terms. from the second query embedding; and
+3. The method of claim 2, wherein: : : . ~ . _
+. : . . including, in the first generative MLM response, content
+each document of the plurality of documents comprises generated by the first generative MLM, and one or
+metadata, wherein the metadata includes a timestamp more citations to document portions of the subsct of the
+corresponding to a last time the respective document one or more document portions.
+was opened: and . 10. The method of claim 9, further comprising providing,
+performing the keyword search on the plurality of docu- on the user interface, the first generative MLM response,
+ments comprises ranking a document in the plurality of wherein the first generative MLM response further includes
+documents usher based on the timestamp of the a highlighting of text of the first generative MLM response.
+respective ocumment. : . . 11. The method of claim 9, wherein a citation of the one
+4. The method of claim 1, wherein selecting the subsct of caer . .
+
+. . : or more citations includes a link to a document that includes
+the plurality of documents comprises selecting a document a document portion of the subsct of the one or more
+of the plurality of documents based on the first query ds .
+
+: : aye rn locument portions.
+embedding being within a threshold similarity from a second ca. . ..
+query embedding associated with the document, and includ- . 12. The method ot claim i, further comprising, respon-
+ing the selected document in the subset. sive to a user interaction with the link to the document that
+. ms ; a includes the document portion:
+§. Vhe method of claim 1, wherein: . . . .
+ach doc t of the plurality of documents comprises opening the document in the user interface: and
+each documen p Ly ip. eee an
+metadata, wherein the metadata indicates whether a highlighting the document portion in the document.
+user has permission to open the respective document; 13. The method of claim 9, further comprising:
+and obtaining a second generative MLM prompt trom the user
+selecting the subset of the plurality of documents com- interface, and
+prises selecting a document of the plurality of docu- responsive to inputting the second generative MLM
+ments based on the metadata, and including the prompt, the subset of the plurality of documents, and
+selected document in the subset. the first generative MLM response into the first gen-
+6. ‘The method of claim 1, wherein: erative MLM, generating, using the first generative
+cach document of the plurality of documents comprises MHIM, a second response.
+metadata, wherein the metadata includes a timestamp 14. The method of claim 9, wherein a document portion
+corresponding to a last time the respective document of the plurality of document portions comprises at least once
+was modified; and of:
+
+US 2025/0103640 Al Mar. 27, 2025
+23
+a sentence; generating, using the generative MLM, a response,
+a paragraph; or wherein the response comprises content generated
+a section. by the generative MI.M.
+15. ‘The method of claim 9, wherein the generative MLM me me ‘ystems on, laim 16, wherein: ‘ses a plurality
+prompt comprises a generative MLM prompt aulomualically eae ocumen ° ne secon Sus L COMPRISES a pinraltty
+= of document portions, and each document portion
+generated by a subsystem of the cloud-based content man- includes an associated third query embedding:
+agement platform. the processing device is further configured to select, from
+16. A system, comprising: the plurality of document portions of the documents of
+a memory; and the second subset, a subset of document portions,
+one or more processing devices, coupled to the memory, wherein the selection of the subset of document por-
+configured to perform operations comprising: tions is based on the first query embedding being within
+generating, using an embedding model, a first query a first threshold similarity from a third query embed-
+embedding based on a generative machine learning __ ding of the plurality of third query embeddings; and
+model (MLM) prompt, wherein the generative MLM inpulling the generative MLM promp! and the second
+prompt includes an indication of a user request to subset into the generative MLM comprises inputting
+generate content based on one or more documents the generative we prompt and wees of decu-
+stored in a cloud-based content management plat- 18 te eetem folsimn 17 wherein the operations further
+form; . . comprise:
+selecting, from a plurality of documents stored in the generating, via the embedding model, a fourth query
+cloud-based content management platform, a first embedding based on the generative MT.M response;
+subset of the plurality of documents, wherein determining whether the fourth query embedding is
+each document in the first subset includes an asso- within a second threshold similarity from a third query
+ciated second query embedding, and embedding of plurality of third query embeddings; and
+the selection of the first subsct is based on the first responsive to determining that the fourth query cmbed-
+query embedding being within a threshold simi- ding is not within the second threshold similarity from
+larity from the second query embedding, associ- any third query embedding of the plurality of third
+ated with a respective document of the plurality of query embeddings, rejecting the generative MI.M
+documents; response. : : :
+selecting, from the first subset, a second subset of 19. The system of claim 16, wherein the generative MI.M
+documents, wherein the selection of the second comprises a Uansformer-based large language model
+subsct is based on an access permission of cach (LLM). o. . oo
+document in the first subset: 20. Lhe system of claim 16, wherein each of the first query
+inputting the generative MLM prompt and the second embedding and the second query embeddings comprises a
+subset of the plurality of documents into a generative vector of floats.
+MLM; and kok ok ok

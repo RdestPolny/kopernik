@@ -1,0 +1,1124 @@
+US012197525B2
+az) United States Patent (10) Patent No.: US 12,197,525 B2
+Hariramasamy et al. (45) Date of Patent: Jan, 14, 2025
+(54) TECHNIQUES FOR PRESENTING (56) References Cited
+GRAPHICAL CONTENT IN A SEARCH
+RESULT U.S. PATENT DOCUMENTS
+(71) Applicant: Google LLC, Mountain View, CA (US) 7,574,659 B2 8/2009 Szabo
+9,448,980 B1* 9/2016 Ellingson ........... GO6F 16/3322
+(72) Inventors: Senthil Kumar Hariramasamy, Los (Continued)
+Altos, CA (US); Omar Frazer Restom,
+San Francisco, CA (US); Abhinay FOREIGN PATENT DOCUMENTS
+Gaiha, Mountain View, CA (US); ~~ 104933179 922015
+Bhavika Goyal, San Francisco, CA c~ 112651748 A021
+(US); Rushil Grover, San Jose, CA a.
+(US) (Continued)
+(73) Assignee: GOOGLE LLC, Mountain View, CA OTHER PUBLICATIONS
+(Us)
+Edwards, “Search on 2022: Search and Explore Information in Now
+(*) Notice: Subject to any disclaimer, the term of this Ways”, Google Blog—The Keyword, Sep. 28, 2022, https://blog.
+patent is extended or adjusted under 35 google/products/search’search-on-2022-announcements’, relieved
+USS.C. 154(b) by 0 days. on May 16, 2022, 8 pages.
+(21) Appl. No.: 18/462,139 (Continued)
+(22) Filed: Sep. 6, 2023 Primary Examiner —[aurie A Ries
+, oo (74) Attorney, Agent, or Firm —DORITY & MANNING
+(65) Prior Publication Data BA.
+US 2024/0211525 Al Jun. 27, 2024 (57) ABSTRACT
+Related U.S. Application Data Techniques for presenting a search result with an improved
+(63) Continuation of application No. 18/086.018, filed on user interface. A computer system can receive, from a user
+Dee. 21, 2022, now Pat. No. 11.954,167. device, a request for a content item. Additionally, the system
+can select, based on the request, a first content item from a
+(51) Int. Cl. plurality of content items. ‘The first content item can be
+G06F 17/00 (2019.01) associated with an organization image and an organization
+GOGF 16/955 (2019.01) name of an organization. Moreover, the system can process,
+GO6V 10/776 (2022.01) using one or more machine-learned model, the organization
+(52) US. cl . image to determine whether the organization image is
+CPC on GOBF 16/9558 (2019.01 ) GO6V 10/776 acceptable to be presented in the search result. Subsequently,
+(2022.01), GO6F 2201/09 (2022.01) the system can transmil, to the user device, the first content
+(58) Field of Classification Search item and the organization image to be presented in the search
+CPC ou... GOGF 16/9558; GOGF 16/9535; GO6V resull.
+10/776; GOGV 2201/09; GO6Q 30/0185;
+(Continued) 20 Claims, 6 Drawing Sheets
+ao
+302 OF AN ORGANIZATION
+:
+abs THE PLURALITY OF IMAGES
+vmx] rerroru cuir assuace rocess“opeTERMNEVOETIER THE
+ale IMAGE |S ACCEPTABLE
+IMAGE IS ACCEPTABLE
+IMAGE Is NOT
+ORGANIZATION BY CALCULATING A.
+VERIFICATION SCORE
+ORG IS NOT JORG 13 VERIFIED
+VERIFIED
+PRESENT THE CONTENT OF THE) PRESENT THE CONTENT OF THE
+mm “ORGANIZATION IN |H= SEARCH io ORGANIZATION :N THE SEARCH
+340 RESULTE WITHOLIT THE MAGE a2 RESULTS WITH “HE IMAGE AND
+AND THE NAME THE NAME.
+
+US 12,197,525 B2
+Page 2
+(58) Field of Classification Search 2021/0363968 Al 11/2021 Narula
+CPC... GOGQ 30/0251; GO6Q 30/0256; GO6Q ae eosagnar xu ree Kata ear
+i . ‘ A 2022/ 767 / 3/2022 oshal et al.
+__ 30/0273; GO6Q 30/0609; GO6Q 30/0631 2022/0222366 Al 7/2022 Nagaraja et al.
+Sce application file for complete search history. 2029/0245651 Al 8/2022 Lillard et al.
+2022/0284065 Al 9/2022 Gentilello ct al
+(56) References Cited 2023/0031874 Al 2/2023 Goldfield ct al
+2023/0081266 Al* 3/2023 Crume ............. HO4L 63/1416
+U.S. PATENT DOCUMENTS 726/23
+2023/0128790 Al 4/2023 Mayne
+9,779,388 Bl* (0/2017 Tlansen wu... G06Q 50/01
+10,860,557 B2* (2/2020 Fert veces GOGF [6/2465 FOREIGN PATENT DOCUMENTS
+2013/0198158 Al 8/2013 Tijssen et al.
+2014/0289002 Al* 9/2014 Dubey. ............. G06Q 30/0201 CN t1Stl4t4 9/2022
+; 705/729 ON 115222522 10/2022
+2015/0046278 Al 2/2015 Pei ct al. wo WO 2019/010182 1/2019
+2015/0199727 Al 72015 Naveh
+20160260131 AL* 9/2016 Wai wc GOOF 16/245 _ 7
+201770061014 Al 3/2017 Tleiler et al. OTTER PUBLICATIONS
+2017/0091270 Al* 3/2017 Guo wo. GOOF 16/5854
+2017/0193545 Al 2017 Zhou ct al. Google, “Deliver More Helpful Search Ads by Adding Your Busi-
+2017/037 1880 Al 12/2017 Chang ot al. ness Information”, https://support.google.com/google-ads/answer!
+2018/0060359 Al 3/2018 Li et al. 128343722hl=en, Oct. 14, 2022. 3 pages
+2018/0101537 A1* 4/2018 Govindarajan ... GO6F 16/24578 “ (ATS OD, CL My aes 9 Pages, ,
+2018/0113842 Al* 4/2018 Xiao wee LIOAL 65/612 International Search Report and Wrillen Opinion for PC'L/U$2023/
+2018/0165364 A1* 6/2018 Mehta ow. GGT 9/54. 2 . mailed on Sep. 7, 3, ages.
+024120, mailed on Sep. 7, 2023, LI pag
+2019/0005424 Al* 1/2019 Gonguet .............. G06Q 50/01 Raghavan, “Search Outside the Box: How We’re Making Search
+2019/0108857 Al 4/2019 Hirata ct al More Natural and Intuitive”, Google Blog—The Keyword, Sep. 28,
+2019/0156374 Al $/2019 Athsani et al. 2022, https://blog.google/products/search/new-search-technology’,
+2019/0303968 Al* 10/2019 Baker, IIL ........., GU6Q 30/0269 retrieved on May 16, 2022, 4 pages.
+2020/0034685 Al* 1/2020 Kemp! sevens GOON 3/084 Vajolahi et al., “ITelping You Fasily Identify Information Sources in
+2020/0104329 Al 42020 Kundu el al. Search”, Google Blog—The Keyword, Oct. 14, 2022, https://blog
+2020/0311156 AL™ 10/2020 Miao oe GON 20/00 a ; P wee aka ntt ne ane aes -
+2090/0334315 Al 10/2020 Du google/products/search/identify-information-sources’, retrieved on
+2020/0387887 Al* 12/2020 Rathod ........... GO6Q 20/3224 May 16, 2022, 3 pages.
+2021/0019567 Al 1/2021 Gandhi ct al . .
+2021/0158265 Al* 5/2021 Kundu «0... GO6F 16/9535 * cited by examiner
+
+U.S. Patent Jan. 14, 2025 Sheet 1 of 6 US 12,197,525 B2
+Q
+OF
+=
+€
+$ | 5 :
+3 xf S
+> mS = Bi xs
+ae) fo) ® — ic)
+aA |S] 3 & ea £ ron Na
+a pd Bl iet iba A ot & <& ex
+= l2ssvell |e | 8s] is 2 |/8e
+| wa tH € Oo
+5 on 5 v2) iQ 3 s 2a
+= g 2i8 Pa S eg =o oe Oo
+S @ Si Ss Ss eo 5 & of
+9° Ops os
+Oo fspe "ray 18 | 8= ]1& & |jea
+5g |& & = |e e ® a
+> g a a >
+&
+wm
+2 E
+= g
+wm
+BD hoy
+> |S Sol} |S
+Slap a Sls =
+o £/-p4 aye i
+@ 2 5/2 Tc iSte g
+o> & QIeE Si&is = er
+QS ES 6 ja & ta
+ER O16 EL OHs oo .
+(| a OySps Efe S
+© £ |r aye fs)
+iS é EVetpist] =
+8 £ LL
+= Bile
+‘io
+ro
+N|§
+2) wo “To
+SI] 8 2 |
+oO day NI
+ay eis Oy is
+@ Il a ayi= = 18 ie
+£ TS + Elio fig la
+Ss | Pa | ee 6 =
+6 |etin- n at 2 oi TE
+Seti >soife ef ow £16
+Qo }sf}ie |= & g
+-~ |B 6 lots 6 g Go; 8S j=
+@/@te |eys Ota &/2/e
+> 1/68 lofiz Sitio sie ig
+ofl = 7 afl¢ 2
+= e eye ELE 8
+a = =Hs 61S /O
+a 2 = 5 Oo
+= > o
+
+U.S. Patent Jan. 14, 2025 Sheet 2 of 6 US 12,197,525 B2
+200 ~4
+
+—_ GOOGLE 204 ( \ o90
+
+| tS BEST ROMO TRIPS ROM SEATTLE ae
+
+ALL IMAGES «© MAPS. NEWS (VIDEOS. SHOP
+
+——e 214 :
+meee eeemenyr 210 :
+
+ONS STTPS CaNWW TEIpCOMPaRY. CONS a
+
+_ TME TOP 10 SEST NOTEAS NEAR SEATTEN
+
+| (2021). DEST VALUE AND EXPERIENCES '
+
+_ PED SEATTLE TRIP COMPANY BOTEIS FROM 9176 - LOWEST
+
+| PRICES & LATEST REVIEWS OW TRIP COMPANY. HIDDEN GENS. _
+
+| BEST PLACES TO EAT. CARDIO TRAVELER PROTOS, FUN THINGS |
+
+_ TODO. VACATION RENTS :
+
+THINGS TO BO
+
+| RENTAL CARS
+
+HTTPS AU TREPCOMPARY.COM > TRAVEL OE
+
+| 2 AAATING SUMGER ROAD TRIPS FROM
+
+| SEATILETO FLAN RIGHT Sow :
+
+| JUN 1, 2076 «CUE EVERYONE'S FAVORITE 90° ROVIE
+
+| CATCHPHRASE: ROADTRIPY CLICKY FOR US, SEING IN SGUTER
+
+| MEANS THAT WE ARE SO CLOSE TN SOME GF THE MOST :
+
+| BEAUTIFUL LOCATIONS AND ATTRACTIONS IN THE. :
+
+a 2 4 8
+
+pg) ENTETARINENT WER SITE a cereeoras _<
+
+(ELD WTS CWNWWINTRSTTE COM ENYERTATS. EY
+
+ON eine
+
+U.S. Patent Jan. 14, 2025 Sheet 3 of 6 US 12,197,525 B2
+300
+ACCESS, BY A CONTENT SERVING SYSTEM, AN IMAGE FROM A LANDING PAGE
+OF AN ORGANIZATION
+
+302
+
+RECEIVE, FROM A USER DEVICE OF A USER, A USER INPUT ASSOCIATED WITH
+304 THE PLURALITY OF IMAGES
+
+PERFORM A QUALITY ASSURANCE PROCESS TO DETERMINE WHETHER THE
+306 IMAGE IS ACCEPTABLE
+IMAGE IS ACCEPTABLE
+IMAGE IS NOT
+ACCEPTABLE PERFORM A VERIFICATION PROCESS FOR THE
+ORGANIZATION BY CALCULATING A
+VERIFICATION SCORE
+ORG IS NOT ORG IS VERIFIED
+VERIFIED
+
+PRESENT THE CONTENT OF THE PRESENT THE CONTENT OF THE
+
+ORGANIZATION IN THE SEARCH ORGANIZATION IN THE SEARCH
+340 RESULTS WITHOUT THE IMAGE aio RESULTS WITH THE IMAGE AND
+
+AND THE NAME THE NAME
+
+U.S. Patent Jan. 14, 2025 Sheet 4 of 6 US 12,197,525 B2
+400
+402 RECEIVE, FROM A USER DEVICE, A REQUEST FOR A CONTENT ITEM
+SELECT, BASED ON THE REQUEST, A FIRST CONTENT ITEM FROM PLURALITY
+OF CONTENT ITEMS, WHEREIN THE FIRST CONTENT ITEM IS ASSOCIATED WITH
+404 AN ORGANIZATION IMAGE OF AN ORGANIZATION
+PROCESS, USING THE ONE OR MORE MACHINE-LEARNED MODEL, THE
+ORGANIZATION IMAGE TO DETERMINE WHETHER THE ORGANIZATION IMAGE IS
+406 ACCEPTABLE TO BE PRESENTED IN THE SEARCH RESULT
+TRANSMIT, TO THE USER DEVICE, THE FIRST CONTENT ITEM AND THE
+ORGANIZATION IMAGE TO BE PRESENTED IN THE SEARCH RESULT BASED ON
+408 THE DETERMINATION THAT THE ORGANIZATION IMAGE !S ACCEPTABLE
+
+U.S. Patent Jan. 14, 2025 Sheet 5 of 6 US 12,197,525 B2
+500
+502 OBTAIN PAYMENT INFORMATION ASSOCIATED WITH THE ORGANIZATION
+OBTAIN A SEARCH RANKING SCORE FOR THE FIRST CONTENT ITEM
+504
+ACCESS A LIST OF VERIFIED ORGANIZATION NAMES FROM A VERIFIED
+ORGANIZATION DATABASE
+506
+PROCESS, USING THE ONE OR MORE MACHINE-LEARNED MODEL, THE
+ORGANIZATION NAME WITH THE PAYMENT INFORMATION, THE SEARCH
+5 o™ RANKING SCORE, AND THE LIST OF VERIFIED ORGANIZATION NAMES TO
+DETERMINE WHETHER THE ORGANIZATION IS VERIFIED.
+
+U.S. Patent Jan. 14, 2025 Sheet 6 of 6 US 12,197,525 B2
+600
+EXTRACT, IN RESPONSE TO THE REQUEST, THE ORGANIZATION IMAGE FROM A
+eho WEBPAGE OF THE ORGANIZATION THAT IS ASSOCIATED WITH THE FIRST
+CONTENT ITEM
+OBTAIN A SEARCH RANKING SCORE FOR THE FIRST CONTENT ITEM
+604
+STORE THE ORGANIZATION IMAGE IN AN IMAGE DATABASE
+806
+ACCESS, FROM AN IMAGE DATABASE, A PLURALITY OF SIMILAR IMAGES BASED
+ote ON THE ORGANIZATION IMAGE
+PROCESS, USING THE ONE OR MORE MACHINE-LEARNED MODEL, THE
+ORGANIZATION IMAGE WITH THE PLURALITY OF SIMILAR IMAGES TO
+610 DETERMINE WHETHER THE ORGANIZATION IMAGE IS ACCEPTABLE TO BE
+PRESENTED IN THE SEARCH RESULT
+
+US 12,197,525 B2
+1 2
+
+TECINIQUES FOR PRESENTING In some instances, the operations can further include
+GRAPHICAL CONTENT IN A SEARCH presenting, on a display of the user device, the first online
+RESULT content item with the organization image when the image is
+
+determined to be acceptable.
+PRIORITY CLAIM 3 In some instances, the first content item can also be
+associated. with an organizalion name of the organization.
+
+The present application is a continuation of U.S. appli- The operations can further include processing, using, the one
+cation Ser. No. 18/086,018 having a filing date of Dec. 21, or more machine-learned model, the organization name to
+2022, which is incorporated by reference herein. _ determine whether the organization is verified. Additionally,
+
+the operations can include transmitting, to the user device,
+FIELD the organization name to be presented in the search result
+based on the determination that the organization name is
+
+The present disclosure relates generally to the field of verified.
+improving user experience with online content presented in 15m some instances, the operations can lurther include
+response to a search query. More particularly, the present ~ presenting, on a display of the user device, the first online
+disclosure relates to using a content serving system to content item with the organization image when the organi-
+improve user interactions by presenting search results with zalion image is determined to be acceptable, and. the first
+verified images and names. online content item with the organization name when the
+
+_ 20 organization name is determined to be verified.
+BACKGROUND In some instances, the first content item can include a link,
+and the organization image can be placed on the left side of
+
+Businesses and. other entities use the internet (o increase the link. Additionally, the organization name can be placed
+awareness of their products and services. A content serving, above the link. Moreover, the link can be a Uniform
+system can present search results in response to a search 25 Resource Locator of an address associated with a web page
+query. In some instances, the search query can be associated of the organization.
+with a keyword. The order of search results returned by the In some instances, the operations can further include
+content serving system is based, in parl, on a ranking system. presenting, on a display of the user device, the first online
+The search results can also be supplemented with sponsored content item with the organization image when the organi-
+content. For example, a business can place sponsored con- 30 zation image is determined to be acceptable. Additionally,
+tent on a web page that is not hosted by the business in order _the operations can further include presenting, on a display of
+to reach a wider audience. When a user selects the sponsored the user device, the first online content item without the
+content, the user can be redirected to a webpage about the organization name when the organization name is deter-
+products and services of the business. ad actors may try to mined to not be verified.
+confuse a user by providing content thal mimics known 35 — In some instances, the organization name is verified in
+organizations in order to get a user to select their content. real-time by querying a database of verified. organizations.
+
+For example, the database of verified organizations can be a
+SUMMARY first-party database thal is maintained by the computer
+system to improve the query time.
+
+Aspects and advantages of embodiments of the present 40 In some instances, the first content item can be a spon-
+disclosure will be sct forth in part in the following descrip- sored content item. The operations can further include
+tion, or can be learned trom the description, or can be obtaining payment information from the organization. Addi-
+leamed through practice of the embodiments. tionally, the operations can further include processing, using
+
+One example aspect of the present disclosure is directed the one or more machine-learned model, the organization
+to a computer system for presenting a search result. The 45 name with the payment information to determine whether
+computer system can include one or more processors and the organization is verified.
+one or more non-transitory computer-readable media. In In some instances, the operations can include accessing a
+some instances, the one or more non-transilory compuler- list of verified organization names from a verified organi-
+readable media can collectively store one or more machine- galion database. Additionally, the operations can include
+learned models and instructions. ‘he one or more machine- 50 processing, using the one or more machine-learned. model,
+learned models can be configured to determine whether an the organization name with the list of verified organization
+image is acceptable to be presented in the search result. ‘The names to determine whether the organization is verified.
+instructions, when executed by the one or more processors, In some instances, the operations can include extracting,
+can cause the computing system to perform operations. The in response to the request, the organization image from a
+operations can include receiving, from a user device, a 55 webpage of the organization that is associated with the first
+request for a content item. Additionally, the operations can content item. Additionally. the operations can include
+include selecting. based on the request, a first content item receiving from a device associated with the organization, a
+from a plurality of content items. The first content item can confirmation of the organizalion image. Moreover, the
+be associated with an organization image of an organization. operations can include storing the organization image in an
+Moreover, the operations can include processing, using the 60 image database.
+one or more machine-learned model, the organization image In some instances, the operations can further include
+to determine whether the organization image is acceptable to extracting, in response to the request, the organization image
+be presented im the search result. Furthermore, the opera- from a webpage of the organization that is associated with
+tions can include transmitting, to the user device, the first the first content item. Additionally, the operations can
+content item and the organization image to be presented in 65 include storing the organization image in an image database.
+the search result based on the determination that the orga- In some instances, the operations can further include
+nization image is acceptable. receiving from a device associated with the organization, the
+
+US 12,197,525 B2
+3 4
+organizalion image. Additionally, the operations can include BRILI DESCRIPTION OF TIE DRAWINGS
+storing the organization image in an image database.
+
+In seme instances, the operations can further include Detailed discussion of embodiments directed to one of
+accessing, from an image database, a plurality of similar ordinary skill in the art is set forth in the specification, which
+images based on the organization image. Additionally, the 5 makes reference to the appended figures, in which:
+operations can include processing, using the one or more FIG. 1 depicts a block diagram of an example system
+machine-learned model, the organization image with the according to some implementations of the present disclo-
+plurality of similar images to determine whether the orga- sure, . . :
+nizalion image is acceplable to be presented in the search _ FIG. 2 depicts an example graphical user interface pre-
+result. Moreover, the determination that the organization 0 sented by a content serving system according to some
+image is acceptable can be performed offline by the one or implementations of the present disclosure.
+
+ht ; tgs . FIG. 3 depicts a flow chart diagram of an example method
+more machine-learned model before receiving the request : : 7 :
+from the user device. Furthermore the images stored in the according to some implementations of the present disclo-
+: : ° sure.
+image database can be labeled as either acceptable or Mls HIG. 4 depicts a flow chart diagram of an example for
+acceptable. Tn some instances, the plurality of similar images presenting a scarch result in response to a scarch query,
+being accessed from the image database are determined by according to example embodiments of the present disclo-
+the one or more machine-learned model. sure.
+
+In some instances, the operations can further include FIG. 5 depicts a flow chart diagram of an example for
+presenting, on a display of the user device, the first online 20 verifying an organization name, according to example
+content item without the organization image when the image embodiments of the present disclosure.
+is determined not acceptable. FIG. 6 depicts a flow chart diagram of an example for
+
+Another example aspect of the present disclosure is determining whether an image is acceptable to be presented
+directed. to a compuler-implemented method to present a ina search resull, according to example embodiments of the
+search result. The method can include receiving, from auser 25 present disclosure.
+device, a request for a content item. Additionally, the method Reference numerals that are repeated across plural figures
+can include selecting, based on the request, a first content are intended to identify the same features in various imple-
+item from a plurality of content items. The first content item mentations.
+can be associated with an organization image of an organi- __ a ; veya .
+zation. Moreover, the method can include processing, using, 30 DETAILED DESCRIPTION
+ene or more machine-learned models, fhe organization Generally. the present disclosure is directed to presenting
+image to determine whether the organization image is . . - .
+
+A content in a search result with an image and name associated
+acceptable to be presented in the search result. Subsequently, . sys . e aan
+! _™ 1 with an organization that is both acceptable and verified.
+the method can include transmitting, to the user device. the 55 More specifically, the system can filter out organization
+first content item and the organization mage lo be presented images that are not acceptable and organization names that
+in the search result based on the determination that the are nol verified in order lo improve a user’s search experi-
+organization image is acceptable. ence.
+
+Another example aspect of the present disclosure is ‘lechniques described herein allow for an improved user
+directed to one or more non-transitory computer-readable 49 experience by reducing the likelihood of confusion for a user
+nicdia that store instructions that, when executed by one or when content is presented in a search result. By presenting
+more processors, cause the one or more processors to acceptable images and verified organizations, the user can
+perform operations. The operations can include receiving, quickly determine additional information about an organi-
+from a user device, a request for a content item. Addition- zation without having to go to the webpage (e.g., landing
+ally, the operations can include selecting. based on the 45 page) of the organization. Additionally, the system leverages
+request, a first content item from a plurality of content items. machine-learned models to provide safeguards and quality
+The first content item can be associated with an organization assurances for the content presented in the search results.
+image of an organization. Moreover, the operalions can These improvements can have important applicalions, espe-
+include processing, using the one or more machine-learned cially for search, because it reduces the likelihood of con-
+model, the organization image to determine whether the 50 fusion and prevents inappropriate images and names from
+organization image is acceptable to be presented in the being presented.
+search result. Furthermore, the operations can include trans- ‘Techniques described herein improve computer-related
+mitting, to the user device, the first content item and the technologies by providing additional scarch information
+organization image to be presented in the search result based (¢.g., organization image, organization name) that is both
+on the determination that the organization image is accept- 55 acceptable and verified in real-time. In order to provide the
+able. additional information in real-time, in response to a search
+
+Other aspects of the present disclosure are directed to query, the system is configured to perform some of the
+various systems, apparatuses, non-iransilory computer-read- operations offline and some of the operations in real-time.
+able media, user interfaces, and electronic devices. For example, in some instances, the system can include an
+
+These and other Jeatures, aspects, and advantages of 60 image database that has labeled. image data. The labeled
+various embodiments of the present disclosure will become image data can include whether the image is acceptable or
+better understood with reference to the following description not acceptable. Lhe determination of whether an image is
+and appended claims. ‘The accompanying drawings, which acceptable is performed using machine-learned. models. For
+are incorporated in and constitute a part ofthis specification, example, some of the operations for determining whether
+illustrate example embodiments of the present disclosure 65 the image is acceptable can be performed offline when the
+and, together with the description, serve to explain the image is uploaded by the organization or when the image is
+related principles. obtained (e.g.. crawled) from a webpage of the organization.
+
+US 12,197,525 B2
+5 6
+
+Additionally, the verification of the organization and orga- In the sponsored content scenario, the content serving
+nization name can be performed in real-time by having a system can serve sponsored content with visual information
+database of verified organizations. l‘or example, the dala- in response to a search query by a user. Sponsored content
+base of verified organizations can be a first-party database can be designed to inform and promote goods and services
+that is maintained and updated by the system (e.g., content 5 offered by content providers. For example. a user can request
+serving system) in order to be able to quickly query the a search query, and the content serving system can present
+database for verification information. search results to the search query, where the search results
+
+In some instances, a verification system can be commu- can also include sponsored content with an image and name
+nicably and operatively coupled to a verified organization of an organization. The sponsored content can include an
+database and/or an image database. The verified organiza- 10 image of the organization, such as a business logo. Addi-
+tion database can be configured to store a variety of infor- tionally, the sponsored content can include a name of the
+mation relevant to the authenticity of an organization. The organization (e.g., business name). By including the image
+verification system can be configured to query, in real-time, and name of the organization in the sponsored. content, the
+the verified. organization database for information and store user experience can be improved. F'rom a user perspective,
+information in the verified organization database. By having 15 the image and name of the organization can indicate to a user
+the verified. organization database be part of the verification the organization thal is sponsoring the content. ‘The visual
+system, the system architecture allows for real-time database information (e.g., image of the organization) in the spon-
+queries, which improves the user experience for search. For sored content can assist a user in obtaining information
+example, the verification system can store locally the list of quickly. For example, the user can quickly obtain the image
+verified organizations in order to reduce the query latency of 20 and name of the organization without having to go to the
+retrieving the list of verified organizations. Similar to the website of the organization. In part, because visual intor-
+verified organization database, by having some parts of the mation can be instantly recognized, especially for familiar or
+image database be part of the verification system, the system recognizable brands. Additionally, the business name can
+architecture allows for real-time database queries, which also make the URI. in the sponsored content more readable.
+improves the user experience for search. lor example, the 25 — In the organic content scenario, the content serving sys-
+verification system can store locally acceptable images thal tem can present content (¢.g., in a search results) in response
+are associated with a verified organization in order to reduce to a search query by a user. Lhe order of search results
+the query latency of retrieving the acceplable images. returned can be based, in part, on a ranking system. In this
+
+Techniques described herein provide novel ways to pro- scenario, the top ranked search results have a higher likeli-
+vide and verify an image of the organization and the name 30 hood to be selected by the user. As a result, there may be an
+of the organization in the search results. For example, the obligation from the content serving system to provide high
+verification process, which may be performed in real-time, quality search results and to provide a proper representation
+prevents bad actors from showing a business logo of a of the search query to the user.
+trusted business. The verification process can reduce the In some instances, the system may only allow trusted
+likelihood of confusion by a user and prevent a user from 35 content to have an accompanying image and business name.
+clicking on a link of an imposter organization trying to For example, sponsored content may have to be trusted and
+mimic a trusted brand. he system can implement various verified prior to being presented to a user. In some instances,
+safeguards techniques lo ensure thal users see more trust- organic content may not need to go through the verification
+worthy logos and trustworthy business names. ‘lhe real-time process. Content can be trusted if the organization associated
+verification process enables a better user experience. For 40 with the content has been verified using a verification
+example, the system, which can be automated, can check process. In one example, the system can verify the organi-
+whether the business name is present prominently in the zation by querying a third-party verification database. In this
+landing page, and whether the business name and the URL example, the verification process can be pre-computed prior
+have strong similarities. The system can ensure that a to the determination of serving content to a user (e.g., as
+keyword having a random string does not produce search 45 described in FIG. 4).
+results having organizations with imposter images and/or Additionally, the verification process can include eligibil-
+organization names. ity criteria for a domain associated with the sponsored
+
+According to some embodiments, content that is associ- content. Eligibility can be applicable to sponsored content,
+aled wilh an organization can be presented, by a content and the verification process is performed for content (e.g.,
+serving system, to a user to include an image of the 50 assets) that will be presented in as sponsored content. Search
+organization and/or a name of'the organization. By including Ad. In some instances, content that will be presented as
+the image and/or the name of the organization, a user can organic content do not need to have been verified.
+easily and quickly obtain additional information about the In some instances, the content serving system can utilize
+organization without having to go to the organization’s payment information of an organization to verify the orga-
+website. Additionally, the content serving system can 55 nization. For example, an organization may pay a fee for the
+include safeguards to prevent bad actors from presenting sponsored content. The content serving system can verify
+incorrect information (e.g., image, organization name). For the payment information used by the organization to deter-
+example, an imposter organization may want lo mimic a mine whether the organization can be trusted. The sponsored
+reputable organization by trying to spoof the system to content can include an image of the organization and/or a
+present a misleading image and/or name. 60 name of the organization if the content serving system
+
+In some instances, the content presented by the content determines that the organization is verified based on the
+serving system can be either sponsored content or organic payment information.
+content. Sponsored content can include content of an orga- In some instances, the content serving system can deter-
+nization that may have paid a fee to appear in the scarch mine whether the sponsored content would be included in a
+results for relevant search querics. Organic content can 65 top number (c.g., top 10, 20, 50) contents of an organic
+include unpaid content of an organization that appears in the search results based on an organic ranking system. For
+search results for relevant search queries based on a ranking. example, a user can request a keyword search, and the
+
+US 12,197,525 B2
+7 8
+
+content serving system can determine that the sponsored present disclosure. The system 100 includes a user device
+content is ranked in the top 20 of the search results. Given 102, a server computing, system 130, a content management
+that the sponsored content is ranked higher than a predeter- system 122, image database 128, and a training computing
+mined rank number (e.g., top 20), then the content serving device 150 that are communicatively coupled over a net-
+system can include the sponsored content in the search 5 work 180.
+results, and the sponsored content can include an image The user device 102 can be any type of computing device,
+and/or business name associated with the organization. such as, for cxample, a personal computing device (c.g.,
+
+According to some embodiments, the system can present laptop or desktop), a mobile computing device (c.g. smart-
+an improved user interface for content (c.g.. sponsored phone or tablet). a gaming console or controller, a wearable
+content, organic content) being presented in the search 10 computing device, an embedded computing device, or any
+results. In some instances, the user interface can include a other type of computing device.
+plurality of lines (e.g., two lines). For example, the first line The user device 102 includes one or more processors 112
+can be an organization name, and. the second line can be a and a memory 114. The one or more processors 112 can be
+URL associated with the organization. Additionally, the user any suitable processing device (e.g., a processor core, a
+interface can include an image associated with the organi- 15 microprocessor, an ASIC, an FPGA, a controller, a micro-
+zation. By having a plurality of lines, the user interlace gives controller, etc.) and. can be one processor or a plurality of
+more prominence to both the business name and the image processors that are operatively connected. he memory 114
+associated with the organization. The image can be a circular can include one or more non-transitory computer-readable
+or a rectangular image of the organization (c.g., logo). The storage media, such as RAM, ROM. EEPROM, EPROM,
+image can be a graphic mark, emblem, or symbol used to aid 20 flash memory devices, magnetic disks, etc., and combina-
+and promote public identification and recognition of the tions thereof. The memory 114 can store data 116 and
+organization. The image can be an abstract or figurative instructions 118 which are executed by the processor 112 to
+design. Additionally, the image includes text of, or derived cause the user device 102 to perform operations.
+from, the name of the organization. Moreover, in some The user device 102 can also include one or more user
+instances, the sponsored content can be labeled as ‘pro- 25 inpul components 120 that receives user inpul. or example,
+moted’ or ‘sponsored’ content in the search results. the user inpul component 120 can be a touch-sensilive
+
+In some instances, the image in the presented content can component (e.g., a touch-sensitive display screen or a touch
+be an icon (¢.g., favicon). In some instances, the system can pad) that is sensilive to the touch ofa user inpul object (e.g,
+select one icon per site. The site can be defined by a a finger or a stylus). The touch-sensitive component can
+hosmame. For example, https:/Awww.example.com/ and 30 serve to implement a virtual keyboard. Other example user
+https://code.example.com/ are two different hostnames, and input components include a microphone, a traditional key-
+therefore can have two different icons. Additionally, when board, or other means by which a user can provide user
+the content presented includes an image or business name, input.
+the system can craw! the home page and the icon file (e.g., The user device 102 may be used by a user to perform
+stored in the HTMI, code) for verification purposes. There- 35 various actions and/or access various types of content, some
+fore, if the system does not have access to the icon file, then of which may be provided. over a network 180. The user
+the content can be presented. without an image or business device 102 may be used to send. data to the server computing
+name. system 130, or may be used to access websiles (e.g., using
+
+Additionally, the content serving system verifies that the an internet browser), media files, and/or any other types of
+image is an appropriate image. If the system deems that the 40 content. In some implementations, the user device 102 has
+image is inappropriate, then the image can be replaced with enabled location services which ean be tracked over network
+a default icon. In some instances, organizations (c.g., pub- 180. Location services may use GPS or other technologics
+lishers) can also provide images directly to the content to determine a location of user device 102.
+serving system. The content serving system can perform a Tn some implementations, the user device 102 can store or
+verification process to ensure that the images received from 45 include one or more models 115. For example. the models
+the organization are appropriate. 115 can be or can otherwise include various machine-
+
+Moreover, the content serving system can determine learned models such as neural networks (e.g., deep neural
+whether the image can be confused (e.g., misconstrued) with networks) or other types of machine-learned models, includ-
+a known image of a known organization. In some instances, ing non-linear models and/or linear models. Neural net-
+the content serving system can calculate a similarity score of 50 works can include leed-forward neural networks, recurrent
+an image with a specific keyword. Additionally. the content neural networks (c.g., long short-term memory recurrent
+serving system can calculate a similarity score of a business neural networks), convolutional neural networks or other
+name associated with the keyword. For example, when the forms of neural networks. In other examples, the models 115
+keyword of scarch query is for a known airline company, can be specific image comparison models which are ditffor-
+and the similarity score of an image and/or business name 55 entiable, and which have been parameterized to facilitate
+(e.g., not from the known airline company) is higher than a application of machine learning techniques. Example mod-
+predetermined threshold value, then the image and/or busi- els 115 are discussed with reference to FIGS. 2-5.
+ness nume are nol presented as part of the content im the In some implementations, the one or more models 115 can
+search result. Machine-learned models can calculate the be received from the server computing system 130 over
+similarity scores based on the likelihood of confusion 60 network 180, stored in the memory 114, and then used or
+between the image of an organization and the known image otherwise implemented by the one or more processors 112.
+of a known organization. By preventing similar images In some implementations, the user computing device 102
+being presented, the content serving system can prevent bad can implement multiple parallel instances of a sgle model
+actors from mimicking known brands in order to confuse 145.
+consumers. 65 More particularly, the models 115 can be trained using a
+
+FIG. 1 depicts a block diagram of an cxample computing training computing system 150 with a set of training data
+system 100 according to example embodiments of the 156 to train the parameters of the model to optimize the
+
+US 12,197,525 B2
+9 10
+
+model. The training computing system 150 may include The training computing system 150 includes one or more
+image comparison data (e.g., data for comparing two similar processors 152 and a memory 154. The one or more pro-
+images) to add elliciency and precision to the training cessors 152 can be any suitable processing device (e.., a
+module. ‘raining data may also include the creation of processor core, a microprocessor, an ASIC, a FPGA, a
+low-resolution processed image data from high-resolution 5 controller, a microcontroller, etc.) and can be one processor
+raw image data. Masks may also be used in training to or a plurality of processors that are operatively connected.
+provide a region of interest. The memory 154 can include one or more non-transitory
+
+Additionally, or alternatively, onc or more models 142 can computer-readable storage mediums, such as RAM. ROM,
+be included in or otherwise stored and implemented by the EEPROM, EPROM, flash memory devices, magnetic disks,
+server computing system 130 that communicates with the 10 etc., and combinations thereof. The memory 154 can store
+user computing device 102 according to a client-server training data 156 and instructions 158 which are executed by
+relationship. For example, the models 142 can be imple- the processor 152 to cause the training computing system
+mented by the server computing system 130 as a portion of 150 to perform operations. In some implementations, the
+a web service. Thus, one or more models 115 can be stored training compuling system 150 includes or is otherwise
+and implemented at the user computing device 102 and/or 15 implemented by one or more server computing devices.
+one or more models 142 can be stored and implemented. at ‘The training computing system 150 can include a model
+the server computing system 130. trainer 160 that trains the machine-learned models 115
+
+The content management system 122 may be configured and/or 142 stored at the user computing device 102 and/or
+to select content for display to users within resources (c.g. the server computing system 130 using various training or
+webpages, applications) and to provide content items to the 20 learning techniques, such as, for example, backwards propa-
+user device 102 over the network 180 for display within the gation of errors. For example, a loss function can be back
+resources. The content from which the content management propagated through the model(s) to update one or more
+system 122 selects items may be provided by one or more parameters of the model(s) (e.g., based on a gradient of the
+content providers via the network 180. In some implemen- loss function). Various loss functions can be used such as
+lations, the content management system 122 may select 25 mean squared error, likelihood loss, cross entropy loss,
+content items from content providers to be displayed on the hinge loss, and/or various other loss functions. Gradient
+user device 102. In such implementations, the content man- descent techniques can be used to iteratively update the
+agement system 122 may determine content to be published parameters over a number of training iterations.
+in one or more content interfaces of resources (c.g., In some implementations, performing backwards propa-
+webpages, applications). 30 gation of errors can include performing truncated back-
+
+The server computing system 130 includes one or more propagation through time. The model trainer 160 can per-
+processors 132 and a memory 134. The server computing form a number of generalization techniques (e.g., weight
+system 130 can be the content serving system as described decays, dropouts, ete.) to improve the generalization capa-
+herein. The one or more processors 132 can be any suitable bility of the models being, trained.
+processing device (e.g., a processor core, a microprocessor, 35 ‘In particular, the model trainer 160 can train the image
+an ASIC, an FPGA, a controller, a microcontroller, etc.) and comparing models 115 and/or 142 based on a set of training
+can be one processor or a plurality of processors that are dala 156. he training data 156 can include, for example, a
+operatively connected. ‘he memory 134 can include one or sel of raw image dala, a set of processed image data, and a
+more non-transitory computer-readable storage media, such set of masks to indicate the region of interest.
+as RAM, ROM, EEPROM, EPROM, flash memory devices, 40 ‘he model trainer 160 includes computer logic utilized to
+magnetic disks, ctc., and combinations thereof. The memory provide desired functionality. The model trainer 160 can be
+134 can store data 136 and instructions 138 which are implemented in hardware, firmware, and/or software con-
+executed by the processor 132 to cause the server computing trolling a general-purpose processor. For example, in some
+system 130 to perform operations. implementations, the model trainer 160 includes program
+
+In some implementations, the server computing system 45 files stored on a storage device, loaded into a memory, and
+130 includes or is otherwise implemented by one or more executed by one or more processors. In other implementa-
+server computing devices. In instances in which the server tions, the model trainer 160 includes one or more sets of
+compuling system 130 includes plural server compuling compuler-execulable instructions that are stored in a tan-
+devices, such server compuling devices can operate accord- gible computer-readable storage medium such as RAM hard
+ing to sequential computing architectures, parallel comput- so disk er optical or magnetic media.
+ing architectures, or some combination thereof. In some implementations, the server computing system
+
+As described above, the server computing system 130 can 130 can store or otherwise include a verification system 140.
+store or otherwise include one or more models 142. For For example, the verification system 140 can determine
+example, the models 142 can be or can otherwise include whether an organization image is acceptable and determine
+various machine-learned models. Example machine-learned 55 whether an organization name is verified. The verification
+models include neural networks or other multi-layer non- system can include one or more machine-learned models
+linear models. Example neural networks include feed for- 142, payment information 144 of organizations, search
+ward neural networks, deep neural networks, recurrent neu- ranking 146 information of organizations, and a verified
+ral networks, and convolutional neural networks. -xample organization database 148 of verified organizations. For
+models 142 are discussed with reference to L'IGS. 2-5. 60 example, the verified organization database 148 can include
+
+The user computing device 102 and/or the server com- a list of organizations that the system 130 has previously
+puting system 130 can train the models 115 and/or 142 via determined to be verified. ‘he payment information 144 data
+interaction with the training compuling system 150 that is may be payment data [rom an organization thal pays a lee for
+communicatively coupled over the network 180. The train- having sponsored content displayed in a scarch result. The
+ing computing system 150 can be separate from the server 65 search ranking 146 can be ranking of a content in an organic
+computing system 130 or can be a portion of the server search result. It should be understood that various imple-
+computing, system 130. mentations may include more, fewer, or different systems
+
+US 12,197,525 B2
+11 12
+than illusirated in FIG. 1, and all such modifications are associated. with a verified organization in order to reduce the
+contemplated within the scope of the present disclosure. query latency of retrieving the acceptable images.
+
+In some implementations, an image database 128 may In various implementations, the databases 128, 148
+include data collected by the server computing system 130 includes various transitory . and/or non-transitory storage
+by crawling web pages for image data. Additionally, the 5 mediums. ‘The slorage mediums may include but are not
+image database 128 can include image data that has been _ limited to magnetic storage, optical storage, flash storage,
+uploaded by users (c.g., organizations). The data may be RAM, etc. ‘The databases 128, 148 and/or the verification
+content input and response for a particular image at one or system 140 can use varlous APIs to perform database
+more points in time. functions, such as managing data stored in the databases
+
+Th ler cy sO eae ~ . _ ,, 128, 148. The APIs can be but are not limited to SQL,
+
+he server computing system 130 can train the models 16 : : .
+142 via interaction with the training computing system 150 No8QL, NewSQL, ODBC, JDBC.
+8 puring, 8Y The verification system 140 can he configured to com-
+that js communicatively coupled over the network 180. municate with any device or system shown in computing
+
+The network 180 can be any type of communications system 100 via network 180. The verification system 140
+network, such as a local area network (e.g. intranet), wide can be configured to receive information trom the network
+area network (e.g. Inlemet), or some combination thereol 13180. The information may include browsing histories,
+and can include any number of wired or wireless links. In cookie logs, television content data, and/or online content
+general, communication over the network 180 can be carried activity data. The verification system 140 can be configured
+via any type of wired and/or wireless connection, using a to receive and/or collect the interactions that the user device
+wide varicty of communication protocols (c.g., TCP/IP, 102 has on the network 180. The verification system 140 can
+HTTP, SMTP, FIP), encodings or formats (e.g., HTML, 20 be configured to receive and/or collect the interactions that
+XML), and/or protection schemes (c.g., VPN, secure HTTP, the content management system 122 has on the network 180.
+SST).
+
+The verification system 140 may be used by content Example Graphical User Interface
+management system 122 to determine whether an organiza- . .
+
+Gion image is acceptable and whether an organizalion name 25 FIG, 2 illustrates an example of a user interface 200 for
+is verified. In various implementations, the verification the presentation of sponsored content. ‘lhe user interface 200
+system 140 and the content management system 122 in FIG. may be, for example, a hypertext markup language (ATMT )
+1 can be implemented as separate systems or imlegrated page pres ented to a user ina web browser executing on a
+ae mp P i on user device or presented in a custom application executing
+within a single system (c.g., the content management system ae ae :
+a _ on the user device. An example user device is an clectronic
+122 can be configured to incorporate some or all the func- 3° device that is under control of a user and that is capable of
+tions’ capabilities of the verification system 140). The veri- requesting and receiving resourees over the network.
+fication system 140 may be configured to communicate over The user interface 200 includes a search entry area 202.
+network 180 via a variety of architectures (e.g., client/server, In the scarch entry area 202 is a query input ficld 204. The
+peer-to-peer). query input field 204 allows a user of the user device to
+
+The verification system 140 can be communicably and 33 provide a query, in this example “best road trips from
+operatively coupled to the verified organization database Seattle” that is transmitted to a search engine. The query
+148 which may be configured to store a variety of informa- may be sent to the search engine using the Hyper-Text
+Gion relevant to the authenticity of an organization. Addi- ‘Transport Protocol CITTP).
+tionally, information received from user device 102, content The user interface 200 also includes a search button 206.
+management system 122 and image database 128, can be 40 Clicking on the search bulton 206 can cause the user
+stored in the verified organization database 148. The veri- interface 200 to transmit the contents of the query input field
+fication system 140 can be configured to query, in real-time, 204 to the search engine. .
+the verified organization database 148 for information and Beneath the search entry area 202 is a first sponsored
+store information in the verified organization database 148. content area 208. In the sponsored content area 208 is
+By having the verified organization database 148 be part of 45 sponsored. content that is relevant to the query in the query
+the verification system 140, the system architecture allows toput field 204. In this example. the first sponsored content
+for real-time datahase queries, which improves the user area 208 includes sponsored. content. The sponsored. content
+
+- a ee may include a link 210 (c.g., URL) that causes the user
+experience for search. or example, the verification system . ne ae ae am .
+
+—— . . a ee interface 200 to visit a web page identified by the content
+140 can store locally the list of verified. organizations m provider. The sponsored content may also include an image
+order lo reduce the query latency of retrieving the list of 50 379 ofthe organization and.a name 214 of the organization.
+verified organizations. es In some implementations, the content provider may pay a
+
+In some inplementations, the verification system 140 can fee to the content management system in response to the user
+be communicably and operatively coupled to the image interacting with the sponsored content, for example select-
+database 128 which may be configured to store a plurality of ing the link 210.
+images that have been crawled from webpages or uploaded 55 In some implementations, the user interface can include a
+to the server computing system 130 by a user. Additionally, plurality of sponsored content areas, such as the first spon-
+information received from user device 102, content man- sored content area 208 and the second sponsored content
+agement system 122 and verified organization database 148, area 216. Beneath the sponsored content areas 208, 216 can
+can be stored in the image database 128. The verification be the search results area 218. The search results area 218
+system 140 can be configured to query the image dalabase 60 includes a list of resources (e.g. web pages, images, videos,
+128 for information and. store information in the image or other content) that the search engine identifies as respon-
+database 128. Similar to the verified organization database sive to the query.
+
+148, by having some parts of the mage database 128 be part
+
+of the verification system 140, the system architecture Example Mcthods
+
+allows for real-time database queries, which improves the 65
+
+user experience for scarch. For example, the verification FIG. 3 depicts a flow chart diagram of an example method
+system 140 can store locally acceptable images that are to perform according, to example embodiments of the pres-
+
+US 12,197,525 B2
+13 14
+
+ent disclosure. Although FIG. 3 depicts steps performed in Al operation 310, when the organization is not verified,
+a particular order for purposes of illustration and discussion, the content serving system may not include the image and
+the methods of the present disclosure are not limited. to the name of the organization in the content (e.g., sponsored
+particularly illustrated order or arrangement. The various content, organic content) presented to a user device. The
+steps of method 300 can be omitted, rearranged, combined, 5 content serving system may not include the image and name
+and/or adapted in various ways without deviating from the of the organization to reduce the risk of abuse by bad actors.
+scope of the present disclosure. At operation 312, when the organization is verified, the
+
+At operation 302, the content serving system can access content serving system can include the image and name of
+(e.g., retrieve, call) a pluralily of images from a landing page the organization in the conlent (¢.g., sponsored content,
+of an organization. The content serving system can select an 0 organic content) presented to a user device. From a user
+image from the plurality of images. ‘he selected image may perspective, the content serving system provides quality
+be used as the image of the organization when content is controls to signal te Ube user tbat ihe sponsored content is
+presented in a search result. The landing page can be a from a verified organization and that there is a high likeli-
+webpage associated with a specific URL. For example, a |; hood that the content is credible.
+search result page can include a plurality of URIs associated FIG. 4 depicts a flow chart diagram of an example for
+with the search query. When a user clicks on one of the presenting a search result in response to a search query,
+URLs presented in the search result page, the content according to example embodiments of the present disclo-
+serving system can open the landing page of the organization sure. Although FIG. 4 depicts steps performed in a particular
+that is associated with the clicked URL. 20 order for purposes of illustration and discussion, the meth-
+
+Al operation 304, the content serving system can receive, ods of the present disclosure are not limited to the particu-
+from a user device of a user, a user input associated with the larly illustrated order or arrangement. The various steps of
+image. The user input can be in response to the plurality of method 400 can be omitted, rearranged, combined, and/or
+images being, presented. The user device can be of user (e.g., adapted in various ways without deviating from the scope of
+administrator) thal is associated with the organization. In 25 the present disclosure.
+some instances, the user device (¢.g., nal is associated with In some instances, method. 400 can include a computing
+the organization) can perform an action with the image that system having one or more machine-learned models. ‘lhe
+is retrieved at 310. For example, the user device can accept one or more machine-learned. models can be configured to
+the image. Alternatively, the user device can upload, to the determine whether an image is acceptable to be presented in
+content serving system, a new image associated with the 30 the search result.
+organization. In some instances. the content serving system The computing system can be user computing device 102,
+can obtain data (e.g., image, name) from the organization. server computing system 130, content management system
+
+At operation 306, the content serving system can perform 122, or verification system 140. The computing system can
+a quality assurance process to determine whether the image use one or more processors (e.g.. processor(s) 112, 132) to
+of the organization is acceptable. In some instances, the 35 perform method 400.
+content serving system can obtain a name of the organization At 402, the computing syslem (e.g., server computing
+from the landing page al 302 and perform a quality assur- system 130) can receive, [rom a user device, a request [or a
+ance process to determine whether the name of the organi- content item.
+zation is acceptable at 306. For example, the content serving At 404, the computing system can select, based on the
+system can verify whether the name and image are presented 40 request, a first content item from a plurality of content items.
+prominently on the landing page. The first content item can be associated with an organization
+
+At operation 308, the content serving system performs a image of an organization.
+verification process for the organization. The verification At 406, the computing system can process, using the one
+process can assist in determining whether the organization is or more machine-learned model (e.g., machine-learned
+allowed to serve (e.g., show) the image. The verification can 45 models 115, 142), the organization image to determine
+be performed when the data (e.g., image, name) is provided whether the organization image is acceptable to be presented
+by the organization, such as in operation 320. Additionally, in the search result. FIG. 6 and method 600 describe
+the delerminalion can be performed al runtime (ie., in techniques for determining whether the organization image
+real-time) when the content is presented in a search result. is acceptable to be presented in the search result.
+In some instances, the real-time verificalion process per- 50 Al 408, the computing system can transmit to the user
+formed at runtime can include verifying the organization by device (c.g., user device 102), the first content item and the
+whether the organization is verified and/or trusted by que- organization image to be presented in the search result based
+rying a database of the verified organization. on the determination that the organization image is accept-
+
+At operation 308, the content serving system can calculate able.
+a verification score for the organization as part of the 55 In some instances, the computing system can present, on
+verification process. In example, the organization can be a display of the user device, the first online content item with
+determined to be verified if the verification score exceeds a the organization image when the image is determined to be
+threshold value (¢.g., 100). The verification score can be acceptable.
+calculated based on the ranking of the organization in an In some instances, where the first content item is associ-
+organic search result. or example, the content serving 60 ated with an organization name of the organization, the
+syslem can receive a search query having a keyword and compuling syslem can process, using the one or more
+calculate a verification score for the organization based on machine-learned model, the organization name to determine
+the association of the organization with the keyword. Addi- whether the organization name is verified. Additionally, the
+tionally, the verification score can be derived from a scarch computing system can transmit, to the user device, the
+score that is determined by an organic search module. The 65 organization name to be presented in the search result based
+search score can be based on a ranking system of the organic on the determination that the organization name is veriticd.
+search module. FIG. 5 and method 500 describe techniques for determining
+
+US 12,197,525 B2
+15 16
+whether the organizalion name is verified so that the orga- content. The payment information can include credit card
+nization name can be presented in the search result. information, address (c.g., zip code), and other information
+In some instances, the compuling system can present, on lo process a payment.
+a display of the user device, the first online content item with At 504, the computing system can obtain a search ranking
+the organization image when the organization image is 5 score for the first content item. The search ranking score can
+determined to be acceptable, and the first online content item be calculated by the server compuling system. lor example,
+with the organization name when the organization name 1s the search ranking, score can rank a content item for a
+determined to be verified. As depicted in FIG. 2, the first specific keyword(s).
+content item can include a link, the Organization image can At 506, the computing system can access a list of verified
+be placed on the left side of the link, and the organization 10 ‘mati = from a verified oreanization database
+name can he placed above the link. The link can be a ‘Ailitigg vite he wy verity the er _—
+Uniform Resource Locator (URI.) of an address associated a Hona ¥ the sy stem can verify the organization name
+with a webpage of the organization. with the verified. organization database (e.g. verified orga-
+Allematively, the computing system can present, on a nization database 148). In some instances, the Server com-
+display of the user device, the first online content item with 15 puting syslem 130 can store the verified organizaulon data-
+the organization image when the organizalion image is base 148 locally in order to reduce the query time to obtain
+determined to be acceptable, but the first content item can be this information.
+without the organization name when the organization name AL 508, the computing system can process, using the one
+is not verified. or more machine-learned model, the organization name with
+In some instances, the organization name can be verified 20 the payment information, the search ranking score, and the
+in real-time by querying a database of veritied organizations list of verified organization names to determine whether the
+using the techniques described herein. For example, as organization is verified.
+depicted in FIG. 1, the database of verified organizations can In some instances, operations 502, 504, 506, and 508 can
+be a first-party database that is maintained by the computer be pre-determined prior to the presentation of the sponsored
+system. 25 content. A database (e.g., content database 123, memory
+In some instances, the computing system can identify a 134, verified organization database 148) can maintain a list
+plurality of content items based on the request. Additionally, of organizations that are veritied. ‘The organizations that are
+the compuling system can select, based on a search ranking verified, as depicted in F1G. 3, can have sponsored content
+score, the first content item from the plurality of content with an organization image and/or organization name. For
+items. 30 example, as described in operation 408, the system can
+In some instances, the computing system can present, on transmit, in real-time. to the user device the first content
+a display of the user device, the first online content item item, the organization image, and the organization name to
+without the organization image when the image is deter- be presented in the search result based on an offline (e.g.,
+mined not acceptable. occurring, prior to the system receiving the request for a
+In some instances, the computing system can present, on 35 content item at operation 402) determination that the orga-
+a display of the user device, the first online content item nization is verified. (e.g., eligible).
+without the organization name when the organization name In some instances, the organization can be verified. based
+is nol verified. on an amount of budget spend on sponsored content by the
+FIG. 5 depicts a flow chart diagram of an example for organization (e.g., spend being greater than zero in order to
+verifying an organization name, according to example 40 be verified), the age of the account associated with the
+embodiments of the present disclosure. Although FIG. 5 organization (¢.g.. the account should be at least 90 days
+depicts steps performed in a particular order for purposes of old), the organization not being in a sensitive industry, or the
+illustration and discussion, the methods of the present dis- organization not having prior policy violations (c.g., calcu-
+closure are not limited to the particularly illustrated order or lated based on a score).
+arrangement. The various steps of method 500 can be 45 — FIG. 6 depicts a flow chart diagram of an example for
+omitted, rearranged, combined, and/or adapted in various determining, whether an image is acceptable to be presented
+ways without deviating from the scope of the present in a search result, according to example embodiments of the
+disclosure. present disclosure. Allhough FIG. 6 depicts steps performed
+In some insiances, method 500 can include a computing, in a particular order for purposes of illustration and discus-
+system having one or more muachine-learmed models. ‘The 50 sion, the methods of the present disclosure are not limited to
+one or more machine-learned models can be configured to the particularly illustrated order or arrangement. The various
+determine whether an organization is verified. ‘The comput- steps of method 600 can be omitted, rearranged, combined,
+ing system can be user computing device 102. server com- and/or adapted in various ways without deviating from the
+puting system 130, content management system 122, or scope of the present disclosure.
+verification system 140. The computing system can use one 55 In some instances, method 600 can include a computing
+or more processors (¢.g., processor(s) 112, 132) to perform system having one or more machine-learned models. The
+method 500. one or more machine-learned models can be configured to
+According to some embodiments verifying an organiza- determine whether an organization image is acceptable to be
+tion can also include determining whether the organization presented in a search result. The computing system can be
+is eligible [or having sponsored content with an organization 60 user compuling device 102, server computing system 130,
+image and/or organization name. conlent management system 122, or verification system 140.
+At 502, the computing system (e.g., server computing ‘The computing system can use one or more processors (e.£.,
+system 130) can obtain payment information associated with processor(s) 112, 132) to perform method 600.
+the organization. In some instances, the payment informa- At 602, the computing system (¢.g., server computing
+tion can be obtained from the organization. For example, the 65 system 130) can extract (¢.g., obtain), in response to the
+first content item can be a sponsored content item, where the request, the organization image from a webpage of the
+organization submits payment information for the sponsored organization that is associated with the first content item.
+
+US 12,197,525 B2
+17 18
+
+At 604, the computing system can receive, from a device a known image (¢.g., image being labeled as a registered
+(e.g., user device 102) associated with the organization, the brand/logo of a reputable organization) from the image
+organization image. In some instances, the organization database. The system can determine that the organization
+image can be uploaded to the system by the device associ- image is not acceptable when the similarity score between
+ated with the organization. For example. the organization 5 the organization image and the known image is above the
+image can be uploaded concurrently with the payment similarity threshold value.
+information for the sponsored content. Alternatively, instead In another example, the computer system can compare the
+of receiving the organization image, the system receives organization image received at 604 or extracted at 602 with
+from the device associated with the organization a contir- an inappropriate image (e.g., image being labeled as inap-
+mation that the organization image obtained at 602 is 10 propriate) from the image database. The system can deter-
+correct. mine that the organization image is nol acceptable when the
+
+At 606, the computing system can store the orpanization similarity score between the organization image and the
+image extracted al 602 and/or received at 604 in an image inappropriate image is above the similarity threshold value.
+database. Tor example, the organization image can be stored In yet another example, the computer system can select
+in the image database 128 of FIG. 1. In some instances, the 15 and access a plurality (e.g., 10, 100) of similar images from
+computing system can later access this organization image the image database. The system can compare cach image
+stored in the image database for making a determination at from the plurality of similar images with the organization
+a future time about another image. image to calculate a similarity score. The system can deter-
+
+At 608, the computing system can access, from the image mine that the organization image is appropriate when the
+database (e.g., image database 128), a plurality of similar 20 similarity score for each of the comparisons is below the
+images based on the organization image. In some instances, similarity threshold value.
+the plurality of similar images being accessed from the Tn some instances, some or all of the operations in method
+image database can he selected and/or determined by the one 600 can be performed offline. For example, the determina-
+or more machine-learned model. The images that are tion that the organization image is acceptable is performed
+selected. [rom the image database can be based on a simi- 25 oflline by the one or more machine-leamed model before
+larity score with the organization image. The machine- receiving the request from the user device. Additionally, the
+learned model can select an image from the image database images stored in the image database (e.g., 128) can be
+when the similarity score with the organizalion image is pre-labeled as either acceptable or not acceptable.
+above a similarity threshold. For cxample, when the orga-
+nization image is an image of an aircraft, the plurality of 30 Additional Disclosure
+similar images accessed at 608 can also be images of an
+aircraft. In some instances, the images stored in the image The technology discussed herein makes reference to serv-
+database 128 can be labeled by the machine-learned model. ers, databases, software applications, and other computer-
+The machine-learned model can process each image stored based systems, as well as actions taken, and information sent
+in the image database to label (e.g., classify) the image. The 35 to and from such systems. The inherent flexibility of com-
+labels can include a description of the image (e.g., aircraft), puter-based systems allows for a great variely of possible
+a Lype of image (e.g., portrail), whether the image is a known configuralions, combinations, and divisions of tasks and
+brand and/or logo, whether the image is deemed to be functionality between and among components. lor instance,
+acceptable or not acceptable. whether the image is deemed processes discussed herein can be implemented using a
+to be inappropriate, and so on. Inappropriate images can 40 single device or component or multiple devices or compo-
+include information or images that is not appropriate for nents working in combination. Databases and applications
+children, adult material, offensive material, inaccurate infor- can be implemented on a single system or distributed across
+mation, information related to dangerous behavior, unlawful multiple systems. Distributed components can operate
+information, material containing or promoting, violence, sequentially or in parallel.
+gruesome material, offensive language, and so on. Inappro- 45 = While this specification contains many specific imple-
+priate images can be also labeled as not acceptable images mentation details, these should not be construed as limita-
+to be presented in a search result. tions on the scope of any inventions or of what may be
+
+At 610, the compuling system can process, using the one claimed, bul rather as descriptions of features specific to
+or more machine-learned model, the organization image particular implementations of particular inventions. Certain
+with the plurality of similar images to determine whether the so features thal are described in this specification in the context
+organization image is acceptable to be presented in the of separate implementations can also be carried out in
+search result. For example. if the organization image is combination or in a single implementation. Conversely,
+similar to a known image (c.g., known logo and/or brand) various features that are described in the context of a single
+associated with a different organization (c.g., airline com- implementation can also be carried out in multiple imple-
+pany), then the system can determine that the organization 55 mentations, separately, or in any suitable sub-combination.
+image is not acceptable to be presented in the search result Moreover, although features may be described above as
+because it will cause confusion. acting in certain combinations and even initially claimed as
+
+In some instances, the machine-learned. model can pro- such, one or more features from a claimed combination can,
+cess the organization image with an image from the plurality in some cases, be excised from the combination, and the
+of similar images to generale a similarily score. ‘The system 60 claimed combination may be directed to a sub-combination
+can determine that the organization image is acceptable or variation of a sub-combination. Additionally, features
+when the similarity score is below a predetermined thresh- described with respect to particular headings may be utilized
+old. Alternatively, the system can determine that the orga- with respect to and/or in combination with illustrative imple-
+nization image is not acceptable when the similarity score is mentations described under other headings; headings. where
+above a predetermined threshold. 65 provided, are included solely for the purpose of readability,
+
+For example, the computer system can compare the and should not be construed as limiting any features pro-
+organization image received at 604 or extracted at 602 with vided with respect to such headings.
+
+US 12,197,525 B2
+Sunilarly, while operations are depicted in the drawings in 2. The computing system of claim 1, ihe operations
+a particular order, this should not be understood as requiring further comprising:
+that such operations be perlormed in the particular order presenting, on a display of the user device, the first
+shown or in sequential order, or that all illustrated operations content on with fhe i are image when the
+be performed, to achieve desirable results. In certain cir- 5 image 1s delermmed to be acceptable. . .
+ss . 3. The computing system of claim 1, wherein the first
+cumstances, multitasking and parallel processing may be 5 A - r ae -
+dvant. M th : f : Ct content item is associated with an organization name of the
+advantageous. Moreover, the separation of various system organization, the operations further comprising:
+components in the implementations described above should processing, using the one or more machine-learned
+not be understood as requiring such separation in all imple- o model, the organization name to determine whether the
+mentations, and it should he understood that the described organization name is verified; and
+program components and systems can generally be inte- transmitting, to the user device, the organization name to
+grated together in a single software product or packaged into be presented in the search result based on the determi-
+multiple software products embodied on tangible media. nation that the organization name is verified. .
+‘Thus, particular implementations of the subject matter |. 4. The computing system of claim 3, the operations
+: . : : saps 15 further comprising:
+have been described. Other implementations are within the . ee. . . .
+
+f the followi Jai I tt ti presenting. on a display of the user device, the first
+scope A he “I Owing, he pa mM ed 4 an ne ac ver content item with the organization image when the
+reciled in the claims can be performed in a dillerent order organization image is determined to be acceptable, and
+and still achieve desirable results. In addition, the processes the first content item with the organization name when
+depicted in the accompanying figures do not necessarily 20 the organization name is determined to be verified.
+require the particular order shown, or sequential order, to 5. The compuling system of claim 4, wherein the first
+achieve desirable results. Tn certain implementations, mul- content item includes a link, wherein the organization image
+titasking and parallel processing may be advantageous. is placed on a left side of the link, and the organization name
+
+While the present subject matter has been described in 1s Placed above the link. I elaim 5. wherein the Ink j
+detail with respect to various specific example embodiments 25 » The computing system of claim 5, wherein the link 1s
+: : . a Uniform Resource T.ocator of an address associated with
+thereol, each example is provided by way of explanation, ae
+limitati f the disclosure. Those skilled in the art a web page of the organization.
+hot imitation oT the disclosure, | hose skilled 1n the art, upon 7. The system of claim 3, the operations further compris-
+attaining an understanding of the foregoing, can readily ing:
+produce alterations to, variations of) and equivalents to such 30 presenting, on a display of the user device, the first
+embodiments. Accordingly, the subject disclosure does not content item with the organization image when the
+preclude inclusion of such modifications, variations and/or organization image is delermined to be acceptable, and
+additions to the present subject matter as would be readily the first content item without the organization name
+apparent to one of ordinary skill in the art. For instance, when the organization name 1s nol verified. .
+features illustrated or described as part of one embodiment 35 8. The comp uting sy stem ot claim 3, where the organl-
+can be used with another embodiment to yield a still further zation name is verilie din real-time by querying a database
+embodiment. Thus, it is intended that the resent disclosure of verified organizations.
+c 7 8, TPIS os P es sels) 9. The computing system of claim 8, wherein the database
+covers such alterations, variations, and equivalents. of verified organization is a first-party database that is
+maintained by the computer system.
+What is claimed is: 40 10. Lhe computing system of claim 3, wherein the first
+iS
+1. A computing system for presenting a search result, the content item is a sponsored content item, the operations
+computing, system comprising: further comprising:
+one or more processors; and obtaining payment information from the organization.
+one or more non-transitory computer-readable media that 1. The computing, system of claim 3, the operations
+collectively store instructions that, when executed by 4 further comprising: . .
+the one or more processors, cause the compuling sys- accessing a list of verified organization names from a
+tem to perform operations, the operations comprising: ver ified Organization database: and .
+receiving, from a user device, a request for a content processing, Using the one or more mac hine-leamed
+item: model, the organization name with the list of verified
+2 . 50 organizalion names to determine whether the organi-
+selecting, based on the request, a first content item from ee te
+. . ; . ~ zation is verified.
+
+a plurality of content items, wherein the first content Th . . P clai hi :
+
+item is associated wilh an oreanivalion imave of an 12. ‘the computing system of claim 1, the operations
+
+vem 1s asso * “ Si 2 . further comprising:
+
+organization; . extracting, in response to the request, the organization
+
+processing, using one or more machine-learned model, 55 image from a webpage of the organization that is
+the organization image to determine whether the associated with the first content item:
+
+organization image is acceptable to be presented in receiving, from a device associated with the organization,
+
+the search result; a confirmation of the organization image; and
+
+processing, using the one or more machine-learned storing the organization image in an image database.
+model, payment information associated with the 69 13. ‘The computing system of claim 1, the operations
+organization to determine whether the organization further comprising:
+
+is verified; and accessing, from an image database, a plurality of similar
+
+transmilling, to the user device, the first content item images based on the organization image; and
+
+and the organization image to be presented in the processing. using the one or more machine-lcarned
+
+search result based on the determination that the 65 model, the organization image with the plurality of
+
+organization image is acceptable and the organiza- similar images to determine whether the organization
+tion is verified. image is acceptable to be presented in the search result.
+
+US 12,197,525 B2
+
+14. The computing system of claim 13, wherein the 18. The method of claim 17, further comprising:
+determination that the organization image is acceptable is presenting. on a display of the user device, the first
+performed. oflline by the one or more machine-learned content item with the organization image when the
+model before receiving the request from the user device, and 19 The, 18 Gowen ined ope acceptable. . ,
+wherein images stored in the image database are labeled as 3 - The method of claim 17, wherem the {irst content tem
+either acceptable or nol acceptable is associated with an organization name of the organization,
+
+15 TI <P ti . in . f laim 13, wherein th the method further comprising:
+
+» the computing, system oF claim 13, wherein the processing, using the one or more machine-learned
+plurality of similar images being accessed from the image model, the organization name to determine whether the
+database are determined. by the one or more machine-learned o organization name is verified; and
+model. transmitting, to the user device, the organization name to
+
+16. lhe computing system of claim 1, the operations be presented in the search result based on the determi-
+further comprising: nation that the organization name is verified. .
+
+presenting, on a display of the user device, the first 20. One or more non-transitory computer-readable media
+content item without the organization image when the 3 that store instructions that, when executed by one or more
+
+5 :
+organization image is determined not acceptable. erations. the on the one or more processors to perfonn
+
+17. Acomputer-implemented method to present a search operations, the operalons comprising: .
+result, the method. comprising: receiving, from a user device, a request for a content item;
+receiving, from a user device, a request for a content item; selecting, based on the request, a first content item from
+selecting, based on the request, a first content item Irom 4, plurality of content items, wherein the first content item
+plurality of content items, wherein the first content item ~ is associated with an organization image of an organi-
+
+is associated with an organization image of an organi- zallon, . .
+
+zation: processing, using one er more machine-learned. model,
+
+processing, using one or more machine-learned model, the organization image lo determine whether the Orga
+the organization image to determine whether the orga- ,, nization image is acceptable to be presented in the
+25 :
+nization image is acceptable to be presented in the search result; .
+search result: processing. using the one or more machine-learned
+processing, using the one or more machine-learned mod pe Ane information associated A ith the orga
+model, payment information associated with the orga- hed. ‘ond 6 determine whether the organization Is verl-
+
+nization lo determine whether the organization is veri- 30 ed, any . .
+
+=a transmitting, to the user device, the first content item and
+
+fied; and Bs j
+
+transmitting, to the user device, the first content item and the organization image lo be presented ima search result
+the organization image to be presented in the search based on the determination that the organization image
+a a a : rae ws
+result based on the determination that the organization is uccepluble and the organization is verified.
+image is acceptable and the organization is verified. ee ek oF

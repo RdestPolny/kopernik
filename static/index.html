@@ -205,6 +205,79 @@ button{font:inherit;cursor:pointer}
 
 /* --- CHART --- */
 .chart-wrap{width:320px;height:320px;margin:0;max-width:100%}
+
+/* --- L1/L2/L3 DASHBOARD --- */
+.audit-shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;align-items:start;margin-top:48px}
+@media(max-width:900px){.audit-shell{grid-template-columns:1fr;margin-top:32px}}
+.url-rail{position:sticky;top:96px;border:1px solid var(--rule);background:var(--paper-2);padding:16px;border-radius:6px}
+@media(max-width:900px){.url-rail{position:static}}
+.rail-title{font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:10px}
+.url-switch{display:flex;flex-direction:column;gap:6px}
+.url-option{width:100%;display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:8px;border:1px solid transparent;background:transparent;text-align:left;padding:8px 9px;border-radius:4px;color:var(--ink);font-size:0.9rem}
+.url-option:hover{background:var(--paper);border-color:var(--rule)}
+.url-option.active{background:var(--paper);border-color:var(--gold)}
+.radio-dot{width:10px;height:10px;border:1.5px solid var(--muted);border-radius:50%;display:inline-block}
+.url-option.active .radio-dot{border-color:var(--gold);background:var(--gold)}
+.url-label{font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.url-meta{grid-column:2/4;color:var(--muted);font-family:var(--mono);font-size:0.66rem;line-height:1.35;word-break:break-all}
+.url-score{font-family:var(--mono);font-size:0.72rem;color:var(--ink-2)}
+.audit-main{min-width:0}
+.dashboard-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:32px;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:30px;margin-bottom:26px}
+@media(max-width:760px){.dashboard-grid{grid-template-columns:1fr}}
+.overall-score{border:1px solid var(--ink);border-radius:6px;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--paper)}
+.overall-score .value{font-size:5rem;line-height:0.9;font-weight:700;letter-spacing:-0.04em}
+.overall-score .denom{font-family:var(--mono);font-size:0.82rem;color:var(--muted);margin-top:8px}
+.overall-score .label{font-weight:600;margin-top:12px;text-align:center;padding:0 12px}
+.group-bars{display:flex;flex-direction:column;gap:8px}
+.group-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(120px,240px) 44px;gap:12px;align-items:center;border:1px solid transparent;background:transparent;text-align:left;padding:8px 10px;border-radius:4px}
+.group-row:hover{border-color:var(--rule);background:var(--paper-2)}
+.group-row.active{border-color:var(--gold);background:#FFFBEA}
+.group-label{font-weight:600;color:var(--ink)}
+.bar-track{height:10px;background:var(--rule);border-radius:999px;overflow:hidden}
+.bar-fill{height:100%;background:var(--gold);border-radius:999px;min-width:2px}
+.group-score{font-family:var(--mono);font-size:0.78rem;text-align:right;color:var(--ink-2)}
+.top-actions{border:1px solid var(--rule);border-radius:6px;background:var(--paper-2);padding:18px 20px;margin-bottom:28px}
+.top-actions h3,.factor-list h3,.factor-detail h3{font-size:1.05rem;margin-bottom:12px;letter-spacing:0}
+.action-list{display:flex;flex-direction:column;gap:8px}
+.action-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--rule)}
+.action-row:first-child{border-top:none;padding-top:0}
+.status-mark{font-family:var(--mono);font-weight:700}
+.status-mark.missing{color:var(--red)}
+.status-mark.partial{color:var(--amber)}
+.status-mark.ok{color:var(--green)}
+.action-title{font-weight:600;line-height:1.35}
+.action-meta,.factor-meta-line{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-top:3px}
+.small-btn{border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap}
+.small-btn:hover{border-color:var(--gold);color:var(--ink)}
+.factor-list{margin-top:18px}
+.factor-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;align-items:start;border-top:1px solid var(--rule);padding:16px 0}
+.factor-row:first-of-type{border-top:none}
+.factor-name{font-weight:700;line-height:1.3}
+.factor-note{color:var(--ink-2);font-size:0.92rem;line-height:1.5;margin-top:5px}
+.chip-line{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.ui-chip{font-family:var(--mono);font-size:0.64rem;text-transform:uppercase;letter-spacing:0.08em;border:1px solid var(--rule);background:var(--paper-2);padding:2px 7px;border-radius:3px;color:var(--ink-2)}
+.ui-chip.patent{background:#EEE7FF;border-color:#C5B5FF}
+.ui-chip.schema{background:#E6F9EC;border-color:#9ED5B3}
+.dot-meter{display:inline-flex;gap:2px;vertical-align:middle}
+.dot-meter span{width:7px;height:7px;border-radius:50%;border:1px solid currentColor;display:inline-block}
+.dot-meter span.filled{background:currentColor}
+.ok-collapse{border-top:1px solid var(--rule);padding-top:14px;margin-top:8px}
+.ok-collapse summary{cursor:pointer;font-weight:700;color:var(--ink);font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em}
+.ok-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
+.ok-pill{border:1px solid var(--rule);border-radius:4px;padding:8px 10px;background:var(--paper);font-size:0.86rem}
+.factor-detail{border-top:2px solid var(--ink);padding-top:20px;margin-top:20px}
+.detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
+.detail-title h2{margin-bottom:6px}
+.detail-sections{display:grid;grid-template-columns:1fr;gap:16px}
+.detail-section{border-top:1px solid var(--rule);padding-top:14px}
+.detail-section h4{font-size:0.82rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:6px}
+.observation-list{display:flex;flex-direction:column;gap:10px}
+.observation-item{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;background:var(--paper)}
+.observation-url{font-family:var(--mono);font-size:0.68rem;color:var(--muted);word-break:break-all;margin-bottom:4px}
+.code-example{white-space:pre-wrap;background:#111;color:#f4f4f4;border-radius:4px;padding:14px;overflow:auto;font-family:var(--mono);font-size:0.78rem;line-height:1.5}
+.appendix{border-top:1px solid var(--rule);padding-top:18px;margin-top:34px}
+.appendix summary{cursor:pointer;font-weight:700;font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
+.appendix-body{margin-top:20px;display:grid;gap:28px}
 </style>
 </head>
 <body>
@@ -764,6 +837,460 @@ function renderPagesList(pages) {
       </div>
     </div>
   `;
+}
+
+const UI_GROUP_ORDER_CLIENT = ['technical', 'onpage', 'schema', 'eeat', 'patents', 'ai_aeo'];
+const UI_GROUP_LABELS_CLIENT = {
+  technical: 'Techniczne SEO',
+  onpage: 'On-page',
+  schema: 'Schema',
+  eeat: 'E-E-A-T',
+  patents: 'Patenty Google',
+  ai_aeo: 'AI / AEO'
+};
+
+let currentScope = 'all';
+let currentGroupKey = 'technical';
+let currentDetailUid = null;
+
+function groupOrder(r) {
+  return r?.meta?.group_order || UI_GROUP_ORDER_CLIENT;
+}
+
+function groupLabel(r, group) {
+  return r?.meta?.group_labels?.[group] || UI_GROUP_LABELS_CLIENT[group] || group;
+}
+
+function scoreStatusFromValue(score) {
+  if (score >= 1.75) return 'ok';
+  if (score >= 0.75) return 'partial';
+  return 'missing';
+}
+
+function statusSymbol(status) {
+  if (status === 'ok') return '✓';
+  if (status === 'partial') return '!';
+  return '✕';
+}
+
+function statusLabel(status) {
+  return {ok: 'OK', partial: 'Częściowo', missing: 'Brak'}[status] || status;
+}
+
+function dotMeter(value) {
+  const v = Math.max(1, Math.min(3, Number(value || 1)));
+  return `<span class="dot-meter">${[1,2,3].map(i => `<span class="${i <= v ? 'filled' : ''}"></span>`).join('')}</span>`;
+}
+
+function scopedObservations(factor, scope) {
+  const observations = factor?.observations || [];
+  if (scope === 'all') return observations;
+  return observations.filter(obs => obs.url === scope || obs.scope === 'domain');
+}
+
+function computeScopeState(r, scope) {
+  const totals = {};
+  groupOrder(r).forEach(group => { totals[group] = {val: 0, max: 0, count: 0}; });
+
+  (r.factor_index || []).forEach(factor => {
+    const group = factor.group;
+    if (!totals[group]) return;
+    const obs = scopedObservations(factor, scope);
+    if (!obs.length) return;
+    const impact = Number(factor.impact || 2);
+    obs.forEach(item => {
+      totals[group].val += (Number(item.score || 0) / 2) * impact;
+      totals[group].max += impact;
+      totals[group].count += 1;
+    });
+  });
+
+  const groups = groupOrder(r).map(group => {
+    const t = totals[group] || {val: 0, max: 0, count: 0};
+    const score = t.max ? Math.round((t.val / t.max) * 100) : null;
+    return {id: group, label: groupLabel(r, group), score, count: t.count};
+  });
+  const visible = groups.filter(g => g.score !== null).map(g => g.score);
+  const overall = visible.length ? Math.round(visible.reduce((a, b) => a + b, 0) / visible.length) : 0;
+  return {overall, groups};
+}
+
+function scopedFactorView(factor, scope) {
+  const obs = scopedObservations(factor, scope);
+  if (!obs.length) return null;
+  const scores = obs.map(o => Number(o.score || 0));
+  const worst = Math.min(...scores);
+  const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
+  const status = scoreStatusFromValue(worst);
+  const affected = obs.filter(o => Number(o.score || 0) < 2);
+  const priority = ((2 - worst) * Number(factor.impact || 2) / Math.max(Number(factor.effort || 1), 1)) + affected.length * 0.15;
+  return {factor, observations: obs, affected, worst, avg, status, priority};
+}
+
+function getGroupFactorViews(r, group, scope) {
+  return (r.factor_index || [])
+    .filter(factor => factor.group === group)
+    .map(factor => scopedFactorView(factor, scope))
+    .filter(Boolean)
+    .sort((a, b) => {
+      if (a.status === 'ok' && b.status !== 'ok') return 1;
+      if (a.status !== 'ok' && b.status === 'ok') return -1;
+      if (b.priority !== a.priority) return b.priority - a.priority;
+      if (b.affected.length !== a.affected.length) return b.affected.length - a.affected.length;
+      return a.factor.label.localeCompare(b.factor.label, 'pl');
+    });
+}
+
+function getTopActionsForScope(r, scope, limit = 5) {
+  return (r.factor_index || [])
+    .map(factor => scopedFactorView(factor, scope))
+    .filter(view => view && view.affected.length)
+    .sort((a, b) => {
+      if (b.priority !== a.priority) return b.priority - a.priority;
+      if (b.affected.length !== a.affected.length) return b.affected.length - a.affected.length;
+      return a.factor.label.localeCompare(b.factor.label, 'pl');
+    })
+    .slice(0, limit);
+}
+
+function pageTypeChips(view) {
+  const factor = view.factor;
+  const types = Array.from(new Set(view.observations.map(o => o.page_type_label || o.page_type).filter(Boolean))).slice(0, 4);
+  const chips = types.map(t => `<span class="ui-chip">${esc(t)}</span>`);
+  if (factor.group === 'patents') chips.unshift('<span class="ui-chip patent">patent</span>');
+  if (factor.group === 'schema') chips.unshift('<span class="ui-chip schema">schema</span>');
+  return chips.join('');
+}
+
+function firstUsefulNote(view) {
+  const note = view.affected.find(o => o.note)?.note || view.observations.find(o => o.note)?.note || '';
+  return note || (view.factor.is_domain ? 'Wynik dotyczy konfiguracji całej domeny.' : 'Brak dodatkowej obserwacji tekstowej.');
+}
+
+function renderResult(r) {
+  currentResult = r;
+  currentMode = 'pro';
+  currentScope = 'all';
+  currentDetailUid = null;
+
+  const initialState = computeScopeState(r, currentScope);
+  const weakestGroup = initialState.groups
+    .filter(g => g.score !== null)
+    .sort((a, b) => a.score - b.score)[0];
+  currentGroupKey = weakestGroup?.id || groupOrder(r)[0] || 'technical';
+
+  document.getElementById('modeToggleNav').classList.remove('hidden');
+  document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
+
+  const overall = initialState.overall;
+  document.getElementById('heroScoreContainer').innerHTML = `
+    <div style="align-self:center;width:100%;max-width:420px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:32px;background:rgba(0,0,0,0.12);text-align:left;">
+      <div style="font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--gold-2);margin-bottom:10px">Score ogólny</div>
+      <div style="display:flex;align-items:baseline;color:#fff">
+        <span style="font-size:5rem;line-height:0.9;font-weight:700;letter-spacing:-0.04em">${overall}</span>
+        <span style="font-family:var(--mono);font-size:1.1rem;color:rgba(255,255,255,0.55);margin-left:6px">/100</span>
+      </div>
+      <div style="margin-top:14px;color:#D8D8D5">${esc(scoreLabel(overall))}</div>
+    </div>
+  `;
+  document.getElementById('heroScoreContainer').style.display = 'flex';
+  document.getElementById('auditForm').style.display = 'none';
+  document.getElementById('ctaScoreWrapper').innerHTML = `
+    <div style="display:flex; align-items:baseline; color:${overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b'}; font-family:var(--sans); letter-spacing:-0.04em;">
+      <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
+      <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
+    </div>`;
+  document.getElementById('ctaContainer').style.display = 'block';
+
+  refreshAuditView();
+  results.classList.remove('hidden');
+  results.onclick = handleAuditClick;
+}
+
+function refreshAuditView() {
+  if (!currentResult) return;
+  results.innerHTML = renderAuditShell(currentResult);
+}
+
+function renderAuditShell(r) {
+  return `
+    <div class="audit-shell" id="auditRoot">
+      <aside class="url-rail">
+        <div class="rail-title">Switch URL</div>
+        <div class="url-switch">${renderUrlSwitch(r)}</div>
+      </aside>
+      <div class="audit-main">
+        ${renderDashboardPanel(r)}
+        ${renderTopActionsPanel(r)}
+        <div id="levelPane">${currentDetailUid ? renderFactorDetail(r, currentDetailUid, currentScope) : renderGroupList(r, currentGroupKey, currentScope)}</div>
+        ${renderAppendix(r)}
+      </div>
+    </div>
+  `;
+}
+
+function renderUrlSwitch(r) {
+  const options = r.dashboard?.url_options || [{id:'all',label:'Wszystkie',count:(r.page_audits || []).length,score:computeScopeState(r,'all').overall}].concat((r.page_audits || []).map(pa => ({
+    id: pa.url,
+    label: pa.page_type_label || pa.page_type,
+    url: pa.url,
+    title: pa.title,
+    page_type_label: pa.page_type_label,
+    score: computeScopeState(r, pa.url).overall
+  })));
+  return options.map(opt => {
+    const scope = opt.id === 'all' ? 'all' : opt.url || opt.id;
+    const meta = opt.id === 'all'
+      ? `${opt.count || 0} URL · średnia ważona`
+      : `${opt.page_type_label || opt.label || ''}${opt.url ? ' · ' + opt.url : ''}`;
+    return `
+      <button class="url-option ${currentScope === scope ? 'active' : ''}" data-scope="${esc(scope)}">
+        <span class="radio-dot"></span>
+        <span class="url-label">${esc(opt.label || 'URL')}</span>
+        <span class="url-score">${opt.score ?? computeScopeState(r, scope).overall}</span>
+        <span class="url-meta">${esc(meta)}</span>
+      </button>
+    `;
+  }).join('');
+}
+
+function renderDashboardPanel(r) {
+  const state = computeScopeState(r, currentScope);
+  const score = state.overall;
+  return `
+    <section class="dashboard-grid">
+      <div class="overall-score">
+        <div class="value">${score}</div>
+        <div class="denom">/100</div>
+        <div class="label">${esc(scoreLabel(score))}</div>
+      </div>
+      <div class="group-bars">
+        ${state.groups.map(group => {
+          const scoreTxt = group.score === null ? '—' : group.score;
+          const width = group.score === null ? 0 : Math.max(group.score, 2);
+          return `
+            <button class="group-row ${currentGroupKey === group.id ? 'active' : ''}" data-group="${esc(group.id)}">
+              <span class="group-label">${esc(group.label)}</span>
+              <span class="bar-track"><span class="bar-fill" style="width:${width}%"></span></span>
+              <span class="group-score">${scoreTxt}</span>
+            </button>
+          `;
+        }).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderTopActionsPanel(r) {
+  const actions = getTopActionsForScope(r, currentScope, 5);
+  if (!actions.length) {
+    return `
+      <section class="top-actions">
+        <h3>5 najpilniejszych akcji</h3>
+        <div style="color:var(--muted)">Brak krytycznych akcji w aktualnym zakresie.</div>
+      </section>`;
+  }
+  return `
+    <section class="top-actions">
+      <h3>5 najpilniejszych akcji</h3>
+      <div class="action-list">
+        ${actions.map(view => {
+          const factor = view.factor;
+          const note = firstUsefulNote(view);
+          return `
+            <div class="action-row">
+              <span class="status-mark ${view.status}">${statusSymbol(view.status)}</span>
+              <div>
+                <div class="action-title">${esc(factor.label)}</div>
+                <div class="factor-note">${esc(note)}</div>
+                <div class="action-meta">${esc(factor.group_label)} · ${view.affected.length} problem${view.affected.length === 1 ? '' : 'y'} · Impact ${factor.impact}/3 · Effort ${factor.effort}/3</div>
+              </div>
+              <button class="small-btn" data-detail="${esc(factor.uid)}" data-group-jump="${esc(factor.group)}">Pokaż</button>
+            </div>
+          `;
+        }).join('')}
+      </div>
+    </section>
+  `;
+}
+
+function renderGroupList(r, group, scope) {
+  const views = getGroupFactorViews(r, group, scope);
+  const active = views.filter(view => view.status !== 'ok');
+  const ok = views.filter(view => view.status === 'ok');
+  const groupName = groupLabel(r, group);
+  if (!views.length) {
+    return `
+      <section class="factor-list">
+        <h3>${esc(groupName)}</h3>
+        <p style="color:var(--muted);font-style:italic">Brak aplikowalnych czynników dla wybranego URL-a.</p>
+      </section>
+    `;
+  }
+  return `
+    <section class="factor-list">
+      <h3>${esc(groupName)}</h3>
+      ${active.length ? active.map(renderFactorRow).join('') : '<p style="color:var(--muted);font-style:italic">Brak problemów w tej grupie.</p>'}
+      ${ok.length ? `
+        <details class="ok-collapse">
+          <summary>${ok.length} czynników OK</summary>
+          <div class="ok-grid">
+            ${ok.map(view => `<div class="ok-pill"><span class="status-mark ok">✓</span> ${esc(view.factor.label)}</div>`).join('')}
+          </div>
+        </details>
+      ` : ''}
+    </section>
+  `;
+}
+
+function renderFactorRow(view) {
+  const factor = view.factor;
+  const note = firstUsefulNote(view);
+  const affectedText = view.affected.length
+    ? `${view.affected.length} URL z problemem`
+    : `${view.observations.length} URL OK`;
+  return `
+    <div class="factor-row">
+      <span class="status-mark ${view.status}">${statusSymbol(view.status)}</span>
+      <div>
+        <div class="factor-name">${esc(factor.label)}</div>
+        <div class="factor-note">${esc(note)}</div>
+        <div class="chip-line">${pageTypeChips(view)}</div>
+        <div class="factor-meta-line">
+          Impact: ${dotMeter(factor.impact)} &nbsp; Effort: ${dotMeter(factor.effort)} &nbsp; ${esc(affectedText)}
+        </div>
+      </div>
+      <button class="small-btn" data-detail="${esc(factor.uid)}">Pokaż</button>
+    </div>
+  `;
+}
+
+function renderFactorDetail(r, uid, scope) {
+  const factor = (r.factor_index || []).find(item => item.uid === uid);
+  if (!factor) {
+    currentDetailUid = null;
+    return renderGroupList(r, currentGroupKey, scope);
+  }
+  const view = scopedFactorView(factor, scope);
+  if (!view) {
+    currentDetailUid = null;
+    return renderGroupList(r, currentGroupKey, scope);
+  }
+  const detail = factor.detail || {};
+  const clientExp = r.client_mode?.client_factor_explanations?.[factor.id] || '';
+  const patentLinks = (factor.patent_ref || '').split(',').map(s => s.trim()).filter(Boolean).map(id => {
+    return `<a href="https://patents.google.com/patent/${encodeURIComponent(id)}/en" target="_blank" rel="noopener">${esc(id)}</a>`;
+  }).join(', ');
+  return `
+    <section class="factor-detail">
+      <div class="detail-head">
+        <div class="detail-title">
+          <button class="small-btn" id="backToList" style="margin-bottom:14px">← Lista</button>
+          <h2>${esc(factor.label)}</h2>
+          <div class="chip-line">${pageTypeChips(view)}</div>
+          <div class="factor-meta-line">Status: ${statusLabel(view.status)} · Impact ${factor.impact}/3 · Effort ${factor.effort}/3</div>
+        </div>
+      </div>
+      <div class="detail-sections">
+        <div class="detail-section">
+          <h4>Co to</h4>
+          <p>${esc(detail.what || 'Brak opisu czynnika.')}</p>
+        </div>
+        <div class="detail-section">
+          <h4>Dlaczego ważne</h4>
+          <p>${esc(currentMode === 'client' && clientExp ? clientExp : (detail.why || 'Ten czynnik wpływa na jakość, czytelność lub dostępność audytowanej strony.'))}</p>
+          ${factor.group === 'patents' ? `<p style="margin-top:8px;color:var(--muted)">Czynnik patentowy jest traktowany jako hipoteza audytowa, nie jako potwierdzony aktualny czynnik rankingowy. ${patentLinks ? `Źródła: ${patentLinks}.` : ''}</p>` : ''}
+          ${factor.group === 'schema' ? `<p style="margin-top:8px"><a href="https://schema.org/" target="_blank" rel="noopener">schema.org</a></p>` : ''}
+        </div>
+        <div class="detail-section">
+          <h4>Stan u Ciebie</h4>
+          <div class="observation-list">
+            ${view.observations.map(obs => `
+              <div class="observation-item">
+                <div class="observation-url">${esc(obs.page_type_label || obs.page_type)} · ${esc(obs.url)}</div>
+                <div><span class="status-mark ${obs.status}">${statusSymbol(obs.status)}</span> <strong>${esc(obs.status_label || statusLabel(obs.status))}</strong></div>
+                <div class="factor-note">${esc(obs.note || (obs.scope === 'domain' ? 'Wynik dotyczy konfiguracji całej domeny.' : 'Brak notatki z audytu.'))}</div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+        <div class="detail-section">
+          <h4>Jak naprawić</h4>
+          <p>${esc(detail.how_to_fix || 'Popraw ten element na wskazanych URL-ach i uruchom audyt ponownie.')}</p>
+          ${detail.code_example ? `<pre class="code-example"><code>${esc(detail.code_example)}</code></pre>` : ''}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+function renderAppendix(r) {
+  const domainMeta = r.meta?.domain_tech_meta || {};
+  return `
+    <details class="appendix">
+      <summary>Appendiks: luki, fan-out, tech domenowe, lista URL</summary>
+      <div class="appendix-body">
+        <section>
+          <div class="section-label"><span class="num">A1</span><h2>Luki treści</h2></div>
+          <div class="gap-list">${renderGaps(r, currentMode)}</div>
+        </section>
+        <section>
+          <div class="section-label"><span class="num">A2</span><h2>Fan-out zapytań</h2></div>
+          <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
+        </section>
+        <section>
+          <div class="section-label"><span class="num">A3</span><h2>Techniczne domenowe</h2></div>
+          <div class="factor-grid">${renderDomainTech(r, domainMeta)}</div>
+        </section>
+        <section>
+          <div class="section-label"><span class="num">A4</span><h2>Lista analizowanych podstron</h2></div>
+          ${renderPagesList(r.page_audits || [])}
+        </section>
+      </div>
+    </details>
+  `;
+}
+
+function handleAuditClick(e) {
+  const urlBtn = e.target.closest('button[data-scope]');
+  if (urlBtn) {
+    currentScope = urlBtn.dataset.scope;
+    currentDetailUid = null;
+    const state = computeScopeState(currentResult, currentScope);
+    if (!state.groups.some(g => g.id === currentGroupKey && g.count > 0)) {
+      const first = state.groups.find(g => g.count > 0);
+      currentGroupKey = first?.id || groupOrder(currentResult)[0] || 'technical';
+    }
+    refreshAuditView();
+    return;
+  }
+
+  const groupBtn = e.target.closest('button[data-group]');
+  if (groupBtn) {
+    currentGroupKey = groupBtn.dataset.group;
+    currentDetailUid = null;
+    refreshAuditView();
+    return;
+  }
+
+  const detailBtn = e.target.closest('button[data-detail]');
+  if (detailBtn) {
+    const jumpGroup = detailBtn.dataset.groupJump;
+    if (jumpGroup) currentGroupKey = jumpGroup;
+    currentDetailUid = detailBtn.dataset.detail;
+    refreshAuditView();
+    return;
+  }
+
+  if (e.target.closest('#backToList')) {
+    currentDetailUid = null;
+    refreshAuditView();
+  }
+}
+
+function applyMode() {
+  if (!currentResult) return;
+  refreshAuditView();
 }
 </script>
 </body>
