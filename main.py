@@ -29,6 +29,31 @@ AI_BOTS = ["GPTBot", "PerplexityBot", "OAI-SearchBot", "ClaudeBot", "anthropic-a
 MAX_AUDIT_PAGES = 5
 SITEMAP_CAP = 300
 MAX_CONTENT_CHARS = 7000
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+PATENT_FACTORS_PATH = os.path.join(BASE_DIR, "google-patent-seo-skill", "references", "factors.jsonl")
+PATENT_SCORING_CONFIDENCE = {"high", "medium"}
+
+
+def _load_patent_factors() -> dict[str, dict]:
+    """Load patent-derived SEO factors. Missing KB should not break the app."""
+    factors: dict[str, dict] = {}
+    if not os.path.exists(PATENT_FACTORS_PATH):
+        return factors
+    try:
+        with open(PATENT_FACTORS_PATH, encoding="utf-8") as fh:
+            for line in fh:
+                if not line.strip():
+                    continue
+                record = json.loads(line)
+                factor_id = record.get("factor_id")
+                if factor_id:
+                    factors[factor_id] = record
+    except Exception:
+        return {}
+    return factors
+
+
+PATENT_FACTORS = _load_patent_factors()
 
 app = FastAPI(title="AI SEO Audit")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -190,12 +215,175 @@ PAGE_TYPE_FACTORS = {
 }
 
 
+PATENT_PAGE_TYPE_FACTORS = {
+    "homepage": [
+        "headline-summary-fit",
+        "query-intent-classification-alignment",
+        "content-entity-alignment",
+        "entity-disambiguation-strength",
+        "entity-salience",
+        "verified-entity-status",
+        "brand-mentions-authority-proxy",
+        "content-data-alignment-score",
+    ],
+    "service": [
+        "headline-summary-fit",
+        "query-intent-classification-alignment",
+        "semantic-coherence-score",
+        "content-entity-alignment",
+        "entity-salience",
+        "citable-fragment-density",
+        "citation-quality-source-verifiability",
+        "content-data-alignment-score",
+        "human-likeness-score",
+    ],
+    "article": [
+        "cross-document-factual-consistency",
+        "headline-summary-fit",
+        "how-to-step-consensus",
+        "opinion-subjectivity-detection",
+        "query-intent-classification-alignment",
+        "semantic-coherence-score",
+        "entity-coverage-depth",
+        "citable-fragment-density",
+        "non-syntheticity-index",
+        "citation-quality-source-verifiability",
+        "multi-source-consensus",
+        "source-confidence-score",
+        "content-data-alignment-score",
+    ],
+    "about": [
+        "headline-summary-fit",
+        "content-entity-alignment",
+        "entity-disambiguation-strength",
+        "entity-salience",
+        "verified-entity-status",
+        "brand-mentions-authority-proxy",
+    ],
+    "contact": [
+        "headline-summary-fit",
+        "content-entity-alignment",
+        "entity-disambiguation-strength",
+        "verified-entity-status",
+        "content-data-alignment-score",
+    ],
+    "category": [
+        "headline-summary-fit",
+        "query-intent-classification-alignment",
+        "semantic-coherence-score",
+        "content-entity-alignment",
+        "entity-coverage-depth",
+        "query-embedding-source-match",
+        "content-data-alignment-score",
+    ],
+    "other": [
+        "headline-summary-fit",
+        "query-intent-classification-alignment",
+        "semantic-coherence-score",
+        "content-entity-alignment",
+        "citable-fragment-density",
+        "non-syntheticity-index",
+        "citation-quality-source-verifiability",
+        "content-data-alignment-score",
+    ],
+}
+
+
+def patent_factor_ids_for_page_type(page_type: str) -> list[str]:
+    """Only score factors that have local evidence and are auditable from page content/HTML."""
+    requested = PATENT_PAGE_TYPE_FACTORS.get(page_type, PATENT_PAGE_TYPE_FACTORS["other"])
+    return [
+        factor_id
+        for factor_id in requested
+        if factor_id in PATENT_FACTORS
+        and PATENT_FACTORS[factor_id].get("confidence") in PATENT_SCORING_CONFIDENCE
+    ]
+
+
+def scored_patent_factor_ids() -> list[str]:
+    factor_ids = set()
+    for page_type in PATENT_PAGE_TYPE_FACTORS:
+        factor_ids.update(patent_factor_ids_for_page_type(page_type))
+    return sorted(factor_ids)
+
+
+def _build_patent_factor_prompt(page_type: str) -> str:
+    lines: list[str] = []
+    for factor_id in patent_factor_ids_for_page_type(page_type):
+        factor = PATENT_FACTORS[factor_id]
+        checks = "; ".join(factor.get("audit_checks_pl", [])[:3])
+        evidence = ", ".join(factor.get("evidence_ids", [])[:3]) or "brak lokalnego evidence_id"
+        lines.append(
+            f'- "{factor_id}" ({factor.get("name_pl", factor_id)}, '
+            f'confidence={factor.get("confidence")}, inference={factor.get("seo_inference_level")}): '
+            f'{factor.get("definition_pl", "")} '
+            f'Sprawdź: {checks}. Evidence: {evidence}.'
+        )
+    return "\n".join(lines)
+
+
+def _build_html_prompt_summary(html_checks: dict | None) -> str:
+    if not html_checks:
+        return "(brak danych HTML/schema)"
+    schema = html_checks.get("schema", {})
+    meta = html_checks.get("meta", {})
+    summary = {
+        "title": meta.get("title"),
+        "meta_description_present": bool(meta.get("description")),
+        "canonical": meta.get("canonical"),
+        "lang": meta.get("lang"),
+        "headings": html_checks.get("headings", {}),
+        "schema": {
+            "types": schema.get("types", []),
+            "has_author": schema.get("has_author"),
+            "has_datepublished": schema.get("has_datepublished"),
+            "has_datemodified": schema.get("has_datemodified"),
+            "samples": schema.get("samples", []),
+        },
+        "links": html_checks.get("links", {}),
+        "content": html_checks.get("content", {}),
+        "contact_signals": html_checks.get("contact_signals", {}),
+        "rag_signals": html_checks.get("rag_signals", {}),
+        "images": html_checks.get("images", {}),
+    }
+    return json.dumps(summary, ensure_ascii=False, indent=2)
+
+
+def _build_patent_factor_meta() -> dict[str, dict]:
+    out: dict[str, dict] = {}
+    for factor_id, factor in PATENT_FACTORS.items():
+        if factor.get("confidence") not in PATENT_SCORING_CONFIDENCE:
+            continue
+        out[factor_id] = {
+            "label": factor.get("name_pl", factor_id),
+            "category": "patent",
+            "source": "google_patent",
+            "patent_category": factor.get("category_label_pl", factor.get("category", "")),
+            "confidence": factor.get("confidence", ""),
+            "seo_inference_level": factor.get("seo_inference_level", ""),
+            "description": factor.get("definition_pl", ""),
+            "evidence_ids": factor.get("evidence_ids", []),
+        }
+    return out
+
+
+def _build_patent_client_explanations() -> dict[str, str]:
+    out: dict[str, str] = {}
+    for factor_id, factor in PATENT_FACTORS.items():
+        if factor.get("confidence") not in PATENT_SCORING_CONFIDENCE:
+            continue
+        action = factor.get("how_to_satisfy_pl") or factor.get("definition_pl") or factor_id
+        out[factor_id] = f"Sprawdzamy patentową hipotezę SEO: {action}"
+    return out
+
+
 # --- FACTOR META: Polish labels + meta-categories for tabs ---
 
 CATEGORY_LABELS = {
     "eeat": "E-E-A-T / Wiarygodność",
     "topical": "Topical Authority",
     "geo": "GEO / RAG Extractability",
+    "patent": "Patenty Google",
     "accessibility": "Techniczne / Dostępność",
 }
 
@@ -278,6 +466,8 @@ FACTOR_META = {
     "external_sources_or_proof_where_relevant": {"label": "Zewnętrzne źródła / dowody gdzie zasadne", "category": "eeat"},
     "clear_next_step_or_cta": {"label": "Jasny następny krok / CTA", "category": "geo"},
 }
+
+FACTOR_META.update(_build_patent_factor_meta())
 
 TECH_FACTOR_META = {
     "meta_title_present": {"label": "Obecny tag <title>", "category": "tech"},
@@ -422,6 +612,8 @@ CLIENT_FACTOR_EXPLANATIONS = {
     "pagespeed_mobile_ok": "Strona szybko ładuje się na telefonach – kluczowe, bo większość użytkowników przegląda na mobile.",
 }
 
+CLIENT_FACTOR_EXPLANATIONS.update(_build_patent_client_explanations())
+
 DOMAIN_TECH_META = {
     "robots_txt_accessible": {"label": "Dostępny plik robots.txt", "category": "tech"},
     "gptbot_not_blocked": {"label": "GPTBot (OpenAI) niezablokowany", "category": "tech"},
@@ -463,6 +655,7 @@ CONTENT_CATEGORY_WEIGHTS = {
     "rag": 2.0,
     "conversion": 1.5,
     "trust": 1.5,
+    "patent": 2.0,
     "topical": 1.0,
     "tech": 1.0,
 }
@@ -969,6 +1162,7 @@ def _extract_schema(soup) -> dict:
     scripts = soup.find_all("script", type="application/ld+json")
     found_types: set[str] = set()
     has_author = has_datepub = has_dateupd = False
+    samples: list[dict] = []
     for s in scripts:
         if not s.string:
             continue
@@ -991,10 +1185,14 @@ def _extract_schema(soup) -> dict:
                     has_datepub = True
                 if "dateModified" in node:
                     has_dateupd = True
+                compact = _compact_schema_node(node)
+                if compact and len(samples) < 8:
+                    samples.append(compact)
     types_lower = {t.lower() for t in found_types}
     return {
         "any": bool(found_types),
         "types": sorted(found_types),
+        "samples": samples,
         "faq": any("faqpage" in t for t in types_lower),
         "article": any(t in types_lower for t in ["article", "newsarticle", "blogposting"]),
         "breadcrumb": "breadcrumblist" in types_lower,
@@ -1009,6 +1207,68 @@ def _extract_schema(soup) -> dict:
         "has_datepublished": has_datepub,
         "has_datemodified": has_dateupd,
     }
+
+
+def _compact_schema_node(node: dict) -> dict:
+    keep = [
+        "@type",
+        "name",
+        "headline",
+        "description",
+        "url",
+        "sameAs",
+        "datePublished",
+        "dateModified",
+        "author",
+        "publisher",
+        "offers",
+        "price",
+        "priceCurrency",
+        "aggregateRating",
+        "review",
+        "address",
+        "telephone",
+        "email",
+    ]
+    compact = {}
+    for key in keep:
+        if key in node:
+            compact[key] = _compact_schema_value(node[key])
+    return compact
+
+
+def _compact_schema_value(value, depth: int = 0):
+    if depth > 2:
+        return "..."
+    if isinstance(value, dict):
+        out = {}
+        for key in [
+            "@type",
+            "name",
+            "url",
+            "price",
+            "priceCurrency",
+            "ratingValue",
+            "reviewCount",
+            "streetAddress",
+            "addressLocality",
+            "postalCode",
+            "addressCountry",
+            "telephone",
+            "email",
+        ]:
+            if key in value:
+                out[key] = _compact_schema_value(value[key], depth + 1)
+        if out:
+            return out
+        if value.get("@type"):
+            return {"@type": value.get("@type")}
+        return {}
+    if isinstance(value, list):
+        return [_compact_schema_value(item, depth + 1) for item in value[:4]]
+    if isinstance(value, str):
+        return value[:300]
+    return value
 
 
 def _walk_schema(node):
@@ -1134,11 +1394,22 @@ def _extract_json(text: str) -> dict:
     return json.loads(text)
 
 
-def _page_factor_prompt(page_type: str, url: str, title: str, meta_desc: str, content: str) -> str:
+def _page_factor_prompt(page_type: str, url: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None) -> str:
     spec = PAGE_TYPE_FACTORS[page_type]
-    factors = spec["factors"]
+    patent_factors = patent_factor_ids_for_page_type(page_type)
+    factors = spec["factors"] + patent_factors
     factor_spec = "\n".join(f'    "{f}": {{"score": 0, "note": "konkretna obserwacja po polsku (cytat/parafraza fragmentu)"}}' for f in factors)
     label = PAGE_TYPE_LABELS.get(page_type, page_type)
+    patent_prompt = _build_patent_factor_prompt(page_type)
+    patent_section = f"""
+<czynniki_z_patentow_google>
+To są patent-derived SEO audit signals: traktuj je jako inferencje audytowe z patentów, nie jako dowód aktualnego algorytmu rankingu.
+Oceniaj wyłącznie czynniki poniżej i tylko na podstawie dostępnej treści, HTML/schema oraz metadanych tej strony.
+Nie wymyślaj danych z GSC, analytics, backlinków ani zewnętrznego SERP-u.
+{patent_prompt}
+</czynniki_z_patentow_google>
+""" if patent_prompt else ""
+    html_summary = _build_html_prompt_summary(html_checks)
 
     return f"""Jesteś {spec["role"]}. Analizujesz POJEDYNCZĄ stronę danego typu.
 
@@ -1154,6 +1425,7 @@ Oceń dokładnie {len(factors)} czynników ZGODNIE z typem strony. Skala:
 - 2 = dobry/pełny/wzorowo
 
 WAŻNE: Oceniasz czynniki DOPASOWANE do typu strony. NIE penalizuj braku dat publikacji na stronie sprzedażowej, NIE penalizuj braku testimoniali na artykule blogowym. Kontekst decyduje.
+WAŻNE DLA PATENTÓW: czynniki patentowe oceniaj jako sprawdzalne proxy treści/HTML. Jeśli patentowy czynnik wymaga danych niedostępnych w audycie, oceń tylko to, co wynika ze strony i napisz w note, jakie dane byłyby potrzebne do pełnej weryfikacji.
 </zadanie>
 
 <proces_myślenia>
@@ -1177,6 +1449,12 @@ WAŻNE: Oceniasz czynniki DOPASOWANE do typu strony. NIE penalizuj braku dat pub
   <typ_strony>{page_type}</typ_strony>
 </dane_strony>
 
+<html_schema_i_sygnaly_techniczne>
+{html_summary}
+</html_schema_i_sygnaly_techniczne>
+
+{patent_section}
+
 <treść>
 {content}
 </treść>
@@ -1189,9 +1467,9 @@ Zwróć TYLKO poprawny JSON (bez markdown):
 }}"""
 
 
-def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: str) -> dict:
-    prompt = _page_factor_prompt(page_type, url, title, meta_desc, content)
-    return _extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=3000))
+def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None) -> dict:
+    prompt = _page_factor_prompt(page_type, url, title, meta_desc, content, html_checks)
+    return _extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=5000))
 
 
 def generate_fan_out(page_url: str, page_title: str, content: str) -> dict:
@@ -1263,7 +1541,10 @@ def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_
         for k, v in (pa.get("factors") or {}).items():
             if isinstance(v, dict) and v.get("score", 0) == 0:
                 note = v.get("note", "")
-                weak_per_page.append(f"[{pt} | {url}] {k}: {note}")
+                meta = FACTOR_META.get(k, {})
+                label = meta.get("label", k)
+                source = " [patent]" if meta.get("source") == "google_patent" else ""
+                weak_per_page.append(f"[{pt} | {url}] {label}{source}: {note}")
     weak_per_page = weak_per_page[:12]
 
     weak_tech_domain = [k for k, v in domain_tech_scores.items() if v == 0][:6]
@@ -1404,7 +1685,7 @@ Zwróć TYLKO JSON:
 # --- SCORING ---
 
 def factor_score_pct(factors: dict) -> int:
-    """Weighted average: EEAT factors count 3×, RAG 2×, conversion/trust 1.5×, topical 1×."""
+    """Weighted average: EEAT and patent-derived signals carry more weight than generic content checks."""
     if not factors:
         return 0
     total_weighted = 0.0
@@ -1521,13 +1802,13 @@ def audit_stream(url: str):
         homepage_data = next((p for p in page_data if p["page_type"] == "homepage"), page_data[0])
         domain_tech_scores = build_domain_tech_scores(robots, sitemap, llms, homepage_data["html_checks"], http_headers, pagespeed)
 
-        yield event("progress", {"message": "Per-URL analiza: każda strona z factor setem dopasowanym do typu (Gemini, parallel)...", "pct": 48})
+        yield event("progress", {"message": "Per-URL analiza: typ strony + czynniki z patentów Google (Gemini, parallel)...", "pct": 48})
 
         # 5. Parallel per-page Gemini analysis
         def _analyze_one(pd):
             content = pd["markdown"][:MAX_CONTENT_CHARS]
             try:
-                factors = analyze_page(pd["url"], pd["page_type"], pd["title"], pd["meta_desc"], content)
+                factors = analyze_page(pd["url"], pd["page_type"], pd["title"], pd["meta_desc"], content, pd["html_checks"])
             except Exception as e:
                 factors = {"error": {"score": 0, "note": f"Analiza nieudana: {str(e)[:200]}"}}
             return pd["url"], factors
@@ -1604,8 +1885,8 @@ def audit_stream(url: str):
         page_scores = [pa["combined_score"] for pa in page_audits] if page_audits else [0]
         avg_page = round(sum(page_scores) / len(page_scores))
 
-        # Category breakdowns for radar chart (eeat/topical/geo from AI factors, accessibility from domain tech)
-        grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "geo")}
+        # Category breakdowns for radar chart (content, patent-derived signals, domain tech)
+        grp = {k: {"val": 0, "max": 0} for k in ("eeat", "topical", "geo", "patent")}
         for pa in page_audits:
             for fk, v in (pa.get("factors") or {}).items():
                 cat = FACTOR_META.get(fk, {}).get("category", "")
@@ -1617,6 +1898,7 @@ def audit_stream(url: str):
         cat_eeat = _grp_pct(grp["eeat"])
         cat_topical = _grp_pct(grp["topical"])
         cat_geo = _grp_pct(grp["geo"])
+        cat_patent = _grp_pct(grp["patent"])
 
         # Base overall: page scores carry category weights (via factor_score_pct),
         # domain tech is weighted by DOMAIN_TECH_WEIGHTS, fan-out coverage last.
@@ -1636,6 +1918,7 @@ def audit_stream(url: str):
                 "eeat": cat_eeat,
                 "topical": cat_topical,
                 "geo": cat_geo,
+                "patent": cat_patent,
                 "accessibility": domain_tech_pct,
             },
             "penalties": penalties,
@@ -1692,6 +1975,8 @@ def audit_stream(url: str):
                 "domain_tech_meta": DOMAIN_TECH_META,
                 "category_labels": CATEGORY_LABELS,
                 "page_type_labels": PAGE_TYPE_LABELS,
+                "patent_factor_count": len(PATENT_FACTORS),
+                "patent_scored_factor_count": len(scored_patent_factor_ids()),
             },
         }
         yield event("done", {"result": result, "pct": 100})

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Google Patent SEO"
+  short_description: "Evidence-first SEO patent signals"
+  default_prompt: "Use $google-patent-seo-skill to audit or brief SEO content with patent-backed signals."

@@ -167,6 +167,7 @@ button{font:inherit;cursor:pointer}
 .factor-card-score.bad{background:#FBE6E4;color:var(--red)}
 .factor-card-note{font-size:0.85rem;color:var(--ink-2);line-height:1.5}
 .factor-card-client{margin-top:8px;padding-top:8px;border-top:1px dashed var(--rule);font-size:0.85rem;color:var(--ink-2);font-style:italic}
+.factor-source-meta{margin-top:5px;font-family:var(--mono);font-size:0.66rem;line-height:1.45;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)}
 
 /* (recommendations removed) */
 
@@ -238,7 +239,7 @@ button{font:inherit;cursor:pointer}
         <span>Perplexity · ChatGPT · Gemini</span>
       </div>
       <h1>Czy Twoja strona istnieje dla <em>AI</em>?</h1>
-      <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań — per podstrona, z dopasowaniem factor setu do typu strony.</p>
+      <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań oraz sprawdzalne sygnały z bazy patentów Google — per podstrona, z dopasowaniem factor setu do typu strony.</p>
       <form class="form" id="auditForm">
         <input type="url" id="urlInput" placeholder="https://twojadomena.pl" required>
         <button type="submit" class="btn" id="submitBtn">Uruchom audyt</button>
@@ -307,6 +308,7 @@ function getGroupForCategory(cat) {
   if (cat === 'eeat') return 'eeat';
   if (cat === 'topical') return 'topical';
   if (cat === 'geo') return 'geo';
+  if (cat === 'patent') return 'patent';
   return 'accessibility';
 }
 
@@ -388,7 +390,7 @@ function renderResult(r) {
   document.getElementById('modeToggleNav').classList.remove('hidden');
   document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
 
-  const groupCounts = { eeat: 0, topical: 0, geo: 0, accessibility: 0 };
+  const groupCounts = { eeat: 0, topical: 0, geo: 0, patent: 0, accessibility: 0 };
 
   (r.page_audits || []).forEach(pa => {
     Object.entries(pa.factors || {}).forEach(([fk]) => {
@@ -405,6 +407,7 @@ function renderResult(r) {
     sc.eeat ?? 0,
     sc.topical ?? 0,
     sc.geo ?? 0,
+    sc.patent ?? 0,
     sc.accessibility ?? 0,
   ];
 
@@ -455,12 +458,13 @@ function renderResult(r) {
 
         <section class="section" id="section-page-audits">
           <div class="section-label"><span class="num">01</span><h2>Audyt per podstrona</h2></div>
-          <p class="lede" style="margin-bottom:24px">Każda podstrona analizowana z factor setem dopasowanym do jej typu.</p>
+          <p class="lede" style="margin-bottom:24px">Każda podstrona analizowana z factor setem dopasowanym do jej typu, razem ze sprawdzalnymi sygnałami wyprowadzonymi z bazy patentów Google.</p>
 
           <div class="tabs" id="tabs">
             <button class="tab active" data-tab="eeat">EEAT <span class="count">${groupCounts.eeat}</span></button>
             <button class="tab" data-tab="topical">Topical Authority <span class="count">${groupCounts.topical}</span></button>
             <button class="tab" data-tab="geo">GEO <span class="count">${groupCounts.geo}</span></button>
+            <button class="tab" data-tab="patent">Patenty Google <span class="count">${groupCounts.patent}</span></button>
             <button class="tab" data-tab="accessibility">Dostępność <span class="count">${groupCounts.accessibility}</span></button>
           </div>
 
@@ -501,6 +505,10 @@ function renderResult(r) {
               <div class="factor-card-note">Generative Engine Optimization - optymalizacja treści i struktury strony pod kątem wyszukiwarek opartych na generatywnej sztucznej inteligencji (np. AI Overviews, Perplexity).</div>
             </div>
             <div class="factor-card">
+              <div class="factor-card-head"><div class="factor-card-name">Patenty Google</div></div>
+              <div class="factor-card-note">Czynniki audytowe wyprowadzone z lokalnej bazy patentów. Są traktowane jako hipotezy i mechanizmy do weryfikacji, nie jako deklaracja aktualnych czynników rankingowych Google.</div>
+            </div>
+            <div class="factor-card">
               <div class="factor-card-head"><div class="factor-card-name">Dostępność</div></div>
               <div class="factor-card-note">Dostępność dla botów AI - techniczna przystępność witryny pozwalająca crawlerom LLM na łatwe pobieranie, przetwarzanie i rozumienie struktury oraz treści strony.</div>
             </div>
@@ -533,7 +541,7 @@ function renderResult(r) {
     new Chart(ctx, {
       type: 'radar',
       data: {
-        labels: ['EEAT', ['Topical', 'Authority'], 'GEO', 'Dostępność'],
+        labels: ['EEAT', ['Topical', 'Authority'], 'GEO', ['Patenty', 'Google'], 'Dostępność'],
         datasets: [{
           data: chartData,
           backgroundColor: 'rgba(237, 217, 113, 0.18)',
@@ -664,6 +672,9 @@ function renderPageAudits(r, tab, mode) {
     const cls = sc === 2 ? 'good' : sc === 1 ? 'warn' : 'bad';
     const scTxt = sc === 2 ? 'OK' : sc === 1 ? 'CZĘŚC.' : 'BRAK';
     const clientExp = r.client_mode?.client_factor_explanations?.[g.key] || '';
+    const sourceMeta = (!g.isTech && fm.source === 'google_patent')
+      ? `<div class="factor-source-meta">Patent · ${esc(fm.patent_category || '')} · confidence: ${esc(fm.confidence || '?')} · inference: ${esc(fm.seo_inference_level || '?')}</div>`
+      : '';
     
     const pageLinks = g.pages.map(p => `<span title="${esc(p.url)}" style="cursor:help;text-decoration:underline;text-decoration-style:dotted;padding:0 3px;font-family:var(--mono);font-weight:600;color:var(--ink);">${p.num}</span>`).join(', ');
     
@@ -684,7 +695,7 @@ function renderPageAudits(r, tab, mode) {
 
     return `
       <tr>
-        <td style="font-weight:600;color:var(--ink)">${esc(label)}</td>
+        <td style="font-weight:600;color:var(--ink)">${esc(label)}${sourceMeta}</td>
         <td style="text-align:center;">${pageLinks}</td>
         <td style="text-align:center;"><span class="factor-card-score ${cls}">${scTxt}</span></td>
         <td>${obsHtml}</td>
