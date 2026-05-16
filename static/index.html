@@ -222,7 +222,7 @@ button{font:inherit;cursor:pointer}
 .url-meta{grid-column:2/4;color:var(--muted);font-family:var(--mono);font-size:0.66rem;line-height:1.35;word-break:break-all}
 .url-score{font-family:var(--mono);font-size:0.72rem;color:var(--ink-2)}
 .audit-main{min-width:0}
-.dashboard-grid{display:grid;grid-template-columns:220px minmax(0,1fr);gap:32px;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:30px;margin-bottom:26px}
+.dashboard-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:30px;margin-bottom:26px}
 @media(max-width:760px){.dashboard-grid{grid-template-columns:1fr}}
 .overall-score{border:1px solid var(--ink);border-radius:6px;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--paper)}
 .overall-score .value{font-size:5rem;line-height:0.9;font-weight:700;letter-spacing:-0.04em}
@@ -848,10 +848,29 @@ const UI_GROUP_LABELS_CLIENT = {
   patents: 'Patenty Google',
   ai_aeo: 'AI / AEO'
 };
+const UI_GROUP_WEIGHTS_CLIENT = {
+  technical: 20,
+  onpage: 10,
+  schema: 20,
+  eeat: 25,
+  patents: 10,
+  ai_aeo: 15
+};
+const SCORE_VALUE_MAP_CLIENT = {0: 0, 1: 0.35, 2: 1};
+const HARD_TECH_CAPS_CLIENT = {
+  https_enabled: 49,
+  robots_txt_accessible: 49,
+  gptbot_not_blocked: 49,
+  claudebot_not_blocked: 49,
+  perplexitybot_not_blocked: 49,
+  google_extended_not_blocked: 59,
+  llms_txt_present: 79
+};
 
 let currentScope = 'all';
 let currentGroupKey = 'technical';
 let currentDetailUid = null;
+let heroRadarChart = null;
 
 function groupOrder(r) {
   return r?.meta?.group_order || UI_GROUP_ORDER_CLIENT;
@@ -859,6 +878,16 @@ function groupOrder(r) {
 
 function groupLabel(r, group) {
   return r?.meta?.group_labels?.[group] || UI_GROUP_LABELS_CLIENT[group] || group;
+}
+
+function groupWeight(r, group) {
+  return r?.meta?.group_weights?.[group] || UI_GROUP_WEIGHTS_CLIENT[group] || 10;
+}
+
+function scoreValue(r, score) {
+  const map = r?.meta?.score_value_map || SCORE_VALUE_MAP_CLIENT;
+  const key = String(Number(score || 0));
+  return Number(map[key] ?? map[Number(score || 0)] ?? 0);
 }
 
 function scoreStatusFromValue(score) {
@@ -890,6 +919,7 @@ function scopedObservations(factor, scope) {
 
 function computeScopeState(r, scope) {
   const totals = {};
+  const scoped = [];
   groupOrder(r).forEach(group => { totals[group] = {val: 0, max: 0, count: 0}; });
 
   (r.factor_index || []).forEach(factor => {
@@ -899,9 +929,10 @@ function computeScopeState(r, scope) {
     if (!obs.length) return;
     const impact = Number(factor.impact || 2);
     obs.forEach(item => {
-      totals[group].val += (Number(item.score || 0) / 2) * impact;
+      totals[group].val += scoreValue(r, item.score) * impact;
       totals[group].max += impact;
       totals[group].count += 1;
+      scoped.push({...item, _factor_id: factor.id, _group: group});
     });
   });
 
@@ -910,9 +941,46 @@ function computeScopeState(r, scope) {
     const score = t.max ? Math.round((t.val / t.max) * 100) : null;
     return {id: group, label: groupLabel(r, group), score, count: t.count};
   });
-  const visible = groups.filter(g => g.score !== null).map(g => g.score);
-  const overall = visible.length ? Math.round(visible.reduce((a, b) => a + b, 0) / visible.length) : 0;
-  return {overall, groups};
+  let weightedTotal = 0;
+  let weightTotal = 0;
+  groups.forEach(group => {
+    if (group.score === null) return;
+    const weight = groupWeight(r, group.id);
+    weightedTotal += group.score * weight;
+    weightTotal += weight;
+  });
+  const rawOverall = weightTotal ? Math.round(weightedTotal / weightTotal) : 0;
+  const caps = calculateScoreCaps(scoped);
+  const overall = caps.length ? Math.min(rawOverall, ...caps.map(cap => cap.max_score)) : rawOverall;
+  return {overall, raw_overall: rawOverall, groups, caps};
+}
+
+function calculateScoreCaps(scoped) {
+  const caps = [];
+  scoped.forEach(obs => {
+    const factorId = obs._factor_id;
+    if (HARD_TECH_CAPS_CLIENT[factorId] && Number(obs.score || 0) === 0) {
+      caps.push({max_score: HARD_TECH_CAPS_CLIENT[factorId], reason: `Krytyczny problem techniczny: ${factorId}`, factor_id: factorId});
+    }
+  });
+  const schemaMissing = scoped.find(obs => obs._group === 'schema' && Number(obs.score || 0) === 0);
+  if (schemaMissing) {
+    caps.push({max_score: 69, reason: 'Brak wymaganego schema dla co najmniej jednego aplikowalnego typu strony.', factor_id: schemaMissing._factor_id || 'schema'});
+  }
+  const articleTrustMissing = scoped.find(obs =>
+    obs.page_type === 'article' &&
+    ['author_bio_with_name_and_credentials', 'external_authoritative_citations_with_links'].includes(obs._factor_id) &&
+    Number(obs.score || 0) === 0
+  );
+  if (articleTrustMissing) {
+    caps.push({max_score: 59, reason: 'Artykuł ma krytyczny brak zaufania: autor lub źródła.', factor_id: articleTrustMissing._factor_id});
+  }
+  if (scoped.length) {
+    const zeroRatio = scoped.filter(obs => Number(obs.score || 0) === 0).length / scoped.length;
+    if (zeroRatio > 0.50) caps.push({max_score: 54, reason: 'Ponad połowa aplikowalnych czynników ma wynik 0.', factor_id: 'zero_ratio'});
+    else if (zeroRatio > 0.30) caps.push({max_score: 64, reason: 'Ponad 30% aplikowalnych czynników ma wynik 0.', factor_id: 'zero_ratio'});
+  }
+  return caps.sort((a, b) => a.max_score - b.max_score);
 }
 
 function scopedFactorView(factor, scope) {
@@ -983,16 +1051,7 @@ function renderResult(r) {
   document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
 
   const overall = initialState.overall;
-  document.getElementById('heroScoreContainer').innerHTML = `
-    <div style="align-self:center;width:100%;max-width:420px;border:1px solid rgba(255,255,255,0.15);border-radius:8px;padding:32px;background:rgba(0,0,0,0.12);text-align:left;">
-      <div style="font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--gold-2);margin-bottom:10px">Score ogólny</div>
-      <div style="display:flex;align-items:baseline;color:#fff">
-        <span style="font-size:5rem;line-height:0.9;font-weight:700;letter-spacing:-0.04em">${overall}</span>
-        <span style="font-family:var(--mono);font-size:1.1rem;color:rgba(255,255,255,0.55);margin-left:6px">/100</span>
-      </div>
-      <div style="margin-top:14px;color:#D8D8D5">${esc(scoreLabel(overall))}</div>
-    </div>
-  `;
+  document.getElementById('heroScoreContainer').innerHTML = renderHeroRadarShell();
   document.getElementById('heroScoreContainer').style.display = 'flex';
   document.getElementById('auditForm').style.display = 'none';
   document.getElementById('ctaScoreWrapper').innerHTML = `
@@ -1001,10 +1060,73 @@ function renderResult(r) {
       <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
     </div>`;
   document.getElementById('ctaContainer').style.display = 'block';
+  drawHeroRadar(initialState.groups);
 
   refreshAuditView();
   results.classList.remove('hidden');
   results.onclick = handleAuditClick;
+}
+
+function renderHeroRadarShell() {
+  return `
+    <div class="chart-wrap" style="width:100%;max-width:520px;height:100%;min-height:480px;margin:0 auto;align-self:center;">
+      <canvas id="heroRadarChart"></canvas>
+    </div>
+  `;
+}
+
+function drawHeroRadar(groups) {
+  setTimeout(() => {
+    const canvas = document.getElementById('heroRadarChart');
+    if (!canvas || typeof Chart === 'undefined') return;
+    if (heroRadarChart) {
+      heroRadarChart.destroy();
+      heroRadarChart = null;
+    }
+    const chartGroups = groupOrder(currentResult).map(id => groups.find(g => g.id === id) || {id, label: groupLabel(currentResult, id), score: 0});
+    const labels = chartGroups.map(g => {
+      if (g.id === 'ai_aeo') return ['AI', 'AEO'];
+      if (g.id === 'patents') return ['Patenty', 'Google'];
+      if (g.id === 'technical') return ['Techniczne', 'SEO'];
+      return g.label;
+    });
+    const data = chartGroups.map(g => g.score === null ? 0 : g.score);
+    heroRadarChart = new Chart(canvas.getContext('2d'), {
+      type: 'radar',
+      data: {
+        labels,
+        datasets: [{
+          data,
+          backgroundColor: 'rgba(237, 217, 113, 0.18)',
+          borderColor: '#edd971',
+          pointBackgroundColor: '#edd971',
+          pointBorderColor: '#1e3351',
+          pointRadius: 5,
+          pointHoverRadius: 7,
+          borderWidth: 2.5,
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}/100` } } },
+        scales: {
+          r: {
+            min: 0,
+            max: 100,
+            ticks: { display: false },
+            grid: { color: 'rgba(255, 255, 255, 0.18)' },
+            angleLines: { color: 'rgba(255, 255, 255, 0.18)' },
+            pointLabels: {
+              font: { family: "'Inter', sans-serif", size: 13, weight: '700' },
+              color: 'rgba(255, 255, 255, 0.9)',
+              padding: 12
+            }
+          }
+        }
+      }
+    });
+  }, 50);
 }
 
 function refreshAuditView() {
@@ -1056,14 +1178,8 @@ function renderUrlSwitch(r) {
 
 function renderDashboardPanel(r) {
   const state = computeScopeState(r, currentScope);
-  const score = state.overall;
   return `
     <section class="dashboard-grid">
-      <div class="overall-score">
-        <div class="value">${score}</div>
-        <div class="denom">/100</div>
-        <div class="label">${esc(scoreLabel(score))}</div>
-      </div>
       <div class="group-bars">
         ${state.groups.map(group => {
           const scoreTxt = group.score === null ? '—' : group.score;
@@ -1076,6 +1192,7 @@ function renderDashboardPanel(r) {
             </button>
           `;
         }).join('')}
+        ${state.caps?.length ? `<div class="factor-meta-line" style="margin-top:8px;color:var(--red)">Sufit wyniku: max ${state.overall}/100 · ${esc(state.caps[0].reason)}</div>` : ''}
       </div>
     </section>
   `;
@@ -1261,6 +1378,7 @@ function handleAuditClick(e) {
       const first = state.groups.find(g => g.count > 0);
       currentGroupKey = first?.id || groupOrder(currentResult)[0] || 'technical';
     }
+    drawHeroRadar(state.groups);
     refreshAuditView();
     return;
   }

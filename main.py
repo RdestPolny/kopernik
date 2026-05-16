@@ -680,6 +680,24 @@ UI_GROUP_LABELS = {
     "patents": "Patenty Google",
     "ai_aeo": "AI / AEO",
 }
+UI_GROUP_WEIGHTS = {
+    "technical": 20,
+    "onpage": 10,
+    "schema": 20,
+    "eeat": 25,
+    "patents": 10,
+    "ai_aeo": 15,
+}
+SCORE_VALUE_MAP = {0: 0.0, 1: 0.35, 2: 1.0}
+HARD_TECH_CAPS = {
+    "https_enabled": 49,
+    "robots_txt_accessible": 49,
+    "gptbot_not_blocked": 49,
+    "claudebot_not_blocked": 49,
+    "perplexitybot_not_blocked": 49,
+    "google_extended_not_blocked": 59,
+    "llms_txt_present": 79,
+}
 
 SCHEMA_FACTOR_IDS = {
     "appropriate_schema_for_content_type",
@@ -729,6 +747,10 @@ PAGE_TECH_APPLIES_TO = {
 
 def _clamp_score(value: int, low: int = 1, high: int = 3) -> int:
     return max(low, min(high, value))
+
+
+def score_value(score: int | float) -> float:
+    return SCORE_VALUE_MAP.get(int(score or 0), 0.0)
 
 
 def _content_applies_to(factor_id: str) -> list[str]:
@@ -999,10 +1021,10 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
                 "note": value.get("note", ""),
             })
 
-        for key, score_value in (pa.get("tech_scores") or {}).items():
+        for key, score_raw in (pa.get("tech_scores") or {}).items():
             meta = TECH_FACTOR_META.get(key, {"label": key, "category": "tech"})
             record = _ensure_factor_record(index, key, meta, is_tech=True)
-            score = int(score_value)
+            score = int(score_raw)
             status = _score_status(score)
             record["observations"].append({
                 **page_ref,
@@ -1013,10 +1035,10 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
                 "note": "",
             })
 
-    for key, score_value in (domain_tech_scores or {}).items():
+    for key, score_raw in (domain_tech_scores or {}).items():
         meta = DOMAIN_TECH_META.get(key, {"label": key, "category": "tech"})
         record = _ensure_factor_record(index, key, meta, is_domain=True)
-        score = int(score_value)
+        score = int(score_raw)
         status = _score_status(score)
         record["observations"].append({
             "url": "domain",
@@ -1039,11 +1061,12 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
         scores = [obs["score"] for obs in observations]
         worst = min(scores)
         avg_score = sum(scores) / len(scores)
+        avg_score_value = sum(score_value(score) for score in scores) / len(scores)
         status = _score_status(worst)
         affected = [obs for obs in observations if obs["score"] < 2]
         record["score"] = worst
         record["avg_score"] = round(avg_score, 2)
-        record["score_pct"] = round(avg_score / 2 * 100)
+        record["score_pct"] = round(avg_score_value * 100)
         record["status"] = status
         record["status_label"] = _status_label(status)
         record["affected_count"] = len(affected)
@@ -1067,6 +1090,8 @@ def _scoped_observations(factor: dict, scope_url: str = "all") -> list[dict]:
 
 def calculate_scope_scores(factor_index: list[dict], scope_url: str = "all") -> dict:
     totals = {group: {"val": 0.0, "max": 0.0, "count": 0} for group in UI_GROUP_ORDER}
+    scoped_observations: list[dict] = []
+    scoped_factors: list[dict] = []
     for factor in factor_index:
         group = factor.get("group")
         if group not in totals:
@@ -1074,9 +1099,11 @@ def calculate_scope_scores(factor_index: list[dict], scope_url: str = "all") -> 
         observations = _scoped_observations(factor, scope_url)
         if not observations:
             continue
+        scoped_factors.append(factor)
+        scoped_observations.extend({**obs, "_factor_id": factor.get("id"), "_group": group} for obs in observations)
         impact = factor.get("impact", 2)
         for obs in observations:
-            totals[group]["val"] += (obs.get("score", 0) / 2) * impact
+            totals[group]["val"] += score_value(obs.get("score", 0)) * impact
             totals[group]["max"] += impact
             totals[group]["count"] += 1
 
@@ -1091,9 +1118,71 @@ def calculate_scope_scores(factor_index: list[dict], scope_url: str = "all") -> 
             "count": total["count"],
         })
 
-    visible_scores = [g["score"] for g in groups if g["score"] is not None]
-    overall = round(sum(visible_scores) / len(visible_scores)) if visible_scores else 0
-    return {"overall": overall, "groups": groups}
+    weighted_total = 0.0
+    weight_total = 0.0
+    for group in groups:
+        if group["score"] is None:
+            continue
+        weight = UI_GROUP_WEIGHTS.get(group["id"], 10)
+        weighted_total += group["score"] * weight
+        weight_total += weight
+    raw_overall = round(weighted_total / weight_total) if weight_total else 0
+    caps = calculate_score_caps(scoped_observations, scoped_factors)
+    overall = min([raw_overall] + [cap["max_score"] for cap in caps]) if caps else raw_overall
+    return {"overall": overall, "raw_overall": raw_overall, "groups": groups, "caps": caps}
+
+
+def calculate_score_caps(scoped_observations: list[dict], scoped_factors: list[dict]) -> list[dict]:
+    caps: list[dict] = []
+    for obs in scoped_observations:
+        factor_id = obs.get("_factor_id")
+        if factor_id in HARD_TECH_CAPS and obs.get("score", 2) == 0:
+            caps.append({
+                "max_score": HARD_TECH_CAPS[factor_id],
+                "reason": f"Krytyczny problem techniczny: {factor_id}",
+                "factor_id": factor_id,
+            })
+
+    schema_missing = [
+        obs for obs in scoped_observations
+        if obs.get("_group") == "schema" and obs.get("score", 2) == 0
+    ]
+    if schema_missing:
+        caps.append({
+            "max_score": 69,
+            "reason": "Brak wymaganego schema dla co najmniej jednego aplikowalnego typu strony.",
+            "factor_id": schema_missing[0].get("_factor_id", "schema"),
+        })
+
+    article_trust_missing = [
+        obs for obs in scoped_observations
+        if obs.get("page_type") == "article"
+        and obs.get("_factor_id") in {"author_bio_with_name_and_credentials", "external_authoritative_citations_with_links"}
+        and obs.get("score", 2) == 0
+    ]
+    if article_trust_missing:
+        caps.append({
+            "max_score": 59,
+            "reason": "Artykuł ma krytyczny brak zaufania: autor lub źródła.",
+            "factor_id": article_trust_missing[0].get("_factor_id", "article_trust"),
+        })
+
+    if scoped_observations:
+        zero_ratio = len([obs for obs in scoped_observations if obs.get("score", 2) == 0]) / len(scoped_observations)
+        if zero_ratio > 0.50:
+            caps.append({
+                "max_score": 54,
+                "reason": "Ponad połowa aplikowalnych czynników ma wynik 0.",
+                "factor_id": "zero_ratio",
+            })
+        elif zero_ratio > 0.30:
+            caps.append({
+                "max_score": 64,
+                "reason": "Ponad 30% aplikowalnych czynników ma wynik 0.",
+                "factor_id": "zero_ratio",
+            })
+
+    return sorted(caps, key=lambda item: item["max_score"])
 
 
 def build_top_actions(factor_index: list[dict], scope_url: str = "all", limit: int = 5) -> list[dict]:
@@ -1145,8 +1234,10 @@ def build_dashboard(factor_index: list[dict], page_audits: list[dict]) -> dict:
         "page_type": "all",
         "page_type_label": "Wszystkie",
         "count": len(page_audits),
-        "score": default_scores["overall"],
-    }]
+            "score": default_scores["overall"],
+            "raw_score": default_scores["raw_overall"],
+            "caps": default_scores["caps"],
+        }]
     for idx, page in enumerate(page_audits, start=1):
         scoped = calculate_scope_scores(factor_index, page.get("url", ""))
         url_options.append({
@@ -1158,10 +1249,14 @@ def build_dashboard(factor_index: list[dict], page_audits: list[dict]) -> dict:
             "page_type_label": page.get("page_type_label", ""),
             "count": 1,
             "score": scoped["overall"],
+            "raw_score": scoped["raw_overall"],
+            "caps": scoped["caps"],
         })
 
     return {
         "overall": default_scores["overall"],
+        "raw_overall": default_scores["raw_overall"],
+        "caps": default_scores["caps"],
         "groups": default_scores["groups"],
         "top_actions": build_top_actions(factor_index, "all", limit=5),
         "url_options": url_options,
@@ -1847,7 +1942,7 @@ def build_page_tech_scores(page_type: str, hc: dict) -> dict:
 def tech_score_pct(tech_scores: dict) -> int:
     if not tech_scores:
         return 0
-    return round((sum(tech_scores.values()) / (len(tech_scores) * 2)) * 100)
+    return round((sum(score_value(value) for value in tech_scores.values()) / len(tech_scores)) * 100)
 
 
 def weighted_domain_tech_score_pct(tech_scores: dict) -> int:
@@ -1855,7 +1950,7 @@ def weighted_domain_tech_score_pct(tech_scores: dict) -> int:
     if not tech_scores:
         return 0
     total_weighted = sum(
-        (tech_scores.get(k, 0) / 2) * w
+        score_value(tech_scores.get(k, 0)) * w
         for k, w in DOMAIN_TECH_WEIGHTS.items()
         if k in tech_scores
     )
@@ -2194,8 +2289,8 @@ def factor_score_pct(factors: dict) -> int:
             continue
         category = FACTOR_META.get(key, {}).get("category", "")
         w = CONTENT_CATEGORY_WEIGHTS.get(category, 1.5)
-        total_weighted += v["score"] * w
-        total_max += 2 * w
+        total_weighted += score_value(v["score"]) * w
+        total_max += w
     if total_max == 0:
         return 0
     return round((total_weighted / total_max) * 100)
@@ -2205,8 +2300,8 @@ def fan_out_score(fan_out: dict) -> int:
     queries = fan_out.get("queries", [])
     if not queries:
         return 0
-    pts = sum({"covered": 2, "partial": 1, "missing": 0}.get(q.get("coverage", "missing"), 0) for q in queries)
-    return round(pts / (len(queries) * 2) * 100)
+    pts = sum({"covered": 1.0, "partial": 0.35, "missing": 0.0}.get(q.get("coverage", "missing"), 0) for q in queries)
+    return round(pts / len(queries) * 100)
 
 
 def combined_page_score(factor_pct: int, tech_pct: int) -> int:
@@ -2486,6 +2581,8 @@ def audit_stream(url: str):
                 "category_labels": CATEGORY_LABELS,
                 "group_labels": UI_GROUP_LABELS,
                 "group_order": UI_GROUP_ORDER,
+                "group_weights": UI_GROUP_WEIGHTS,
+                "score_value_map": SCORE_VALUE_MAP,
                 "page_type_labels": PAGE_TYPE_LABELS,
                 "patent_factor_count": len(PATENT_FACTORS),
                 "patent_scored_factor_count": len(scored_patent_factor_ids()),
