@@ -677,20 +677,21 @@ CRITICAL_FACTOR_PENALTIES = {
 
 UI_GROUP_ORDER = ["technical", "performance", "onpage", "eeat", "patents", "ai_aeo"]
 UI_GROUP_LABELS = {
-    "technical": "Techniczne SEO + Schema",
+    "technical": "Techniczne SEO",
     "performance": "Wydajność",
     "onpage": "On-page",
     "eeat": "E-E-A-T",
     "patents": "Patenty Google",
     "ai_aeo": "AI / AEO",
 }
+# Weights chosen for AI SEO priorities: authority + AI extractability > foundations > perf.
 UI_GROUP_WEIGHTS = {
-    "technical": 30,
-    "performance": 15,
+    "technical": 20,
+    "performance": 10,
     "onpage": 10,
-    "eeat": 22,
-    "patents": 8,
-    "ai_aeo": 12,
+    "eeat": 25,
+    "patents": 15,
+    "ai_aeo": 20,
 }
 
 PERFORMANCE_FACTOR_META = {

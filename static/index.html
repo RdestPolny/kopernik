@@ -139,6 +139,15 @@ button{font:inherit;cursor:pointer}
 .url-pill .pill-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
 .url-pill .pill-score{font-family:var(--mono);font-size:0.72rem;font-weight:600;opacity:0.65}
 .url-pill.active .pill-score{opacity:1;color:var(--gold-2)}
+.url-pill.tone-good{background:#e7f6ea;border-color:#4ade80;color:#14532d}
+.url-pill.tone-warn{background:#fdf6dd;border-color:#edd971;color:#5a4a08}
+.url-pill.tone-bad{background:#fde4e4;border-color:#ff6b6b;color:#7a1e1e}
+.url-pill.tone-good:hover,.url-pill.tone-warn:hover,.url-pill.tone-bad:hover{filter:brightness(0.96)}
+.url-pill.active.tone-good{background:#16a34a;color:#fff;border-color:#16a34a}
+.url-pill.active.tone-warn{background:#ca9a13;color:#fff;border-color:#ca9a13}
+.url-pill.active.tone-bad{background:#dc2626;color:#fff;border-color:#dc2626}
+.hero-domain-badge{display:inline-flex;align-items:center;gap:10px;background:rgba(237,217,113,0.12);border:1px solid rgba(237,217,113,0.35);padding:8px 14px;border-radius:999px;font-family:var(--mono);font-size:0.78rem;color:#edd971;margin-bottom:18px;letter-spacing:0.04em;word-break:break-all}
+.hero-domain-badge strong{color:#fff;font-weight:600;letter-spacing:0}
 
 /* Priority strip */
 .priority{margin:0 0 64px}
@@ -545,7 +554,7 @@ function renderPagesList(pages) {
 
 const UI_GROUP_ORDER_CLIENT = ['technical', 'performance', 'onpage', 'eeat', 'patents', 'ai_aeo'];
 const UI_GROUP_LABELS_CLIENT = {
-  technical: 'Techniczne SEO + Schema',
+  technical: 'Techniczne SEO',
   performance: 'Wydajność',
   onpage: 'On-page',
   eeat: 'E-E-A-T',
@@ -553,12 +562,12 @@ const UI_GROUP_LABELS_CLIENT = {
   ai_aeo: 'AI / AEO'
 };
 const UI_GROUP_WEIGHTS_CLIENT = {
-  technical: 30,
-  performance: 15,
+  technical: 20,
+  performance: 10,
   onpage: 10,
-  eeat: 22,
-  patents: 8,
-  ai_aeo: 12
+  eeat: 25,
+  patents: 15,
+  ai_aeo: 20
 };
 const SCORE_VALUE_MAP_CLIENT = {0: 0, 1: 0.35, 2: 1};
 
@@ -709,6 +718,21 @@ function renderResult(r) {
   document.getElementById('heroScoreContainer').innerHTML = renderHeroRadarShell();
   document.getElementById('heroScoreContainer').style.display = 'flex';
   document.getElementById('auditForm').style.display = 'none';
+  let domainLabel = '';
+  try { domainLabel = new URL(r.url).hostname.replace(/^www\./, ''); } catch(e) { domainLabel = r.url || ''; }
+  const heroH1 = document.querySelector('.hero h1');
+  const heroLede = document.querySelector('.hero .lede');
+  if (heroH1) heroH1.innerHTML = `Wyniki audytu AI SEO dla <em>${esc(domainLabel)}</em>`;
+  if (heroLede) heroLede.style.display = 'none';
+  const ctaContainer = document.getElementById('ctaContainer');
+  let domainBadge = document.getElementById('heroDomainBadge');
+  if (!domainBadge) {
+    domainBadge = document.createElement('div');
+    domainBadge.id = 'heroDomainBadge';
+    domainBadge.className = 'hero-domain-badge';
+    ctaContainer.parentNode.insertBefore(domainBadge, ctaContainer);
+  }
+  domainBadge.innerHTML = `Audytowana domena: <strong>${esc(domainLabel)}</strong>`;
   document.getElementById('ctaScoreWrapper').innerHTML = `
     <div style="display:flex; align-items:baseline; color:${overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b'}; font-family:var(--sans); letter-spacing:-0.04em;">
       <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
@@ -742,7 +766,7 @@ function drawHeroRadar(groups) {
     const labels = chartGroups.map(g => {
       if (g.id === 'ai_aeo') return ['AI', 'AEO'];
       if (g.id === 'patents') return ['Patenty', 'Google'];
-      if (g.id === 'technical') return ['Techniczne', 'SEO'];
+      if (g.id === 'technical') return 'Techniczne SEO';
       return g.label;
     });
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
@@ -817,18 +841,20 @@ function renderCategorySwitcher(r, state) {
   const items = [{cat:'all', label:'Wszystkie', score: allScore}].concat(
     groups.map(g => {
       const sg = stateGroups.find(x => x.id === g);
-      return {cat: g, label: groupLabel(r, g), score: sg ? (sg.score ?? '–') : '–'};
+      return {cat: g, label: groupLabel(r, g), score: sg ? sg.score : null};
     })
   );
   return `
     <div class="url-switcher">
       <span class="url-switcher-label">Kategoria:</span>
-      ${items.map(it => `
-        <button class="url-pill ${currentCategory === it.cat ? 'active' : ''}" data-cat="${esc(it.cat)}">
+      ${items.map(it => {
+        const tone = scoreToneClass(it.score);
+        const toneCls = tone ? `tone-${tone}` : '';
+        return `
+        <button class="url-pill ${toneCls} ${currentCategory === it.cat ? 'active' : ''}" data-cat="${esc(it.cat)}" title="${it.score === null || it.score === undefined ? 'brak danych' : it.score + '/100'}">
           <span class="pill-label">${esc(it.label)}</span>
-          <span class="pill-score">${it.score}</span>
         </button>
-      `).join('')}
+      `;}).join('')}
     </div>
   `;
 }
