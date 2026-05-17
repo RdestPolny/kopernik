@@ -675,21 +675,19 @@ CRITICAL_FACTOR_PENALTIES = {
     "https_enabled": 12,
 }
 
-UI_GROUP_ORDER = ["technical", "performance", "onpage", "schema", "eeat", "patents", "ai_aeo"]
+UI_GROUP_ORDER = ["technical", "performance", "onpage", "eeat", "patents", "ai_aeo"]
 UI_GROUP_LABELS = {
-    "technical": "Techniczne SEO",
+    "technical": "Techniczne SEO + Schema",
     "performance": "Wydajność",
     "onpage": "On-page",
-    "schema": "Schema",
     "eeat": "E-E-A-T",
     "patents": "Patenty Google",
     "ai_aeo": "AI / AEO",
 }
 UI_GROUP_WEIGHTS = {
-    "technical": 18,
+    "technical": 30,
     "performance": 15,
     "onpage": 10,
-    "schema": 18,
     "eeat": 22,
     "patents": 8,
     "ai_aeo": 12,
@@ -789,7 +787,7 @@ def _ui_group_for_factor(factor_id: str, meta: dict | None = None, *, is_tech: b
     if meta.get("source") == "google_patent":
         return "patents"
     if factor_id in SCHEMA_FACTOR_IDS or "schema" in factor_id:
-        return "schema"
+        return "technical"
     if is_tech or is_domain:
         return "technical"
 
@@ -811,9 +809,6 @@ def _impact_effort_for_factor(factor_id: str, group: str, meta: dict | None = No
     if group == "patents":
         impact = 3 if meta.get("confidence") == "high" else 2
         effort = 2 if meta.get("seo_inference_level") == "direct" else 3
-    elif group == "schema":
-        impact = 3
-        effort = 1
     elif group == "eeat":
         impact = 3
         effort = 2
@@ -821,8 +816,12 @@ def _impact_effort_for_factor(factor_id: str, group: str, meta: dict | None = No
         impact = 3 if factor_id in {"direct_answer_near_content_start", "citable-fragment-density"} else 2
         effort = 2
     elif group == "technical":
-        impact = 3 if factor_id in CRITICAL_FACTOR_PENALTIES or is_domain else 2
-        effort = 1
+        if factor_id in SCHEMA_FACTOR_IDS or "schema" in factor_id:
+            impact = 3
+            effort = 1
+        else:
+            impact = 3 if factor_id in CRITICAL_FACTOR_PENALTIES or is_domain else 2
+            effort = 1
     elif group == "performance":
         impact = 3 if factor_id in {"performance_score_mobile", "lcp_mobile_ok", "cls_mobile_ok"} else 2
         effort = 3
@@ -901,7 +900,8 @@ def _generic_detail(factor_id: str, label: str, group: str, meta: dict | None = 
             "patent_ref": ", ".join(patents),
         }
 
-    if group == "schema":
+    is_schema = factor_id in SCHEMA_FACTOR_IDS or "schema" in factor_id
+    if is_schema:
         return {
             "what": f"{label} to techniczny opis treści w danych strukturalnych, który pomaga wyszukiwarkom i systemom AI rozpoznać typ strony.",
             "why": "Schema zmniejsza niejednoznaczność: artykuł, organizacja, oferta, breadcrumb lub osoba są opisane jawnie, a nie tylko wywnioskowane z HTML.",

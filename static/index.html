@@ -543,21 +543,19 @@ function renderPagesList(pages) {
   `;
 }
 
-const UI_GROUP_ORDER_CLIENT = ['technical', 'performance', 'onpage', 'schema', 'eeat', 'patents', 'ai_aeo'];
+const UI_GROUP_ORDER_CLIENT = ['technical', 'performance', 'onpage', 'eeat', 'patents', 'ai_aeo'];
 const UI_GROUP_LABELS_CLIENT = {
-  technical: 'Techniczne SEO',
+  technical: 'Techniczne SEO + Schema',
   performance: 'Wydajność',
   onpage: 'On-page',
-  schema: 'Schema',
   eeat: 'E-E-A-T',
   patents: 'Patenty Google',
   ai_aeo: 'AI / AEO'
 };
 const UI_GROUP_WEIGHTS_CLIENT = {
-  technical: 18,
+  technical: 30,
   performance: 15,
   onpage: 10,
-  schema: 18,
   eeat: 22,
   patents: 8,
   ai_aeo: 12
@@ -908,9 +906,9 @@ function renderCategory(r, groupId, num, state) {
 }
 
 const CAT_BLURBS = {
-  technical: 'Dostępność dla crawlerów AI: HTTPS, robots.txt, GPTBot/ClaudeBot/PerplexityBot, llms.txt.',
+  technical: 'Dostępność dla crawlerów AI (HTTPS, robots.txt, GPTBot/ClaudeBot, llms.txt) + dane strukturalne schema.org dopasowane do typu strony.',
+  performance: 'Core Web Vitals i Lighthouse Performance (mobile) per URL — LCP, CLS, TBT, FCP.',
   onpage: 'Czytelne tytuły, meta, struktura nagłówków — fundament rozumienia treści przez LLM.',
-  schema: 'Strukturalne dane (schema.org) dopasowane do typu strony — paliwo dla rich results i RAG.',
   eeat: 'Doświadczenie, ekspertyza, autorytatywność, wiarygodność — sygnały jakości E-E-A-T.',
   patents: 'Hipotezy audytowe wyprowadzone z bazy patentów Google — sprawdzalne sygnały, nie deklaracja czynników rankingowych.',
   ai_aeo: 'Ekstraktywność dla RAG, fan-out zapytań, gotowość treści na cytowanie w AI Overviews i Perplexity.'
