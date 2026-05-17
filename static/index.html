@@ -140,10 +140,6 @@ button{font:inherit;cursor:pointer}
 .url-pill .pill-score{font-family:var(--mono);font-size:0.72rem;font-weight:600;opacity:0.65}
 .url-pill.active .pill-score{opacity:1;color:var(--gold-2)}
 
-/* Cap banner */
-.cap-banner{background:#FBE6E4;border-left:3px solid var(--red);padding:14px 18px;font-size:0.9rem;color:var(--ink-2);margin-bottom:40px;border-radius:0 4px 4px 0}
-.cap-banner strong{color:var(--red);font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px}
-
 /* Priority strip */
 .priority{margin:0 0 64px}
 .priority-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;gap:16px;flex-wrap:wrap}
@@ -339,14 +335,105 @@ document.getElementById('modeToggleNav').addEventListener('click', (e) => {
   applyMode();
 });
 
-form.addEventListener('submit', (e) => {
+form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const url = urlInput.value.trim();
   if (!url) return;
-  startAudit(url);
+  await fetchCandidatesAndPick(url);
 });
 
-function startAudit(url) {
+async function fetchCandidatesAndPick(url) {
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Szukam podstron...';
+  progress.classList.remove('hidden');
+  progressFill.style.width = '5%';
+  progressMsg.textContent = 'Pobieram sitemapę i klasyfikuję podstrony (Gemini)...';
+  try {
+    const r = await fetch(`/audit/candidates?url=${encodeURIComponent(url)}`);
+    if (!r.ok) throw new Error('Błąd pobierania kandydatów');
+    const data = await r.json();
+    progress.classList.add('hidden');
+    showPagePicker(data);
+  } catch (err) {
+    progressMsg.textContent = 'Błąd: ' + err.message;
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Spróbuj ponownie';
+  }
+}
+
+function showPagePicker(data) {
+  const cand = data.candidates || {};
+  const homepage = data.homepage;
+  const groups = [
+    {key: 'service', label: 'Strona sprzedażowa (oferta / usługa / produkt)', required: true},
+    {key: 'article', label: 'Artykuł / wpis blogowy / poradnik', required: true},
+    {key: 'about', label: 'O firmie / zespół (jeśli istnieje)', required: false},
+  ];
+  const html = `
+    <div id="pagePickerOverlay" style="position:fixed;inset:0;background:rgba(10,10,10,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;">
+      <div style="background:#fff;max-width:780px;width:100%;max-height:90vh;overflow-y:auto;border-radius:6px;padding:32px;">
+        <h2 style="margin:0 0 8px;font-size:1.4rem;">Potwierdź podstrony do audytu</h2>
+        <p style="color:#6B6B68;margin:0 0 24px;font-size:0.92rem;">Strona główna (${esc(homepage)}) jest wybrana automatycznie. Wybierz po jednym kandydacie dla pozostałych typów — Gemini zasugerował najbardziej prawdopodobnych. Możesz też wpisać własny URL.</p>
+        <form id="pagePickerForm">
+          ${groups.map(g => renderPickerGroup(g, cand[g.key] || [])).join('')}
+          <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;">
+            <button type="submit" class="btn" style="background:#edd971;color:#0A0A0A;border:none;padding:12px 24px;font-weight:600;cursor:pointer;border-radius:3px;">Audytuj wybrane</button>
+            <button type="button" id="pickerCancel" style="background:transparent;border:1px solid #ccc;padding:12px 24px;cursor:pointer;border-radius:3px;">Anuluj</button>
+          </div>
+        </form>
+      </div>
+    </div>`;
+  document.body.insertAdjacentHTML('beforeend', html);
+  document.getElementById('pickerCancel').addEventListener('click', closePagePicker);
+  document.getElementById('pagePickerForm').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const picks = [];
+    groups.forEach(g => {
+      const radio = document.querySelector(`input[name="pick_${g.key}"]:checked`);
+      const customField = document.getElementById(`custom_${g.key}`);
+      let url = '';
+      if (radio && radio.value === '__custom__') {
+        url = customField.value.trim();
+      } else if (radio && radio.value !== '__skip__') {
+        url = radio.value;
+      }
+      if (url) picks.push({url, page_type: g.key});
+    });
+    closePagePicker();
+    startAudit(homepage, picks);
+  });
+}
+
+function renderPickerGroup(group, items) {
+  const opts = items.map((it, i) => `
+    <label style="display:flex;align-items:flex-start;gap:8px;padding:8px;border:1px solid #eee;border-radius:3px;margin-bottom:6px;cursor:pointer;">
+      <input type="radio" name="pick_${group.key}" value="${esc(it.url)}" ${i === 0 ? 'checked' : ''} style="margin-top:3px;">
+      <span style="flex:1;min-width:0;">
+        <span style="display:block;font-size:0.88rem;color:#1A1A1A;word-break:break-all;">${esc(it.url)}</span>
+        ${it.reason ? `<span style="display:block;font-size:0.78rem;color:#6B6B68;margin-top:2px;">${esc(it.reason)}</span>` : ''}
+      </span>
+    </label>`).join('');
+  return `
+    <div style="margin-bottom:20px;">
+      <div style="font-weight:600;font-size:0.95rem;margin-bottom:8px;">${esc(group.label)}${group.required ? '' : ' <span style="color:#6B6B68;font-weight:400;">— opcjonalna</span>'}</div>
+      ${items.length ? opts : '<div style="color:#6B6B68;font-size:0.85rem;font-style:italic;margin-bottom:8px;">Brak automatycznych sugestii — wpisz własny URL.</div>'}
+      <label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px dashed #ccc;border-radius:3px;cursor:pointer;">
+        <input type="radio" name="pick_${group.key}" value="__custom__" ${items.length ? '' : 'checked'}>
+        <span style="font-size:0.85rem;color:#6B6B68;">Własny URL:</span>
+        <input type="url" id="custom_${group.key}" placeholder="https://..." style="flex:1;border:none;border-bottom:1px solid #ccc;padding:4px;font:inherit;outline:none;">
+      </label>
+      ${group.required ? '' : `<label style="display:flex;align-items:center;gap:8px;padding:4px 8px;cursor:pointer;"><input type="radio" name="pick_${group.key}" value="__skip__"><span style="font-size:0.82rem;color:#6B6B68;">Pomiń</span></label>`}
+    </div>`;
+}
+
+function closePagePicker() {
+  const ov = document.getElementById('pagePickerOverlay');
+  if (ov) ov.remove();
+  submitBtn.disabled = false;
+  submitBtn.textContent = 'Uruchom audyt';
+}
+
+function startAudit(url, picks) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Audytuję...';
   progress.classList.remove('hidden');
@@ -355,7 +442,9 @@ function startAudit(url) {
   progressFill.style.width = '3%';
   progressMsg.textContent = 'Łączenie ze streamem...';
 
-  const es = new EventSource(`/audit/stream?url=${encodeURIComponent(url)}`);
+  let qs = `url=${encodeURIComponent(url)}`;
+  if (picks && picks.length) qs += `&picks=${encodeURIComponent(JSON.stringify(picks))}`;
+  const es = new EventSource(`/audit/stream?${qs}`);
   es.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if (data.step === 'progress') {
@@ -469,15 +558,6 @@ const UI_GROUP_WEIGHTS_CLIENT = {
   ai_aeo: 15
 };
 const SCORE_VALUE_MAP_CLIENT = {0: 0, 1: 0.35, 2: 1};
-const HARD_TECH_CAPS_CLIENT = {
-  https_enabled: 49,
-  robots_txt_accessible: 49,
-  gptbot_not_blocked: 49,
-  claudebot_not_blocked: 49,
-  perplexitybot_not_blocked: 49,
-  google_extended_not_blocked: 59,
-  llms_txt_present: 79
-};
 
 let currentScope = 'all';
 let heroRadarChart = null;
@@ -554,38 +634,8 @@ function computeScopeState(r, scope) {
     weightedTotal += group.score * weight;
     weightTotal += weight;
   });
-  const rawOverall = weightTotal ? Math.round(weightedTotal / weightTotal) : 0;
-  const caps = calculateScoreCaps(scoped);
-  const overall = caps.length ? Math.min(rawOverall, ...caps.map(cap => cap.max_score)) : rawOverall;
-  return {overall, raw_overall: rawOverall, groups, caps};
-}
-
-function calculateScoreCaps(scoped) {
-  const caps = [];
-  scoped.forEach(obs => {
-    const factorId = obs._factor_id;
-    if (HARD_TECH_CAPS_CLIENT[factorId] && Number(obs.score || 0) === 0) {
-      caps.push({max_score: HARD_TECH_CAPS_CLIENT[factorId], reason: `Krytyczny problem techniczny: ${factorId}`, factor_id: factorId});
-    }
-  });
-  const schemaMissing = scoped.find(obs => obs._group === 'schema' && Number(obs.score || 0) === 0);
-  if (schemaMissing) {
-    caps.push({max_score: 69, reason: 'Brak wymaganego schema dla co najmniej jednego aplikowalnego typu strony.', factor_id: schemaMissing._factor_id || 'schema'});
-  }
-  const articleTrustMissing = scoped.find(obs =>
-    obs.page_type === 'article' &&
-    ['author_bio_with_name_and_credentials', 'external_authoritative_citations_with_links'].includes(obs._factor_id) &&
-    Number(obs.score || 0) === 0
-  );
-  if (articleTrustMissing) {
-    caps.push({max_score: 59, reason: 'Artykuł ma krytyczny brak zaufania: autor lub źródła.', factor_id: articleTrustMissing._factor_id});
-  }
-  if (scoped.length) {
-    const zeroRatio = scoped.filter(obs => Number(obs.score || 0) === 0).length / scoped.length;
-    if (zeroRatio > 0.50) caps.push({max_score: 54, reason: 'Ponad połowa aplikowalnych czynników ma wynik 0.', factor_id: 'zero_ratio'});
-    else if (zeroRatio > 0.30) caps.push({max_score: 64, reason: 'Ponad 30% aplikowalnych czynników ma wynik 0.', factor_id: 'zero_ratio'});
-  }
-  return caps.sort((a, b) => a.max_score - b.max_score);
+  const overall = weightTotal ? Math.round(weightedTotal / weightTotal) : 0;
+  return {overall, raw_overall: overall, groups};
 }
 
 function scopedFactorView(factor, scope) {
@@ -746,7 +796,6 @@ function renderAuditShell(r) {
   return `
     <div class="report" id="auditRoot">
       ${renderUrlSwitcher(r, state)}
-      ${renderCapBanner(state)}
       ${renderPriority(r)}
       ${groupOrder(r).map((g, i) => renderCategory(r, g, i + 1, state)).join('')}
       ${renderExtras(r)}
@@ -771,16 +820,6 @@ function renderUrlSwitcher(r, state) {
           <span class="pill-score">${it.score}</span>
         </button>
       `).join('')}
-    </div>
-  `;
-}
-
-function renderCapBanner(state) {
-  if (!state.caps?.length) return '';
-  return `
-    <div class="cap-banner">
-      <strong>Sufit wyniku · max ${state.overall}/100</strong>
-      ${esc(state.caps[0].reason)}
     </div>
   `;
 }

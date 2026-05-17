@@ -689,15 +689,6 @@ UI_GROUP_WEIGHTS = {
     "ai_aeo": 15,
 }
 SCORE_VALUE_MAP = {0: 0.0, 1: 0.35, 2: 1.0}
-HARD_TECH_CAPS = {
-    "https_enabled": 49,
-    "robots_txt_accessible": 49,
-    "gptbot_not_blocked": 49,
-    "claudebot_not_blocked": 49,
-    "perplexitybot_not_blocked": 49,
-    "google_extended_not_blocked": 59,
-    "llms_txt_present": 79,
-}
 
 SCHEMA_FACTOR_IDS = {
     "appropriate_schema_for_content_type",
@@ -1126,63 +1117,8 @@ def calculate_scope_scores(factor_index: list[dict], scope_url: str = "all") -> 
         weight = UI_GROUP_WEIGHTS.get(group["id"], 10)
         weighted_total += group["score"] * weight
         weight_total += weight
-    raw_overall = round(weighted_total / weight_total) if weight_total else 0
-    caps = calculate_score_caps(scoped_observations, scoped_factors)
-    overall = min([raw_overall] + [cap["max_score"] for cap in caps]) if caps else raw_overall
-    return {"overall": overall, "raw_overall": raw_overall, "groups": groups, "caps": caps}
-
-
-def calculate_score_caps(scoped_observations: list[dict], scoped_factors: list[dict]) -> list[dict]:
-    caps: list[dict] = []
-    for obs in scoped_observations:
-        factor_id = obs.get("_factor_id")
-        if factor_id in HARD_TECH_CAPS and obs.get("score", 2) == 0:
-            caps.append({
-                "max_score": HARD_TECH_CAPS[factor_id],
-                "reason": f"Krytyczny problem techniczny: {factor_id}",
-                "factor_id": factor_id,
-            })
-
-    schema_missing = [
-        obs for obs in scoped_observations
-        if obs.get("_group") == "schema" and obs.get("score", 2) == 0
-    ]
-    if schema_missing:
-        caps.append({
-            "max_score": 69,
-            "reason": "Brak wymaganego schema dla co najmniej jednego aplikowalnego typu strony.",
-            "factor_id": schema_missing[0].get("_factor_id", "schema"),
-        })
-
-    article_trust_missing = [
-        obs for obs in scoped_observations
-        if obs.get("page_type") == "article"
-        and obs.get("_factor_id") in {"author_bio_with_name_and_credentials", "external_authoritative_citations_with_links"}
-        and obs.get("score", 2) == 0
-    ]
-    if article_trust_missing:
-        caps.append({
-            "max_score": 59,
-            "reason": "Artykuł ma krytyczny brak zaufania: autor lub źródła.",
-            "factor_id": article_trust_missing[0].get("_factor_id", "article_trust"),
-        })
-
-    if scoped_observations:
-        zero_ratio = len([obs for obs in scoped_observations if obs.get("score", 2) == 0]) / len(scoped_observations)
-        if zero_ratio > 0.50:
-            caps.append({
-                "max_score": 54,
-                "reason": "Ponad połowa aplikowalnych czynników ma wynik 0.",
-                "factor_id": "zero_ratio",
-            })
-        elif zero_ratio > 0.30:
-            caps.append({
-                "max_score": 64,
-                "reason": "Ponad 30% aplikowalnych czynników ma wynik 0.",
-                "factor_id": "zero_ratio",
-            })
-
-    return sorted(caps, key=lambda item: item["max_score"])
+    overall = round(weighted_total / weight_total) if weight_total else 0
+    return {"overall": overall, "raw_overall": overall, "groups": groups}
 
 
 def build_top_actions(factor_index: list[dict], scope_url: str = "all", limit: int = 5) -> list[dict]:
@@ -1234,10 +1170,8 @@ def build_dashboard(factor_index: list[dict], page_audits: list[dict]) -> dict:
         "page_type": "all",
         "page_type_label": "Wszystkie",
         "count": len(page_audits),
-            "score": default_scores["overall"],
-            "raw_score": default_scores["raw_overall"],
-            "caps": default_scores["caps"],
-        }]
+        "score": default_scores["overall"],
+    }]
     for idx, page in enumerate(page_audits, start=1):
         scoped = calculate_scope_scores(factor_index, page.get("url", ""))
         url_options.append({
@@ -1249,14 +1183,10 @@ def build_dashboard(factor_index: list[dict], page_audits: list[dict]) -> dict:
             "page_type_label": page.get("page_type_label", ""),
             "count": 1,
             "score": scoped["overall"],
-            "raw_score": scoped["raw_overall"],
-            "caps": scoped["caps"],
         })
 
     return {
         "overall": default_scores["overall"],
-        "raw_overall": default_scores["raw_overall"],
-        "caps": default_scores["caps"],
         "groups": default_scores["groups"],
         "top_actions": build_top_actions(factor_index, "all", limit=5),
         "url_options": url_options,
@@ -1446,6 +1376,95 @@ def _ensure_about_page(picked: list[dict], candidates: list[str], base_url: str)
     if picked:
         picked[-1] = {"url": about_url, "page_type": "about", "reason": "wymuszona strona O nas / Zespół (sygnał E-E-A-T)"}
     return picked
+
+
+def propose_page_candidates(all_urls: list[str], homepage_url: str, base_url: str, per_type: int = 4) -> dict:
+    """Gemini groups sitemap URLs into buckets (service/article/about/other). User confirms picks."""
+    domain = urlparse(base_url).netloc
+    clean: list[str] = []
+    seen = set()
+    for u in all_urls:
+        pu = urlparse(u)
+        if pu.netloc and pu.netloc != domain:
+            continue
+        if re.search(r"\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|xml|woff2?|ttf|mp4|zip|pdf)(\?|$)", u, re.I):
+            continue
+        key = (pu.path.rstrip("/"), pu.query)
+        if key in seen or pu.path in ("", "/"):
+            continue
+        seen.add(key)
+        clean.append(u)
+
+    empty = {"service": [], "article": [], "about": [], "other": []}
+    if not clean:
+        return empty
+    candidates = clean[:80]
+
+    prompt = f"""Jesteś ekspertem SEO. Klasyfikujesz podstrony witryny i sugerujesz NAJLEPSZYCH kandydatów do audytu.
+
+<cel>
+Pogrupuj kandydatów w 4 kubełki: service (sprzedażowa/oferta/produkt/cennik/landing), article (blog/poradnik/case study/news),
+about (o nas/zespół/historia), other (portfolio, FAQ, referencje). Dla każdego kubełka WYBIERZ do {per_type} najbardziej reprezentatywnych URL-i.
+Strona główna {homepage_url} jest JUŻ wybrana — nie wliczaj jej.
+</cel>
+
+<wykluczenia>
+polityka prywatności, regulamin, RODO, cookies; paginacja; tagi/archiwa/wyniki wyszukiwania; logowanie/koszyk/konto;
+URL-e z parametrami śledzenia; strony błędów/staging.
+</wykluczenia>
+
+<wskazówki>
+- Slug głębszy = bardziej konkretna treść (preferuj "/uslugi/seo-techniczny" nad "/uslugi").
+- Dla 'article' wybierz najmocniejsze tematycznie wpisy (nie listingi).
+- W każdym kubełku unikaj duplikatów tematycznych.
+- Jeśli kubełek pusty - zwróć [].
+</wskazówki>
+
+<kandydaci>
+{chr(10).join(f"- {u}" for u in candidates)}
+</kandydaci>
+
+Zwróć TYLKO JSON:
+{{
+  "service": [{{"url":"https://...","reason":"krótkie uzasadnienie po polsku"}}, ...],
+  "article": [...],
+  "about": [...],
+  "other": [...]
+}}"""
+
+    try:
+        parsed = _extract_json(_gemini_call(prompt, temperature=0.2, max_tokens=2048))
+    except Exception:
+        return _heuristic_propose_candidates(candidates, base_url, per_type)
+
+    cand_set = set(candidates)
+    out = {"service": [], "article": [], "about": [], "other": []}
+    for bucket in out:
+        for item in (parsed.get(bucket) or [])[:per_type]:
+            u = item.get("url") if isinstance(item, dict) else None
+            if u and u in cand_set and u not in {p["url"] for p in out[bucket]}:
+                out[bucket].append({"url": u, "reason": (item.get("reason") if isinstance(item, dict) else "") or ""})
+    # Fallback per empty bucket using heuristics
+    heur = _heuristic_propose_candidates(candidates, base_url, per_type)
+    for bucket, items in out.items():
+        if not items:
+            out[bucket] = heur[bucket]
+    return out
+
+
+def _heuristic_propose_candidates(urls: list[str], base_url: str, per_type: int) -> dict:
+    buckets: dict[str, list[dict]] = {"service": [], "article": [], "about": [], "other": []}
+    for u in urls:
+        pt = classify_page_type_heuristic(u, base_url)
+        if pt in buckets:
+            bucket = pt
+        elif pt in (None, "category"):
+            bucket = "other"
+        else:
+            continue
+        if len(buckets[bucket]) < per_type:
+            buckets[bucket].append({"url": u, "reason": "heurystyka URL"})
+    return buckets
 
 
 def _heuristic_pick_and_classify(urls: list[str], base_url: str) -> list[dict]:
@@ -2310,7 +2329,7 @@ def combined_page_score(factor_pct: int, tech_pct: int) -> int:
 
 # --- SSE AUDIT STREAM ---
 
-def audit_stream(url: str):
+def audit_stream(url: str, picks: list[dict] | None = None):
     def event(step: str, data: dict):
         return f"data: {json.dumps({'step': step, **data})}\n\n"
 
@@ -2318,27 +2337,42 @@ def audit_stream(url: str):
         parsed = urlparse(url)
         base_url = f"{parsed.scheme}://{parsed.netloc}"
 
-        # 1. URL discovery
-        yield event("progress", {"message": "Wykrywanie podstron (sitemap.xml → Firecrawl /map)...", "pct": 5})
-        sitemap_urls = fetch_sitemap_urls(base_url)
-        discovery_source = "sitemap" if sitemap_urls else "firecrawl-map"
-        if not sitemap_urls:
-            sitemap_urls = fetch_firecrawl_map(base_url)
-        yield event("progress", {"message": f"Znaleziono {len(sitemap_urls)} URL-i ({discovery_source}). Gemini klasyfikuje + wybiera reprezentację...", "pct": 12})
+        if picks:
+            # User-confirmed selection. Skip Gemini auto-pick.
+            yield event("progress", {"message": "Używam podstron wybranych przez użytkownika.", "pct": 10})
+            sitemap_urls: list[str] = []
+            discovery_source = "user-picked"
+        else:
+            yield event("progress", {"message": "Wykrywanie podstron (sitemap.xml → Firecrawl /map)...", "pct": 5})
+            sitemap_urls = fetch_sitemap_urls(base_url)
+            discovery_source = "sitemap" if sitemap_urls else "firecrawl-map"
+            if not sitemap_urls:
+                sitemap_urls = fetch_firecrawl_map(base_url)
+            yield event("progress", {"message": f"Znaleziono {len(sitemap_urls)} URL-i ({discovery_source}). Gemini klasyfikuje + wybiera reprezentację...", "pct": 12})
 
-        # 2. Gemini selects + classifies URLs
-        selected = select_and_classify_urls(sitemap_urls, url, base_url) if sitemap_urls else []
-
-        # Always include homepage first
         homepage_entry = {"url": url, "page_type": "homepage", "reason": "strona główna"}
         url_entries: list[dict] = [homepage_entry]
         seen = {url}
-        for s in selected:
-            if s["url"] not in seen:
-                url_entries.append(s)
-                seen.add(s["url"])
-            if len(url_entries) >= MAX_AUDIT_PAGES:
-                break
+
+        if picks:
+            for p in picks:
+                u = (p.get("url") or "").strip()
+                pt = p.get("page_type", "other")
+                if pt not in PAGE_TYPE_FACTORS:
+                    pt = "other"
+                if u and u not in seen:
+                    url_entries.append({"url": u, "page_type": pt, "reason": "wybór użytkownika"})
+                    seen.add(u)
+                if len(url_entries) >= MAX_AUDIT_PAGES:
+                    break
+        else:
+            selected = select_and_classify_urls(sitemap_urls, url, base_url) if sitemap_urls else []
+            for s in selected:
+                if s["url"] not in seen:
+                    url_entries.append(s)
+                    seen.add(s["url"])
+                if len(url_entries) >= MAX_AUDIT_PAGES:
+                    break
 
         yield event("progress", {"message": f"Scrapowanie {len(url_entries)} podstron (Firecrawl, parallel)...", "pct": 18})
 
@@ -2602,14 +2636,44 @@ async def index():
         return f.read()
 
 
-@app.get("/audit/stream")
-async def audit_endpoint(url: str):
+@app.get("/audit/candidates")
+async def audit_candidates(url: str):
     if not url:
         raise HTTPException(status_code=400, detail="URL required")
     if not url.startswith("http"):
         url = "https://" + url
+    parsed = urlparse(url)
+    base_url = f"{parsed.scheme}://{parsed.netloc}"
+    sitemap_urls = fetch_sitemap_urls(base_url)
+    source = "sitemap" if sitemap_urls else "firecrawl-map"
+    if not sitemap_urls:
+        sitemap_urls = fetch_firecrawl_map(base_url)
+    candidates = propose_page_candidates(sitemap_urls, url, base_url)
+    return {
+        "homepage": url,
+        "base_url": base_url,
+        "discovery_source": source,
+        "sitemap_count": len(sitemap_urls),
+        "candidates": candidates,
+    }
+
+
+@app.get("/audit/stream")
+async def audit_endpoint(url: str, picks: str = ""):
+    if not url:
+        raise HTTPException(status_code=400, detail="URL required")
+    if not url.startswith("http"):
+        url = "https://" + url
+    parsed_picks: list[dict] | None = None
+    if picks:
+        try:
+            parsed_picks = json.loads(picks)
+            if not isinstance(parsed_picks, list):
+                parsed_picks = None
+        except Exception:
+            parsed_picks = None
     return StreamingResponse(
-        audit_stream(url),
+        audit_stream(url, parsed_picks),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
