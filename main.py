@@ -960,7 +960,10 @@ def _enrich_factor_metadata() -> None:
         meta.setdefault("applies_to", PAGE_TECH_APPLIES_TO.get(factor_id, ["homepage", "service", "article", "about", "contact", "category", "other"]))
         meta.setdefault("impact", impact)
         meta.setdefault("effort", effort)
-        meta.setdefault("detail", _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_tech=True))
+        detail = _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_tech=True)
+        if factor_id in TECH_FIX_HOW:
+            detail["how_to_fix"] = TECH_FIX_HOW[factor_id]
+        meta.setdefault("detail", detail)
 
     for factor_id, meta in DOMAIN_TECH_META.items():
         group = _ui_group_for_factor(factor_id, meta, is_domain=True)
@@ -970,7 +973,10 @@ def _enrich_factor_metadata() -> None:
         meta.setdefault("applies_to", ["domain"])
         meta.setdefault("impact", impact)
         meta.setdefault("effort", effort)
-        meta.setdefault("detail", _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_domain=True))
+        detail = _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_domain=True)
+        if factor_id in DOMAIN_FIX_HOW:
+            detail["how_to_fix"] = DOMAIN_FIX_HOW[factor_id]
+        meta.setdefault("detail", detail)
 
     for factor_id, meta in PERFORMANCE_FACTOR_META.items():
         group = _ui_group_for_factor(factor_id, meta, is_performance=True)
@@ -1009,6 +1015,242 @@ def _tech_auto_note(score: int, *, domain: bool = False) -> str:
     return f"Element nie został wykryty w {target}."
 
 
+def _trunc(text: str, limit: int = 80) -> str:
+    text = (text or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[:limit - 1].rstrip() + "…"
+
+
+def _tech_specific_note(key: str, hc: dict, score: int) -> str:
+    """Concrete observation per tech factor — actual values + delta vs threshold."""
+    if not hc:
+        return _tech_auto_note(score)
+    meta = hc.get("meta", {}) or {}
+    heads = hc.get("headings", {}) or {}
+    schema = hc.get("schema", {}) or {}
+    imgs = hc.get("images", {}) or {}
+    sem = hc.get("semantic_html5", {}) or {}
+    contact_sig = hc.get("contact_signals", {}) or {}
+    size_kb = hc.get("html_size_kb", 0)
+
+    if key == "meta_title_present":
+        title = meta.get("title")
+        if title:
+            return f"Title obecny ({len(title)} zn.): „{_trunc(title, 90)}”."
+        return "Brak tagu <title> w <head>."
+    if key == "meta_description":
+        desc = meta.get("description")
+        if desc:
+            ln = len(desc)
+            note = f"Meta description: {ln} zn. „{_trunc(desc, 90)}”."
+            if ln < 70:
+                note += " Za krótko (zalecane 120–160 zn.)."
+            elif ln > 170:
+                note += " Za długo (zalecane 120–160 zn., snippet ucinany)."
+            return note
+        return "Brak meta description w <head>."
+    if key == "canonical_tag":
+        c = meta.get("canonical")
+        return f"Canonical: {c}" if c else "Brak <link rel=\"canonical\">."
+    if key == "h1_single":
+        n = heads.get("h1_count", 0)
+        if n == 1:
+            return "Dokładnie 1 H1 — OK."
+        if n == 0:
+            return "Brak H1 na stronie."
+        return f"{n} elementów H1 — powinien być dokładnie 1."
+    if key == "heading_hierarchy":
+        if heads.get("hierarchy_ok"):
+            return f"Hierarchia poprawna (H2: {heads.get('h2_count',0)}, H3: {heads.get('h3_count',0)})."
+        return f"Skoki poziomów lub brak H2 (H1: {heads.get('h1_count',0)}, H2: {heads.get('h2_count',0)}, H3: {heads.get('h3_count',0)})."
+    if key == "og_tags":
+        ogt, ogd = meta.get("og_title"), meta.get("og_description")
+        if ogt and ogd:
+            return "og:title + og:description obecne."
+        if ogt:
+            return "og:title obecne, brak og:description."
+        return "Brak tagów Open Graph (og:title, og:description)."
+    if key == "viewport_meta":
+        v = meta.get("viewport")
+        return f"Viewport: „{_trunc(v, 80)}”." if v else "Brak <meta name=\"viewport\"> — strona nie skaluje się na mobile."
+    if key == "lang_attribute":
+        lang = meta.get("lang")
+        return f"<html lang=\"{lang}\"> — OK." if lang else "Brak atrybutu lang w <html>."
+    if key == "image_alt_coverage":
+        pct = imgs.get("alt_coverage_pct", 0)
+        total = imgs.get("total", 0)
+        with_alt = imgs.get("with_alt", 0)
+        return f"Pokrycie alt: {pct}% ({with_alt}/{total} obrazów). Próg dobry: ≥90%, słaby: <50%."
+    if key == "semantic_html5_tags":
+        present = [k for k in ("article", "main", "section", "nav", "header", "footer") if sem.get(k)]
+        if present:
+            return f"Tagi semantyczne: {', '.join(present)}."
+        return "Brak tagów semantycznych (<article>, <main>, <section>) — surowy <div>-soup."
+    if key == "response_size_ok":
+        if size_kb > 500:
+            return f"HTML {size_kb} KB — przekracza próg 500 KB o {round(size_kb - 500, 1)} KB. Boty mogą ucinać/wolniej parsować."
+        if size_kb > 200:
+            return f"HTML {size_kb} KB — w strefie ostrzegawczej (próg dobry: ≤200 KB)."
+        return f"HTML {size_kb} KB — w normie."
+    if key in ("organization_schema",):
+        return "Schema Organization obecny." if schema.get("organization") else "Brak schema typu Organization w JSON-LD."
+    if key == "website_schema":
+        return "Schema WebSite obecny." if schema.get("website") else "Brak schema typu WebSite w JSON-LD."
+    if key == "any_schema":
+        types = schema.get("types", []) or []
+        if types:
+            return f"Obecne typy schema: {', '.join(types[:6])}{' …' if len(types) > 6 else ''}."
+        return "Brak jakiegokolwiek JSON-LD na stronie."
+    if key == "product_or_service_schema":
+        if schema.get("product") or schema.get("service"):
+            return "Schema Product/Service obecny."
+        return "Brak schema Product ani Service na stronie usługowej/produktowej."
+    if key == "faq_schema_bonus":
+        return "Schema FAQPage obecny." if schema.get("faq") else "Brak FAQPage (bonus — pomaga w AI Overviews i rich snippets)."
+    if key == "breadcrumb_schema":
+        return "BreadcrumbList obecny." if schema.get("breadcrumb") else "Brak schema BreadcrumbList — okruszki nawigacyjne bez wsparcia w kodzie."
+    if key == "article_schema":
+        return "Schema Article/BlogPosting obecny." if schema.get("article") else "Brak schema Article/BlogPosting na podstronie artykułowej."
+    if key == "schema_author_field":
+        return "Pole author w schema obecne." if schema.get("has_author") else "Brak pola \"author\" w JSON-LD artykułu."
+    if key == "schema_dates":
+        dp = schema.get("has_datepublished")
+        dm = schema.get("has_datemodified")
+        if dp and dm:
+            return "datePublished + dateModified obecne w schema."
+        if dp:
+            return "datePublished obecne, brak dateModified — AI nie wie, że artykuł jest aktualizowany."
+        return "Brak datePublished/dateModified w schema."
+    if key == "person_schema_team":
+        return "Schema Person obecny." if schema.get("person") else "Brak schema Person — zespół niewidoczny dla AI jako encje."
+    if key == "localbusiness_or_organization_schema":
+        if schema.get("localbusiness") or schema.get("organization"):
+            return "Schema LocalBusiness/Organization obecny."
+        return "Brak LocalBusiness ani Organization w JSON-LD."
+    if key == "tel_link_present":
+        return "Klikalny <a href=\"tel:\"> obecny." if contact_sig.get("tel") else "Brak klikalnego numeru telefonu (<a href=\"tel:…\">)."
+    if key == "mailto_link_present":
+        return "Klikalny <a href=\"mailto:\"> obecny." if contact_sig.get("mailto") else "Brak klikalnego e-maila (<a href=\"mailto:…\">)."
+    if key == "contact_form_present":
+        n = contact_sig.get("forms", 0)
+        return f"Formularz kontaktowy: {n} <form> na stronie." if n else "Brak <form> na podstronie kontaktowej."
+    if key == "itemlist_schema":
+        return "Schema ItemList obecny." if schema.get("itemlist") else "Brak schema ItemList — lista produktów/wpisów bez wsparcia w kodzie."
+    return _tech_auto_note(score)
+
+
+def _domain_tech_specific_note(key: str, raw: dict, score: int) -> str:
+    """Concrete observation per domain tech factor."""
+    if not raw:
+        return _tech_auto_note(score, domain=True)
+    robots = raw.get("robots", {}) or {}
+    sitemap = raw.get("sitemap", {}) or {}
+    llms = raw.get("llms", {}) or {}
+    headers = raw.get("http_headers", {}) or {}
+    hc = raw.get("homepage_hc", {}) or {}
+    bots = robots.get("bots", {}) or {}
+
+    if key == "robots_txt_accessible":
+        if robots.get("accessible"):
+            return "robots.txt dostępny (HTTP 200)."
+        err = robots.get("error")
+        return f"robots.txt niedostępny ({err})." if err else "robots.txt niedostępny lub brak pliku."
+    if key in ("gptbot_not_blocked", "perplexitybot_not_blocked", "claudebot_not_blocked", "google_extended_not_blocked"):
+        bot_name = {
+            "gptbot_not_blocked": "GPTBot",
+            "perplexitybot_not_blocked": "PerplexityBot",
+            "claudebot_not_blocked": "ClaudeBot",
+            "google_extended_not_blocked": "Google-Extended",
+        }[key]
+        b = bots.get(bot_name, {}) or {}
+        if b.get("allowed", True):
+            return f"{bot_name} dozwolony{' (wymieniony jawnie w robots.txt)' if b.get('mentioned') else ' (brak reguły Disallow)'}."
+        return f"{bot_name} zablokowany w robots.txt (Disallow: /) — bot AI nie pobiera Twoich treści."
+    if key == "crawl_delay_ok":
+        d = robots.get("crawl_delay")
+        if d is None:
+            return "Brak Crawl-delay — OK."
+        if d < 10:
+            return f"Crawl-delay: {d}s — w normie."
+        if d < 30:
+            return f"Crawl-delay: {d}s — wysoki, spowalnia indeksację."
+        return f"Crawl-delay: {d}s — bardzo wysoki, blokuje crawl."
+    if key == "sitemap_present":
+        if sitemap.get("exists"):
+            return f"sitemap.xml obecna pod {sitemap.get('url','')} ({sitemap.get('size_kb','?')} KB)."
+        return "Brak sitemap.xml — boty muszą same szukać URL-i."
+    if key == "sitemap_in_robots":
+        return "Link do sitemap w robots.txt — OK." if robots.get("sitemap_in_robots") else "Brak linii Sitemap: w robots.txt."
+    if key == "llms_txt_present":
+        if llms.get("exists"):
+            return f"{llms.get('path','/llms.txt')} obecny ({llms.get('size_kb','?')} KB)."
+        return "Brak /llms.txt — pliku ułatwiającego AI poznanie struktury i kluczowych zasobów domeny."
+    if key == "https_enabled":
+        return "HTTPS aktywne (kłódka w przeglądarce)." if hc.get("https") else "HTTPS wyłączone — strona ładowana po HTTP (brak szyfrowania)."
+    if key == "hreflang_used":
+        n = (hc.get("meta", {}) or {}).get("hreflang_count", 0)
+        if n > 0:
+            return f"{n} tag(ów) hreflang w <head>."
+        return "Brak hreflang — strona jednojęzyczna lub język niezadeklarowany."
+    if key == "hsts_enabled":
+        if headers.get("hsts"):
+            return "HSTS aktywne (Strict-Transport-Security obecne w odpowiedzi serwera)."
+        return "Brak nagłówka Strict-Transport-Security."
+    if key == "compression_enabled":
+        if headers.get("compression"):
+            return f"Kompresja aktywna ({headers.get('compression')})."
+        return "Brak kompresji gzip/brotli — strona transferowana jako tekst."
+    return _tech_auto_note(score, domain=True)
+
+
+# Per-factor concrete fix instructions (override generic detail.how_to_fix).
+TECH_FIX_HOW = {
+    "meta_title_present": "Dodaj <title> w <head> — 50–60 zn., zawierający główne słowo kluczowe i markę: <title>Audyt akustyczny mieszkań — Nyquista</title>.",
+    "meta_description": "Dodaj/uzupełnij meta description (120–160 zn.), zawierającą propozycję wartości i CTA. <meta name=\"description\" content=\"…\">.",
+    "canonical_tag": "Dodaj <link rel=\"canonical\" href=\"https://twojadomena.pl/strona/\"> w <head>, wskazując pełny URL bez parametrów śledzących.",
+    "h1_single": "Pozostaw dokładnie jeden <h1> na stronie z głównym tematem podstrony. Pozostałe nagłówki sekcji zamień na <h2>/<h3>.",
+    "heading_hierarchy": "Ułóż nagłówki kolejno: H1 → H2 → H3, bez skoków (np. H1 → H4). Każda sekcja zaczyna się od H2.",
+    "og_tags": "Dodaj w <head>: <meta property=\"og:title\">, <meta property=\"og:description\">, <meta property=\"og:image\">, <meta property=\"og:url\">.",
+    "viewport_meta": "Dodaj <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> w <head>.",
+    "lang_attribute": "Ustaw <html lang=\"pl\"> (lub odpowiedni kod języka).",
+    "image_alt_coverage": "Dodaj atrybut alt do wszystkich <img>. Dla obrazów dekoracyjnych użyj alt=\"\". Dla treściowych — opisz zawartość 5–12 słowami.",
+    "semantic_html5_tags": "Zamień opakowujące <div> na <main>, <article>, <section>, <nav>, <header>, <footer> zgodnie z funkcją bloku.",
+    "response_size_ok": "Zmniejsz wagę HTML do ≤200 KB: usuń inline CSS/JS (przenieś do plików), wykasuj komentarze i niewykorzystany markup, minifikuj output WordPress/CMS, włącz lazy-load grafik.",
+    "organization_schema": "Dodaj JSON-LD Organization z polami: name, url, logo, sameAs (LinkedIn, GBP, social). Umieść w <head> lub stopce.",
+    "website_schema": "Dodaj JSON-LD WebSite z polami: name, url, potentialAction (SearchAction) — pomaga AI rozpoznać markę i wyszukiwarkę wewnętrzną.",
+    "any_schema": "Wstrzyknij dowolny JSON-LD pasujący do typu strony (Organization na home, Article na blogu, Service na ofertach, BreadcrumbList wszędzie).",
+    "product_or_service_schema": "Dodaj JSON-LD Service (lub Product) z polami: name, description, provider, areaServed, offers (price/priceCurrency).",
+    "faq_schema_bonus": "Dodaj JSON-LD FAQPage z faktycznymi pytaniami i odpowiedziami widocznymi też w treści (nie ukryte).",
+    "breadcrumb_schema": "Dodaj JSON-LD BreadcrumbList — lista pozycji od Home → Kategoria → Bieżąca strona, z polami position/name/item.",
+    "article_schema": "Dodaj JSON-LD Article (lub BlogPosting) z polami: headline, author, datePublished, dateModified, image, publisher.",
+    "schema_author_field": "Uzupełnij \"author\": {\"@type\":\"Person\",\"name\":\"…\",\"url\":\"…/o-nas\"} w JSON-LD artykułu.",
+    "schema_dates": "Dodaj \"datePublished\" i \"dateModified\" w formacie ISO 8601 (\"2026-05-17\") do JSON-LD Article.",
+    "person_schema_team": "Dla każdej osoby zespołu dodaj JSON-LD Person z name, jobTitle, sameAs (LinkedIn), worksFor.",
+    "localbusiness_or_organization_schema": "Dodaj JSON-LD LocalBusiness z address (PostalAddress), telephone, openingHours, geo (latitude/longitude).",
+    "tel_link_present": "Zamień telefony w treści na <a href=\"tel:+48123456789\">+48 123 456 789</a>.",
+    "mailto_link_present": "Zamień adresy e-mail w treści na <a href=\"mailto:kontakt@…\">kontakt@…</a>.",
+    "contact_form_present": "Dodaj prosty <form> z polami imię, e-mail, wiadomość + reCAPTCHA. Po wysłaniu — strona dziękująca.",
+    "itemlist_schema": "Dodaj JSON-LD ItemList z position/url/name każdego elementu listy (produkty, wpisy, członkowie).",
+}
+
+DOMAIN_FIX_HOW = {
+    "robots_txt_accessible": "Udostępnij plik /robots.txt (HTTP 200, text/plain). Minimalny: \"User-agent: *\\nAllow: /\\nSitemap: https://twojadomena.pl/sitemap.xml\".",
+    "gptbot_not_blocked": "Usuń z robots.txt sekcję \"User-agent: GPTBot\\nDisallow: /\" (lub zmień Disallow na Allow).",
+    "perplexitybot_not_blocked": "Usuń z robots.txt sekcję \"User-agent: PerplexityBot\\nDisallow: /\".",
+    "claudebot_not_blocked": "Usuń z robots.txt sekcję \"User-agent: ClaudeBot\\nDisallow: /\" (oraz anthropic-ai).",
+    "google_extended_not_blocked": "Usuń z robots.txt sekcję \"User-agent: Google-Extended\\nDisallow: /\" — inaczej AI Overviews Cię pomija.",
+    "crawl_delay_ok": "Usuń lub obniż dyrektywę Crawl-delay w robots.txt (zostaw ≤10 lub nic).",
+    "sitemap_present": "Wygeneruj sitemap.xml (Yoast/RankMath/Screaming Frog) i opublikuj pod /sitemap.xml. Zgłoś w Google Search Console.",
+    "sitemap_in_robots": "Dodaj na końcu robots.txt linię: \"Sitemap: https://twojadomena.pl/sitemap.xml\".",
+    "llms_txt_present": "Stwórz /llms.txt z markdown TOC do najważniejszych URL-i, opisem firmy i licencją treści. Standard: https://llmstxt.org.",
+    "https_enabled": "Wymuś HTTPS: zainstaluj certyfikat Let's Encrypt (zwykle darmowo u hostingu), dodaj redirect 301 HTTP → HTTPS.",
+    "hreflang_used": "Dodaj <link rel=\"alternate\" hreflang=\"pl\" href=\"…\"> i hreflang=\"x-default\" — istotne tylko jeśli masz wersje językowe.",
+    "hsts_enabled": "Dodaj nagłówek serwera: Strict-Transport-Security: max-age=31536000; includeSubDomains.",
+    "compression_enabled": "Włącz na serwerze gzip lub brotli (nginx: gzip on, brotli on; Apache: mod_deflate). Sprawdza się przez Content-Encoding header.",
+}
+
+
 def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_tech: bool = False, is_domain: bool = False, is_performance: bool = False) -> dict:
     uid = f"perf:{key}" if is_performance else f"domain:{key}" if is_domain else f"tech:{key}" if is_tech else f"factor:{key}"
     if uid not in index:
@@ -1035,10 +1277,11 @@ def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_te
     return index[uid]
 
 
-def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> list[dict]:
+def build_factor_index(page_audits: list[dict], domain_tech_scores: dict, domain_tech_raw: dict | None = None) -> list[dict]:
     index: dict[str, dict] = {}
 
     for pa in page_audits:
+        hc = pa.get("html_checks") or {}
         page_ref = {
             "url": pa.get("url", ""),
             "title": pa.get("title", ""),
@@ -1073,7 +1316,7 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
                 "score_pct": round(score / 2 * 100),
                 "status": status,
                 "status_label": _status_label(status),
-                "note": _tech_auto_note(score),
+                "note": _tech_specific_note(key, hc, score),
             })
 
         for key, perf_data in (pa.get("performance_scores") or {}).items():
@@ -1110,7 +1353,7 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
             "score_pct": round(score / 2 * 100),
             "status": status,
             "status_label": _status_label(status),
-            "note": _tech_auto_note(score, domain=True),
+            "note": _domain_tech_specific_note(key, domain_tech_raw or {}, score),
         })
 
     records = []
@@ -2658,6 +2901,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
                 "performance_scores": pd.get("performance_scores", {}),
                 "pagespeed_raw": pd.get("pagespeed_raw", {}),
                 "combined_score": combined_page_score(f_pct, t_pct),
+                "html_checks": pd["html_checks"],
                 "html_checks_summary": {
                     "word_count": pd["html_checks"].get("content", {}).get("word_count", 0),
                     "html_size_kb": pd["html_checks"].get("html_size_kb", 0),
@@ -2711,7 +2955,17 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         )
 
         legacy_overall = max(0, legacy_base_overall - penalties)
-        factor_index = build_factor_index(page_audits, domain_tech_scores)
+        homepage_hc = next((pa.get("html_checks") for pa in page_audits if pa.get("page_type") == "homepage"), None) or (page_audits[0].get("html_checks") if page_audits else {})
+        domain_tech_raw = {
+            "robots": robots,
+            "sitemap": sitemap,
+            "llms": llms,
+            "http_headers": http_headers,
+            "homepage_hc": homepage_hc,
+        }
+        factor_index = build_factor_index(page_audits, domain_tech_scores, domain_tech_raw)
+        for pa in page_audits:
+            pa.pop("html_checks", None)
         dashboard = build_dashboard(factor_index, page_audits)
         category_scores = {group["id"]: group["score"] if group["score"] is not None else 0 for group in dashboard["groups"]}
         overall = dashboard["overall"]

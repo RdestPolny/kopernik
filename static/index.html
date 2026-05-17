@@ -146,8 +146,6 @@ button{font:inherit;cursor:pointer}
 .url-pill.active.tone-good{background:#16a34a;color:#fff;border-color:#16a34a}
 .url-pill.active.tone-warn{background:#ca9a13;color:#fff;border-color:#ca9a13}
 .url-pill.active.tone-bad{background:#dc2626;color:#fff;border-color:#dc2626}
-.hero-domain-badge{display:inline-flex;align-items:center;gap:10px;background:rgba(237,217,113,0.12);border:1px solid rgba(237,217,113,0.35);padding:8px 14px;border-radius:999px;font-family:var(--mono);font-size:0.78rem;color:#edd971;margin-bottom:18px;letter-spacing:0.04em;word-break:break-all}
-.hero-domain-badge strong{color:#fff;font-weight:600;letter-spacing:0}
 
 /* Priority strip */
 .priority{margin:0 0 64px}
@@ -724,15 +722,6 @@ function renderResult(r) {
   const heroLede = document.querySelector('.hero .lede');
   if (heroH1) heroH1.innerHTML = `Wyniki audytu AI SEO dla <em>${esc(domainLabel)}</em>`;
   if (heroLede) heroLede.style.display = 'none';
-  const ctaContainer = document.getElementById('ctaContainer');
-  let domainBadge = document.getElementById('heroDomainBadge');
-  if (!domainBadge) {
-    domainBadge = document.createElement('div');
-    domainBadge.id = 'heroDomainBadge';
-    domainBadge.className = 'hero-domain-badge';
-    ctaContainer.parentNode.insertBefore(domainBadge, ctaContainer);
-  }
-  domainBadge.innerHTML = `Audytowana domena: <strong>${esc(domainLabel)}</strong>`;
   document.getElementById('ctaScoreWrapper').innerHTML = `
     <div style="display:flex; align-items:baseline; color:${overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b'}; font-family:var(--sans); letter-spacing:-0.04em;">
       <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
