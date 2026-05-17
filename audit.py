@@ -270,7 +270,6 @@ Zwróć TYLKO poprawny JSON (bez markdown, bez wyjaśnień):
     "last_updated_date_visible": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
     "external_authoritative_citations": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
     "firsthand_experience_signals": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
-    "unique_data_or_original_statistics": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
     "sources_cited_inline": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
     "about_or_contact_page_linked": {{"score": 0, "note": "konkretna obserwacja po polsku"}},
     "content_not_generic_ai_fluff": {{"score": 0, "note": "konkretna obserwacja po polsku"}}

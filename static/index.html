@@ -543,9 +543,10 @@ function renderPagesList(pages) {
   `;
 }
 
-const UI_GROUP_ORDER_CLIENT = ['technical', 'onpage', 'schema', 'eeat', 'patents', 'ai_aeo'];
+const UI_GROUP_ORDER_CLIENT = ['technical', 'performance', 'onpage', 'schema', 'eeat', 'patents', 'ai_aeo'];
 const UI_GROUP_LABELS_CLIENT = {
   technical: 'Techniczne SEO',
+  performance: 'Wydajność',
   onpage: 'On-page',
   schema: 'Schema',
   eeat: 'E-E-A-T',
@@ -553,16 +554,18 @@ const UI_GROUP_LABELS_CLIENT = {
   ai_aeo: 'AI / AEO'
 };
 const UI_GROUP_WEIGHTS_CLIENT = {
-  technical: 20,
+  technical: 18,
+  performance: 15,
   onpage: 10,
-  schema: 20,
-  eeat: 25,
-  patents: 10,
-  ai_aeo: 15
+  schema: 18,
+  eeat: 22,
+  patents: 8,
+  ai_aeo: 12
 };
 const SCORE_VALUE_MAP_CLIENT = {0: 0, 1: 0.35, 2: 1};
 
 let currentScope = 'all';
+let currentCategory = 'all';
 let heroRadarChart = null;
 
 function groupOrder(r) {
@@ -697,6 +700,7 @@ function renderResult(r) {
   currentResult = r;
   currentMode = 'pro';
   currentScope = 'all';
+  currentCategory = 'all';
 
   const initialState = computeScopeState(r, currentScope);
 
@@ -796,29 +800,33 @@ function scoreToneClass(score) {
 
 function renderAuditShell(r) {
   const state = computeScopeState(r, currentScope);
+  const groups = groupOrder(r);
+  const visibleGroups = currentCategory === 'all' ? groups : groups.filter(g => g === currentCategory);
   return `
     <div class="report" id="auditRoot">
-      ${renderUrlSwitcher(r, state)}
-      ${renderPriority(r)}
-      ${groupOrder(r).map((g, i) => renderCategory(r, g, i + 1, state)).join('')}
-      ${renderExtras(r)}
+      ${renderCategorySwitcher(r, state)}
+      ${currentCategory === 'all' ? renderPriority(r) : ''}
+      ${visibleGroups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('')}
+      ${currentCategory === 'all' ? renderExtras(r) : ''}
     </div>
   `;
 }
 
-function renderUrlSwitcher(r, state) {
-  const pages = r.page_audits || [];
+function renderCategorySwitcher(r, state) {
+  const groups = groupOrder(r);
+  const stateGroups = state.groups || [];
   const allScore = state.overall;
-  const items = [{scope:'all', label:'Wszystkie', score: allScore}].concat(pages.map(pa => ({
-    scope: pa.url,
-    label: pa.page_type_label || pa.page_type || pa.url,
-    score: computeScopeState(r, pa.url).overall
-  })));
+  const items = [{cat:'all', label:'Wszystkie', score: allScore}].concat(
+    groups.map(g => {
+      const sg = stateGroups.find(x => x.id === g);
+      return {cat: g, label: groupLabel(r, g), score: sg ? (sg.score ?? '–') : '–'};
+    })
+  );
   return `
     <div class="url-switcher">
-      <span class="url-switcher-label">URL:</span>
+      <span class="url-switcher-label">Kategoria:</span>
       ${items.map(it => `
-        <button class="url-pill ${currentScope === it.scope ? 'active' : ''}" data-scope="${esc(it.scope)}">
+        <button class="url-pill ${currentCategory === it.cat ? 'active' : ''}" data-cat="${esc(it.cat)}">
           <span class="pill-label">${esc(it.label)}</span>
           <span class="pill-score">${it.score}</span>
         </button>
@@ -997,6 +1005,12 @@ function renderExtras(r) {
 }
 
 function handleAuditClick(e) {
+  const catBtn = e.target.closest('button[data-cat]');
+  if (catBtn) {
+    currentCategory = catBtn.dataset.cat;
+    refreshAuditView();
+    return;
+  }
   const urlBtn = e.target.closest('button[data-scope]');
   if (!urlBtn) return;
   currentScope = urlBtn.dataset.scope;

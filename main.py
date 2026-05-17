@@ -24,6 +24,8 @@ FIRECRAWL_SCRAPE = "https://api.firecrawl.dev/v1/scrape"
 FIRECRAWL_MAP = "https://api.firecrawl.dev/v1/map"
 PAGESPEED_KEY = os.getenv("PAGESPEED_KEY", "")
 PERPLEXITY_KEY = os.getenv("PERPLEXITY_KEY", "")
+GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
+_PSI_TOKEN_CACHE: dict = {"token": None, "exp": 0}
 
 AI_BOTS = ["GPTBot", "PerplexityBot", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "Google-Extended"]
 MAX_AUDIT_PAGES = 5
@@ -609,7 +611,11 @@ CLIENT_FACTOR_EXPLANATIONS = {
     "hreflang_used": "Podajemy w kodzie do AI i Google języki, w których dostępna jest nasza firma.",
     "hsts_enabled": "Przeglądarka zawsze używa bezpiecznego połączenia – chroni użytkowników i wzmacnia zaufanie.",
     "compression_enabled": "Pliki strony są kompresowane przed wysłaniem – szybsze ładowanie, mniejsze zużycie danych.",
-    "pagespeed_mobile_ok": "Strona szybko ładuje się na telefonach – kluczowe, bo większość użytkowników przegląda na mobile.",
+    "performance_score_mobile": "Strona szybko ładuje się na telefonach – kluczowe, bo większość użytkowników przegląda na mobile.",
+    "lcp_mobile_ok": "Pierwsza duża grafika/nagłówek pojawia się szybko – kluczowe Core Web Vital.",
+    "cls_mobile_ok": "Treść nie skacze w trakcie ładowania – stabilność wizualna podnosi zaufanie i UX.",
+    "tbt_mobile_ok": "Strona reaguje natychmiast na dotyk – brak zacięć przy interakcji.",
+    "fcp_mobile_ok": "Pierwsza treść pojawia się szybko – użytkownik widzi, że coś się dzieje.",
 }
 
 CLIENT_FACTOR_EXPLANATIONS.update(_build_patent_client_explanations())
@@ -628,7 +634,6 @@ DOMAIN_TECH_META = {
     "hreflang_used": {"label": "Tagi hreflang", "category": "tech"},
     "hsts_enabled": {"label": "HSTS (Strict-Transport-Security)", "category": "tech"},
     "compression_enabled": {"label": "Kompresja odpowiedzi (gzip/brotli)", "category": "tech"},
-    "pagespeed_mobile_ok": {"label": "PageSpeed Mobile (Core Web Vitals)", "category": "tech"},
 }
 
 # Domain tech factor weights. Normalized dynamically so sum doesn't need to equal 100.
@@ -641,7 +646,6 @@ DOMAIN_TECH_WEIGHTS = {
     "robots_txt_accessible": 10,
     "sitemap_present": 8,
     "https_enabled": 7,
-    "pagespeed_mobile_ok": 7,
     "hsts_enabled": 3,
     "compression_enabled": 3,
     "crawl_delay_ok": 4,
@@ -671,9 +675,10 @@ CRITICAL_FACTOR_PENALTIES = {
     "https_enabled": 12,
 }
 
-UI_GROUP_ORDER = ["technical", "onpage", "schema", "eeat", "patents", "ai_aeo"]
+UI_GROUP_ORDER = ["technical", "performance", "onpage", "schema", "eeat", "patents", "ai_aeo"]
 UI_GROUP_LABELS = {
     "technical": "Techniczne SEO",
+    "performance": "Wydajność",
     "onpage": "On-page",
     "schema": "Schema",
     "eeat": "E-E-A-T",
@@ -681,12 +686,29 @@ UI_GROUP_LABELS = {
     "ai_aeo": "AI / AEO",
 }
 UI_GROUP_WEIGHTS = {
-    "technical": 20,
+    "technical": 18,
+    "performance": 15,
     "onpage": 10,
-    "schema": 20,
-    "eeat": 25,
-    "patents": 10,
-    "ai_aeo": 15,
+    "schema": 18,
+    "eeat": 22,
+    "patents": 8,
+    "ai_aeo": 12,
+}
+
+PERFORMANCE_FACTOR_META = {
+    "performance_score_mobile": {"label": "Lighthouse Performance (mobile)", "category": "performance"},
+    "lcp_mobile_ok": {"label": "LCP – Largest Contentful Paint (mobile)", "category": "performance"},
+    "cls_mobile_ok": {"label": "CLS – Cumulative Layout Shift (mobile)", "category": "performance"},
+    "tbt_mobile_ok": {"label": "TBT – Total Blocking Time (mobile)", "category": "performance"},
+    "fcp_mobile_ok": {"label": "FCP – First Contentful Paint (mobile)", "category": "performance"},
+}
+
+PERFORMANCE_FACTOR_WHY = {
+    "performance_score_mobile": "Łączna ocena Lighthouse — wpływa na ranking mobilny i UX.",
+    "lcp_mobile_ok": "Czas wczytania największego elementu. Core Web Vitals.",
+    "cls_mobile_ok": "Stabilność layoutu — skoki treści w trakcie ładowania psują UX.",
+    "tbt_mobile_ok": "Czas blokowania głównego wątku przez JS. Wpływa na interaktywność.",
+    "fcp_mobile_ok": "Czas do pierwszego renderu — pierwsze wrażenie użytkownika.",
 }
 SCORE_VALUE_MAP = {0: 0.0, 1: 0.35, 2: 1.0}
 
@@ -760,8 +782,10 @@ def _content_applies_to(factor_id: str) -> list[str]:
     return patent_types or ["homepage", "service", "article", "about", "contact", "category", "other"]
 
 
-def _ui_group_for_factor(factor_id: str, meta: dict | None = None, *, is_tech: bool = False, is_domain: bool = False) -> str:
+def _ui_group_for_factor(factor_id: str, meta: dict | None = None, *, is_tech: bool = False, is_domain: bool = False, is_performance: bool = False) -> str:
     meta = meta or {}
+    if is_performance or meta.get("category") == "performance":
+        return "performance"
     if meta.get("source") == "google_patent":
         return "patents"
     if factor_id in SCHEMA_FACTOR_IDS or "schema" in factor_id:
@@ -799,6 +823,9 @@ def _impact_effort_for_factor(factor_id: str, group: str, meta: dict | None = No
     elif group == "technical":
         impact = 3 if factor_id in CRITICAL_FACTOR_PENALTIES or is_domain else 2
         effort = 1
+    elif group == "performance":
+        impact = 3 if factor_id in {"performance_score_mobile", "lcp_mobile_ok", "cls_mobile_ok"} else 2
+        effort = 3
     else:
         impact = 2
         effort = 2
@@ -809,8 +836,6 @@ def _impact_effort_for_factor(factor_id: str, group: str, meta: dict | None = No
         effort = max(effort, 3)
     if any(token in factor_id for token in low_effort_tokens):
         effort = min(effort, 1)
-    if factor_id == "pagespeed_mobile_ok":
-        effort = 3
 
     return _clamp_score(impact), _clamp_score(effort)
 
@@ -946,6 +971,21 @@ def _enrich_factor_metadata() -> None:
         meta.setdefault("effort", effort)
         meta.setdefault("detail", _generic_detail(factor_id, meta.get("label", factor_id), group, meta, is_domain=True))
 
+    for factor_id, meta in PERFORMANCE_FACTOR_META.items():
+        group = _ui_group_for_factor(factor_id, meta, is_performance=True)
+        impact, effort = _impact_effort_for_factor(factor_id, group, meta)
+        meta.setdefault("group", group)
+        meta.setdefault("group_label", UI_GROUP_LABELS[group])
+        meta.setdefault("applies_to", ["homepage", "service", "article", "about", "contact", "category", "other"])
+        meta.setdefault("impact", impact)
+        meta.setdefault("effort", effort)
+        meta.setdefault("detail", {
+            "what": meta["label"],
+            "why": PERFORMANCE_FACTOR_WHY.get(factor_id, "Wpływa na Core Web Vitals i ranking mobilny."),
+            "how_to_fix": "Zoptymalizuj zasoby (obrazy WebP/AVIF, lazy-load, defer JS), CDN, kompresję, cache. Sprawdź raport PageSpeed Insights dla detali.",
+            "code_example": None,
+        })
+
 
 def _score_status(score: float) -> str:
     if score >= 1.75:
@@ -968,10 +1008,10 @@ def _tech_auto_note(score: int, *, domain: bool = False) -> str:
     return f"Element nie został wykryty w {target}."
 
 
-def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_tech: bool = False, is_domain: bool = False) -> dict:
-    uid = f"domain:{key}" if is_domain else f"tech:{key}" if is_tech else f"factor:{key}"
+def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_tech: bool = False, is_domain: bool = False, is_performance: bool = False) -> dict:
+    uid = f"perf:{key}" if is_performance else f"domain:{key}" if is_domain else f"tech:{key}" if is_tech else f"factor:{key}"
     if uid not in index:
-        group = meta.get("group") or _ui_group_for_factor(key, meta, is_tech=is_tech, is_domain=is_domain)
+        group = meta.get("group") or _ui_group_for_factor(key, meta, is_tech=is_tech, is_domain=is_domain, is_performance=is_performance)
         index[uid] = {
             "uid": uid,
             "id": key,
@@ -1033,6 +1073,25 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
                 "status": status,
                 "status_label": _status_label(status),
                 "note": _tech_auto_note(score),
+            })
+
+        for key, perf_data in (pa.get("performance_scores") or {}).items():
+            meta = PERFORMANCE_FACTOR_META.get(key, {"label": key, "category": "performance"})
+            record = _ensure_factor_record(index, key, meta, is_performance=True)
+            if isinstance(perf_data, dict):
+                score = int(perf_data.get("score", 0))
+                note = perf_data.get("note", "")
+            else:
+                score = int(perf_data)
+                note = ""
+            status = _score_status(score)
+            record["observations"].append({
+                **page_ref,
+                "score": score,
+                "score_pct": round(score / 2 * 100),
+                "status": status,
+                "status_label": _status_label(status),
+                "note": note or _tech_auto_note(score),
             })
 
     for key, score_raw in (domain_tech_scores or {}).items():
@@ -1608,14 +1667,44 @@ def check_http_headers(base_url: str) -> dict:
     return result
 
 
+def _psi_access_token() -> str | None:
+    """Build OAuth bearer token from service account JSON. Cached ~50min."""
+    import time as _t
+    if not GOOGLE_APPLICATION_CREDENTIALS or not os.path.exists(GOOGLE_APPLICATION_CREDENTIALS):
+        return None
+    now = _t.time()
+    if _PSI_TOKEN_CACHE["token"] and _PSI_TOKEN_CACHE["exp"] > now + 60:
+        return _PSI_TOKEN_CACHE["token"]
+    try:
+        from google.oauth2 import service_account
+        import google.auth.transport.requests as _gar
+        creds = service_account.Credentials.from_service_account_file(
+            GOOGLE_APPLICATION_CREDENTIALS,
+            scopes=["https://www.googleapis.com/auth/cloud-platform"],
+        )
+        creds.refresh(_gar.Request())
+        _PSI_TOKEN_CACHE["token"] = creds.token
+        _PSI_TOKEN_CACHE["exp"] = creds.expiry.timestamp() if creds.expiry else now + 3000
+        return creds.token
+    except Exception:
+        return None
+
+
 def check_pagespeed(url: str) -> dict:
-    if not PAGESPEED_KEY:
-        return {"available": False}
+    """Call PageSpeed Insights API. Prefers API key, falls back to service account OAuth."""
+    params = {"url": url, "strategy": "mobile"}
+    headers = {}
+    if PAGESPEED_KEY:
+        params["key"] = PAGESPEED_KEY
+    else:
+        token = _psi_access_token()
+        if not token:
+            return {"available": False, "error": "no PAGESPEED_KEY and no service account"}
+        headers["Authorization"] = f"Bearer {token}"
     try:
         r = requests.get(
             "https://www.googleapis.com/pagespeedonline/v5/runPagespeed",
-            params={"url": url, "strategy": "mobile", "key": PAGESPEED_KEY},
-            timeout=60,
+            params=params, headers=headers, timeout=90,
         )
         r.raise_for_status()
         data = r.json()
@@ -1641,7 +1730,45 @@ def check_pagespeed(url: str) -> dict:
         return {"available": False, "error": str(e)}
 
 
-def build_domain_tech_scores(robots: dict, sitemap: dict, llms: dict, homepage_html_checks: dict, http_headers: dict = None, pagespeed: dict = None) -> dict:
+# Per-URL performance scoring thresholds (mobile, Lighthouse v10 norms).
+def perf_to_scores(ps: dict) -> dict:
+    """Convert PSI response to dict of {factor_id: {score, note}}."""
+    if not ps or not ps.get("available"):
+        return {}
+    out: dict = {}
+    p = ps.get("performance_score") or 0
+    out["performance_score_mobile"] = {
+        "score": 2 if p >= 90 else (1 if p >= 50 else 0),
+        "note": f"Lighthouse Performance: {p}/100 (mobile).",
+    }
+    lcp = ps.get("lcp_ms")
+    if lcp is not None:
+        out["lcp_mobile_ok"] = {
+            "score": 2 if lcp <= 2500 else (1 if lcp <= 4000 else 0),
+            "note": f"LCP: {lcp/1000:.2f}s (cel <2.5s; źle >4s).",
+        }
+    cls = ps.get("cls")
+    if cls is not None:
+        out["cls_mobile_ok"] = {
+            "score": 2 if cls <= 0.1 else (1 if cls <= 0.25 else 0),
+            "note": f"CLS: {cls:.3f} (cel <0.1; źle >0.25).",
+        }
+    tbt = ps.get("tbt_ms")
+    if tbt is not None:
+        out["tbt_mobile_ok"] = {
+            "score": 2 if tbt <= 200 else (1 if tbt <= 600 else 0),
+            "note": f"TBT: {tbt}ms (cel <200ms; źle >600ms).",
+        }
+    fcp = ps.get("fcp_ms")
+    if fcp is not None:
+        out["fcp_mobile_ok"] = {
+            "score": 2 if fcp <= 1800 else (1 if fcp <= 3000 else 0),
+            "note": f"FCP: {fcp/1000:.2f}s (cel <1.8s; źle >3s).",
+        }
+    return out
+
+
+def build_domain_tech_scores(robots: dict, sitemap: dict, llms: dict, homepage_html_checks: dict, http_headers: dict = None) -> dict:
     s = {}
     s["robots_txt_accessible"] = 2 if robots.get("accessible") else 0
     s["gptbot_not_blocked"] = 2 if robots.get("bots", {}).get("GPTBot", {}).get("allowed", True) else 0
@@ -1659,9 +1786,6 @@ def build_domain_tech_scores(robots: dict, sitemap: dict, llms: dict, homepage_h
     if http_headers:
         s["hsts_enabled"] = 2 if http_headers.get("hsts") else 0
         s["compression_enabled"] = 2 if http_headers.get("compression") else 0
-    if pagespeed and pagespeed.get("available"):
-        ps = pagespeed.get("performance_score", 0)
-        s["pagespeed_mobile_ok"] = 2 if ps >= 70 else (1 if ps >= 50 else 0)
     return s
 
 
@@ -2016,7 +2140,7 @@ def _extract_json(text: str) -> dict:
     return json.loads(text)
 
 
-def _page_factor_prompt(page_type: str, url: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None) -> str:
+def _page_factor_prompt(page_type: str, url: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None, sitemap_urls: list[str] | None = None) -> str:
     spec = PAGE_TYPE_FACTORS[page_type]
     patent_factors = patent_factor_ids_for_page_type(page_type)
     factors = spec["factors"] + patent_factors
@@ -2032,6 +2156,25 @@ Nie wymyślaj danych z GSC, analytics, backlinków ani zewnętrznego SERP-u.
 </czynniki_z_patentow_google>
 """ if patent_prompt else ""
     html_summary = _build_html_prompt_summary(html_checks)
+    cluster_section = ""
+    if sitemap_urls and "pillar_or_cluster_page_structure_signals" in factors:
+        from urllib.parse import urlparse as _up
+        slugs = []
+        for u in sitemap_urls[:120]:
+            p = _up(u).path.strip("/")
+            if p and p != _up(url).path.strip("/"):
+                slugs.append(f"- {p}")
+        if slugs:
+            cluster_section = f"""
+<sitemap_urls_dla_oceny_pillar_cluster>
+Poniżej lista innych URL-i z tej witryny (slugi). Użyj ich do oceny czynnika `pillar_or_cluster_page_structure_signals`:
+- score=2: ta strona jest centrum (pillar) klastra LUB należy do wyraźnego klastra tematycznego (≥3 powiązane slugi)
+- score=1: pojedyncze powiązania, brak wyraźnego klastra
+- score=0: izolowana, brak powiązanych tematów w sitemap
+W "note" wskaż 2-3 powiązane slugi lub stwierdź ich brak.
+{chr(10).join(slugs)}
+</sitemap_urls_dla_oceny_pillar_cluster>
+"""
 
     return f"""Jesteś {spec["role"]}. Analizujesz POJEDYNCZĄ stronę danego typu.
 
@@ -2076,7 +2219,7 @@ WAŻNE DLA PATENTÓW: czynniki patentowe oceniaj jako sprawdzalne proxy treści/
 </html_schema_i_sygnaly_techniczne>
 
 {patent_section}
-
+{cluster_section}
 <treść>
 {content}
 </treść>
@@ -2089,8 +2232,8 @@ Zwróć TYLKO poprawny JSON (bez markdown):
 }}"""
 
 
-def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None) -> dict:
-    prompt = _page_factor_prompt(page_type, url, title, meta_desc, content, html_checks)
+def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None, sitemap_urls: list[str] | None = None) -> dict:
+    prompt = _page_factor_prompt(page_type, url, title, meta_desc, content, html_checks, sitemap_urls)
     return _extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=5000))
 
 
@@ -2391,18 +2534,16 @@ def audit_stream(url: str, picks: list[dict] | None = None):
 
         yield event("progress", {"message": "Analiza techniczna domeny (robots, sitemap, llms.txt, headers, PageSpeed) + HTML per strona...", "pct": 32})
 
-        # 4. Domain-level checks — run PageSpeed in parallel with other checks
+        # 4. Domain-level checks (PSI runs per-URL later, in performance step)
         with ThreadPoolExecutor(max_workers=4) as _tech_ex:
             _robots_f = _tech_ex.submit(check_robots_txt, base_url)
             _sitemap_f = _tech_ex.submit(check_sitemap, base_url)
             _llms_f = _tech_ex.submit(check_llms_txt, base_url)
             _headers_f = _tech_ex.submit(check_http_headers, base_url)
-            _pagespeed_f = _tech_ex.submit(check_pagespeed, url)
             robots = _robots_f.result()
             sitemap = _sitemap_f.result()
             llms = _llms_f.result()
             http_headers = _headers_f.result()
-            pagespeed = _pagespeed_f.result()
 
         # Per-page HTML analysis + tech scoring
         page_data: list[dict] = []
@@ -2437,15 +2578,33 @@ def audit_stream(url: str, picks: list[dict] | None = None):
 
         # Domain tech scores (uses homepage html_checks for https/hreflang)
         homepage_data = next((p for p in page_data if p["page_type"] == "homepage"), page_data[0])
-        domain_tech_scores = build_domain_tech_scores(robots, sitemap, llms, homepage_data["html_checks"], http_headers, pagespeed)
+        domain_tech_scores = build_domain_tech_scores(robots, sitemap, llms, homepage_data["html_checks"], http_headers)
+
+        yield event("progress", {"message": "PageSpeed Insights per URL (mobile)...", "pct": 40})
+
+        # 4b. Per-URL PageSpeed Insights (parallel, mobile strategy)
+        def _psi_one(pd):
+            ps = check_pagespeed(pd["url"])
+            return pd["url"], ps, perf_to_scores(ps)
+
+        psi_map: dict[str, dict] = {}
+        with ThreadPoolExecutor(max_workers=min(len(page_data), 5)) as _psi_ex:
+            for fut in as_completed({_psi_ex.submit(_psi_one, pd): pd["url"] for pd in page_data}):
+                u, ps, scores = fut.result()
+                psi_map[u] = {"raw": ps, "scores": scores}
+        for pd in page_data:
+            pd["performance_scores"] = psi_map.get(pd["url"], {}).get("scores", {})
+            pd["pagespeed_raw"] = psi_map.get(pd["url"], {}).get("raw", {})
+        pagespeed = next((m["raw"] for m in psi_map.values() if m.get("raw", {}).get("available")), {"available": False})
 
         yield event("progress", {"message": "Per-URL analiza: typ strony + czynniki z patentów Google (Gemini, parallel)...", "pct": 48})
 
         # 5. Parallel per-page Gemini analysis
+        _sitemap_urls_for_clusters = (sitemap_urls or [])[:200]
         def _analyze_one(pd):
             content = pd["markdown"][:MAX_CONTENT_CHARS]
             try:
-                factors = analyze_page(pd["url"], pd["page_type"], pd["title"], pd["meta_desc"], content, pd["html_checks"])
+                factors = analyze_page(pd["url"], pd["page_type"], pd["title"], pd["meta_desc"], content, pd["html_checks"], _sitemap_urls_for_clusters)
             except Exception as e:
                 factors = {"error": {"score": 0, "note": f"Analiza nieudana: {str(e)[:200]}"}}
             return pd["url"], factors
@@ -2495,6 +2654,8 @@ def audit_stream(url: str, picks: list[dict] | None = None):
                 "factor_score_pct": f_pct,
                 "tech_scores": pd["tech_scores"],
                 "tech_score_pct": t_pct,
+                "performance_scores": pd.get("performance_scores", {}),
+                "pagespeed_raw": pd.get("pagespeed_raw", {}),
                 "combined_score": combined_page_score(f_pct, t_pct),
                 "html_checks_summary": {
                     "word_count": pd["html_checks"].get("content", {}).get("word_count", 0),
