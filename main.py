@@ -959,6 +959,15 @@ def _status_label(status: str) -> str:
     return {"ok": "OK", "partial": "Częściowo", "missing": "Brak"}.get(status, status)
 
 
+def _tech_auto_note(score: int, *, domain: bool = False) -> str:
+    target = "konfiguracji domeny" if domain else "kodzie HTML strony"
+    if score >= 2:
+        return f"Element wykryty poprawnie w {target}."
+    if score == 1:
+        return f"Element wykryty częściowo lub niekompletnie w {target}."
+    return f"Element nie został wykryty w {target}."
+
+
 def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_tech: bool = False, is_domain: bool = False) -> dict:
     uid = f"domain:{key}" if is_domain else f"tech:{key}" if is_tech else f"factor:{key}"
     if uid not in index:
@@ -1023,7 +1032,7 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
                 "score_pct": round(score / 2 * 100),
                 "status": status,
                 "status_label": _status_label(status),
-                "note": "",
+                "note": _tech_auto_note(score),
             })
 
     for key, score_raw in (domain_tech_scores or {}).items():
@@ -1041,7 +1050,7 @@ def build_factor_index(page_audits: list[dict], domain_tech_scores: dict) -> lis
             "score_pct": round(score / 2 * 100),
             "status": status,
             "status_label": _status_label(status),
-            "note": "",
+            "note": _tech_auto_note(score, domain=True),
         })
 
     records = []

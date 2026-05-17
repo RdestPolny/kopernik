@@ -192,17 +192,20 @@ button{font:inherit;cursor:pointer}
 .factor-body h4{font-family:var(--mono);font-size:0.7rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin:0 0 6px;font-weight:600}
 .factor-body p{font-size:0.94rem;color:var(--ink-2);line-height:1.6}
 .factor-body a{color:var(--ink)}
-.obs-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
-.obs-row{padding:10px 14px;border-left:2px solid var(--rule);background:var(--paper-2);border-radius:0 4px 4px 0}
+.obs-list{display:flex;flex-direction:column;gap:6px;margin-top:6px}
+.obs-row{display:grid;grid-template-columns:90px minmax(180px,1fr) minmax(220px,2fr);gap:14px;align-items:start;padding:10px 14px;border-left:2px solid var(--rule);background:var(--paper-2);border-radius:0 4px 4px 0}
 .obs-row.missing{border-left-color:var(--red)}
 .obs-row.partial{border-left-color:var(--amber)}
 .obs-row.ok{border-left-color:var(--green)}
-.obs-url{font-family:var(--mono);font-size:0.68rem;color:var(--muted);word-break:break-all;margin-bottom:4px}
-.obs-status{font-family:var(--mono);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.obs-url{font-family:var(--mono);font-size:0.72rem;color:var(--muted);word-break:break-all;line-height:1.4}
+.obs-url .obs-url-type{display:block;color:var(--ink-2);font-weight:600;margin-bottom:2px}
+.obs-status{font-family:var(--mono);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;align-self:center}
 .obs-status.missing{color:var(--red)}
 .obs-status.partial{color:var(--amber)}
 .obs-status.ok{color:var(--green)}
-.obs-note{font-size:0.9rem;line-height:1.5;color:var(--ink-2)}
+.obs-note{font-size:0.88rem;line-height:1.5;color:var(--ink-2)}
+.obs-note.is-empty{color:var(--muted);font-style:italic}
+@media (max-width:680px){.obs-row{grid-template-columns:1fr;gap:4px}.obs-status{align-self:start}}
 .code-example{white-space:pre-wrap;background:var(--ink);color:#f4f4f4;border-radius:4px;padding:14px;overflow:auto;font-family:var(--mono);font-size:0.78rem;line-height:1.5;margin-top:6px}
 
 /* Tiny chips */
@@ -941,13 +944,17 @@ function renderFactorItem(r, view) {
         <div>
           <h4>Stan u Ciebie</h4>
           <div class="obs-list">
-            ${view.observations.map(obs => `
+            ${view.observations.map(obs => {
+              const hasNote = !!obs.note;
+              const fallback = obs.scope === 'domain' ? 'Wynik dotyczy konfiguracji całej domeny.' : 'Brak notatki — czynnik bez automatycznego opisu.';
+              const noteText = hasNote ? obs.note : fallback;
+              return `
               <div class="obs-row ${obs.status}">
-                <div class="obs-url">${esc(obs.page_type_label || obs.page_type)} · ${esc(obs.url)}</div>
                 <div class="obs-status ${obs.status}">${esc(obs.status_label || statusLabel(obs.status))}</div>
-                <div class="obs-note">${esc(obs.note || (obs.scope === 'domain' ? 'Wynik dotyczy konfiguracji całej domeny.' : 'Brak notatki z audytu.'))}</div>
+                <div class="obs-url"><span class="obs-url-type">${esc(obs.page_type_label || obs.page_type)}</span>${esc(obs.url)}</div>
+                <div class="obs-note ${hasNote ? '' : 'is-empty'}">${esc(noteText)}</div>
               </div>
-            `).join('')}
+            `;}).join('')}
           </div>
         </div>
         <div>
