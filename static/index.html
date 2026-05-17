@@ -75,12 +75,6 @@ button{font:inherit;cursor:pointer}
 
 /* --- LAYOUT --- */
 .page{max-width:1120px;margin:0 auto;padding:0 28px}
-.rule{border:none;border-top:1px solid var(--rule);margin:56px 0}
-.rule-thick{border:none;border-top:2px solid var(--ink);margin:40px 0 32px}
-.section{margin:56px 0}
-.section-label{display:flex;align-items:baseline;gap:16px;margin-bottom:28px}
-.section-label .num{font-family:var(--mono);font-size:0.8rem;color:var(--gold);font-weight:500}
-.section-label h2{margin:0}
 
 /* --- PROGRESS --- */
 .progress{margin:48px 0}
@@ -88,71 +82,11 @@ button{font:inherit;cursor:pointer}
 .progress-fill{height:100%;background:var(--gold);transition:width .6s}
 .progress-msg{margin-top:14px;font-family:var(--mono);font-size:0.8rem;color:var(--muted);letter-spacing:0.04em}
 
-/* (mode toggle moved to nav) */
-
-/* --- LAYOUT & TOC --- */
-.results-layout{display:grid;grid-template-columns:260px 1fr;gap:56px;align-items:start}
-@media(max-width:900px){.results-layout{grid-template-columns:1fr}}
-.sidebar-toc{position:sticky;top:100px;background:var(--paper-2);border:1px solid var(--rule);padding:24px;border-radius:4px}
-@media(max-width:900px){.sidebar-toc{display:none}}
-.toc-title{font-size:1.1rem;margin-bottom:16px;border-bottom:2px solid var(--ink);padding-bottom:12px;font-weight:700;font-family:var(--sans)}
-.sidebar-toc ul{list-style:none}
-.sidebar-toc li{margin-bottom:12px}
-.sidebar-toc a{font-weight:500;font-size:0.95rem;text-decoration:none;color:var(--ink-2);display:block;padding:6px 8px;border-radius:3px;transition:all .15s;border:1px solid transparent}
-.sidebar-toc a:hover{background:var(--paper);border-color:var(--rule);color:var(--gold)}
-
-/* --- AUDIT TABLE --- */
-.audit-table{width:100%;border-collapse:collapse;margin-top:24px;font-size:0.95rem;background:var(--paper);border:1px solid var(--rule);border-radius:4px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
-.audit-table th,.audit-table td{padding:14px 18px;text-align:left;border-bottom:1px solid var(--rule)}
-.audit-table th{background:var(--paper-2);font-weight:600;color:var(--ink);text-transform:uppercase;font-family:var(--mono);font-size:0.75rem;letter-spacing:0.05em}
-.audit-table td{vertical-align:top;line-height:1.6}
-.audit-table tr:last-child td{border-bottom:none}
-.audit-table tr:hover td{background:#fafafa}
-
-/* --- SCORE HEAD --- */
-.score-band{background:transparent;padding:0;margin:0}
-.score-band-inner{display:flex;align-items:center;gap:60px;flex-wrap:wrap}
-.score-big{font-family:var(--sans);font-weight:700;font-size:6rem;line-height:1;color:var(--ink);letter-spacing:-0.04em}
-.score-big sub{font-size:1.5rem;color:var(--ink-2);margin-left:4px;font-weight:500;letter-spacing:0}
-
-/* --- VERDICT CARD --- */
-.verdict-card{background:var(--paper-2);border-left:4px solid var(--gold);padding:24px 28px;margin:32px 0;font-size:1.1rem;line-height:1.6;font-weight:500}
-.verdict-card.client{background:#FFFBEA;border-left-color:var(--gold)}
-
-/* --- TABS --- */
-.tabs{display:flex;gap:4px;border-bottom:2px solid var(--ink);margin:40px 0 24px;flex-wrap:wrap;overflow-x:auto}
-.tab{padding:12px 18px;background:transparent;border:none;font-family:var(--mono);font-size:0.74rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);border-bottom:3px solid transparent;margin-bottom:-2px;white-space:nowrap;font-weight:500}
-.tab:hover{color:var(--ink)}
-.tab.active{color:var(--ink);border-bottom-color:var(--gold)}
-.tab .count{font-family:var(--mono);font-size:0.65rem;color:var(--muted);margin-left:6px;background:var(--paper-2);padding:1px 6px;border-radius:8px}
-.tab.active .count{background:var(--gold);color:var(--ink)}
-
-/* --- PAGE AUDITS --- */
-.page-audit{border-top:1px solid var(--rule);padding:32px 0}
-.page-audit:first-of-type{border-top:none;padding-top:0}
-.page-audit-head{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:18px;flex-wrap:wrap}
-.page-audit-title{flex:1;min-width:280px}
-.page-audit-title h3{font-style:italic;margin-bottom:8px}
-.page-audit-title .url{font-family:var(--mono);font-size:0.78rem;color:var(--muted);word-break:break-all}
-.page-audit-badges{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}
+/* --- BADGE (pages list) --- */
 .badge{display:inline-block;padding:3px 10px;border-radius:2px;font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;background:var(--paper-2);border:1px solid var(--rule);color:var(--ink-2)}
 .badge.page-type{background:var(--gold-2);border-color:var(--gold);color:var(--ink)}
-.badge.cat-eeat{background:#EEE7FF;border-color:#C5B5FF}
-.badge.cat-topical{background:#E6F9EC;border-color:#9ED5B3}
-.badge.cat-rag{background:var(--sky);border-color:#5BB8CC}
-.badge.cat-conversion{background:var(--gold-2);border-color:var(--gold)}
-.badge.cat-trust{background:#FFEBDC;border-color:#F4C9A0}
-.badge.cat-tech{background:var(--paper-2);border-color:var(--rule)}
 
-.page-audit-scores{display:flex;gap:24px;align-items:center}
-.mini-score{text-align:right}
-.mini-score .lbl{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;color:var(--muted);letter-spacing:0.1em}
-.mini-score .val{font-family:var(--serif);font-size:1.8rem;color:var(--ink)}
-.mini-score .val.good{color:var(--green)}
-.mini-score .val.warn{color:var(--amber)}
-.mini-score .val.bad{color:var(--red)}
-
-/* --- FACTOR GRID --- */
+/* --- FACTOR GRID (domain tech) --- */
 .factor-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(320px,1fr));gap:14px;margin-top:20px}
 .factor-card{border:1px solid var(--rule);border-radius:3px;padding:14px 16px;background:var(--paper);transition:border-color .15s}
 .factor-card:hover{border-color:var(--ink)}
@@ -165,11 +99,7 @@ button{font:inherit;cursor:pointer}
 .factor-card-score.good{background:#E8F4EC;color:var(--green)}
 .factor-card-score.warn{background:#FBF1DD;color:var(--amber)}
 .factor-card-score.bad{background:#FBE6E4;color:var(--red)}
-.factor-card-note{font-size:0.85rem;color:var(--ink-2);line-height:1.5}
 .factor-card-client{margin-top:8px;padding-top:8px;border-top:1px dashed var(--rule);font-size:0.85rem;color:var(--ink-2);font-style:italic}
-.factor-source-meta{margin-top:5px;font-family:var(--mono);font-size:0.66rem;line-height:1.45;text-transform:uppercase;letter-spacing:0.05em;color:var(--muted)}
-
-/* (recommendations removed) */
 
 /* --- CONTENT GAPS --- */
 .gap-list{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;margin-top:20px}
@@ -185,14 +115,6 @@ button{font:inherit;cursor:pointer}
 .fan-cov.partial{background:#FBF1DD;color:var(--amber)}
 .fan-cov.missing{background:#FBE6E4;color:var(--red)}
 
-/* --- DARK SECTIONS --- */
-.section-dark{background:var(--brand-bg);color:#fff;padding:40px;margin:40px 0;border-radius:4px}
-.section-dark-inner{max-width:100%}
-.section-dark h2,.section-dark h3,.section-dark h4{color:#fff}
-.section-dark .section-label .num{color:var(--gold-2)}
-.section-dark .verdict-card{background:rgba(0,0,0,0.2);border-left-color:var(--gold);color:#E8E8E5}
-.section-dark .gap-card{background:rgba(0,0,0,0.2);color:#E8E8E5;border-left-color:var(--gold-2)}
-
 /* --- FOOTER --- */
 .footer{background:var(--brand-bg);color:#B5B5B0;padding:48px 28px 32px;margin-top:80px;border-top:3px solid var(--gold)}
 .footer-inner{max-width:1120px;margin:0 auto;display:flex;justify-content:space-between;gap:24px;flex-wrap:wrap;align-items:center;font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.12em}
@@ -200,84 +122,117 @@ button{font:inherit;cursor:pointer}
 
 /* --- UTILS --- */
 .hidden{display:none !important}
-.two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px}
-@media(max-width:900px){.two-col{grid-template-columns:1fr}.score-band-inner{grid-template-columns:1fr;text-align:center}.score-band-inner .chart-wrap{margin:20px auto 0}.score-sub-grid{grid-template-columns:1fr}}
 
 /* --- CHART --- */
 .chart-wrap{width:320px;height:320px;margin:0;max-width:100%}
 
-/* --- L1/L2/L3 DASHBOARD --- */
-.audit-shell{display:grid;grid-template-columns:250px minmax(0,1fr);gap:32px;align-items:start;margin-top:48px}
-@media(max-width:900px){.audit-shell{grid-template-columns:1fr;margin-top:32px}}
-.url-rail{position:sticky;top:96px;border:1px solid var(--rule);background:var(--paper-2);padding:16px;border-radius:6px}
-@media(max-width:900px){.url-rail{position:static}}
-.rail-title{font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);margin-bottom:10px}
-.url-switch{display:flex;flex-direction:column;gap:6px}
-.url-option{width:100%;display:grid;grid-template-columns:18px minmax(0,1fr) auto;align-items:center;gap:8px;border:1px solid transparent;background:transparent;text-align:left;padding:8px 9px;border-radius:4px;color:var(--ink);font-size:0.9rem}
-.url-option:hover{background:var(--paper);border-color:var(--rule)}
-.url-option.active{background:var(--paper);border-color:var(--gold)}
-.radio-dot{width:10px;height:10px;border:1.5px solid var(--muted);border-radius:50%;display:inline-block}
-.url-option.active .radio-dot{border-color:var(--gold);background:var(--gold)}
-.url-label{font-weight:600;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.url-meta{grid-column:2/4;color:var(--muted);font-family:var(--mono);font-size:0.66rem;line-height:1.35;word-break:break-all}
-.url-score{font-family:var(--mono);font-size:0.72rem;color:var(--ink-2)}
-.audit-main{min-width:0}
-.dashboard-grid{display:grid;grid-template-columns:1fr;gap:18px;align-items:center;border-bottom:2px solid var(--ink);padding-bottom:30px;margin-bottom:26px}
-@media(max-width:760px){.dashboard-grid{grid-template-columns:1fr}}
-.overall-score{border:1px solid var(--ink);border-radius:6px;min-height:190px;display:flex;flex-direction:column;justify-content:center;align-items:center;background:var(--paper)}
-.overall-score .value{font-size:5rem;line-height:0.9;font-weight:700;letter-spacing:-0.04em}
-.overall-score .denom{font-family:var(--mono);font-size:0.82rem;color:var(--muted);margin-top:8px}
-.overall-score .label{font-weight:600;margin-top:12px;text-align:center;padding:0 12px}
-.group-bars{display:flex;flex-direction:column;gap:8px}
-.group-row{display:grid;grid-template-columns:minmax(150px,1fr) minmax(120px,240px) 44px;gap:12px;align-items:center;border:1px solid transparent;background:transparent;text-align:left;padding:8px 10px;border-radius:4px}
-.group-row:hover{border-color:var(--rule);background:var(--paper-2)}
-.group-row.active{border-color:var(--gold);background:#FFFBEA}
-.group-label{font-weight:600;color:var(--ink)}
-.bar-track{height:10px;background:var(--rule);border-radius:999px;overflow:hidden}
-.bar-fill{height:100%;background:var(--gold);border-radius:999px;min-width:2px}
-.group-score{font-family:var(--mono);font-size:0.78rem;text-align:right;color:var(--ink-2)}
-.top-actions{border:1px solid var(--rule);border-radius:6px;background:var(--paper-2);padding:18px 20px;margin-bottom:28px}
-.top-actions h3,.factor-list h3,.factor-detail h3{font-size:1.05rem;margin-bottom:12px;letter-spacing:0}
-.action-list{display:flex;flex-direction:column;gap:8px}
-.action-row{display:grid;grid-template-columns:22px minmax(0,1fr) auto;gap:10px;align-items:start;padding:10px 0;border-top:1px solid var(--rule)}
-.action-row:first-child{border-top:none;padding-top:0}
-.status-mark{font-family:var(--mono);font-weight:700}
-.status-mark.missing{color:var(--red)}
-.status-mark.partial{color:var(--amber)}
-.status-mark.ok{color:var(--green)}
-.action-title{font-weight:600;line-height:1.35}
-.action-meta,.factor-meta-line{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.06em;color:var(--muted);margin-top:3px}
-.small-btn{border:1px solid var(--rule);background:var(--paper);color:var(--ink);border-radius:4px;padding:6px 10px;font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap}
-.small-btn:hover{border-color:var(--gold);color:var(--ink)}
-.factor-list{margin-top:18px}
-.factor-row{display:grid;grid-template-columns:24px minmax(0,1fr) auto;gap:12px;align-items:start;border-top:1px solid var(--rule);padding:16px 0}
-.factor-row:first-of-type{border-top:none}
-.factor-name{font-weight:700;line-height:1.3}
-.factor-note{color:var(--ink-2);font-size:0.92rem;line-height:1.5;margin-top:5px}
+/* --- REPORT v3 --- */
+.report{margin-top:40px}
+@media(max-width:760px){.report{margin-top:24px}}
+
+/* URL switcher — horizontal sticky pills */
+.url-switcher{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0;border-bottom:1px solid var(--rule);margin-bottom:32px;position:sticky;top:64px;background:var(--paper);z-index:10}
+.url-switcher-label{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);align-self:center;margin-right:6px}
+.url-pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border:1px solid var(--rule);background:var(--paper);border-radius:999px;font-size:0.85rem;color:var(--ink-2);cursor:pointer;font:inherit;transition:all .15s;max-width:280px}
+.url-pill:hover{border-color:var(--ink);color:var(--ink)}
+.url-pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+.url-pill .pill-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
+.url-pill .pill-score{font-family:var(--mono);font-size:0.72rem;font-weight:600;opacity:0.65}
+.url-pill.active .pill-score{opacity:1;color:var(--gold-2)}
+
+/* Cap banner */
+.cap-banner{background:#FBE6E4;border-left:3px solid var(--red);padding:14px 18px;font-size:0.9rem;color:var(--ink-2);margin-bottom:40px;border-radius:0 4px 4px 0}
+.cap-banner strong{color:var(--red);font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.1em;display:block;margin-bottom:4px}
+
+/* Priority strip */
+.priority{margin:0 0 64px}
+.priority-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;gap:16px;flex-wrap:wrap}
+.priority-head h2{font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:600;margin:0}
+.priority-head .count{font-family:var(--mono);font-size:0.72rem;color:var(--muted)}
+.priority-list{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
+.priority-item{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 20px;background:var(--paper);text-decoration:none;color:var(--ink);transition:background .15s}
+.priority-item:hover{background:var(--paper-2)}
+.priority-mark{font-family:var(--mono);font-size:0.95rem;font-weight:700;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
+.priority-mark.missing{background:#FBE6E4;color:var(--red)}
+.priority-mark.partial{background:#FBF1DD;color:var(--amber)}
+.priority-mark.ok{background:#E8F4EC;color:var(--green)}
+.priority-name{font-weight:600;font-size:0.95rem;line-height:1.35;color:var(--ink)}
+.priority-meta{font-family:var(--mono);font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.06em;margin-top:4px}
+.priority-jump{font-family:var(--mono);font-size:0.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;white-space:nowrap}
+.priority-item:hover .priority-jump{color:var(--ink)}
+
+/* Category section */
+.cat{margin:0 0 80px;scroll-margin-top:120px}
+.cat-head{display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:baseline;padding-bottom:18px;border-bottom:2px solid var(--ink);margin-bottom:24px}
+@media(max-width:600px){.cat-head{grid-template-columns:auto 1fr;gap:12px}.cat-score-wrap{grid-column:1/-1;display:flex;align-items:baseline;gap:6px;margin-top:4px}}
+.cat-num{font-family:var(--mono);font-size:0.74rem;color:var(--gold);font-weight:600;letter-spacing:0.1em;padding-top:6px}
+.cat-title{font-size:1.7rem;font-weight:700;letter-spacing:-0.02em;line-height:1.15;margin:0}
+.cat-score-wrap{text-align:right;line-height:1}
+.cat-score{font-family:var(--sans);font-size:2.4rem;font-weight:700;letter-spacing:-0.03em;color:var(--ink)}
+.cat-score.good{color:var(--green)}
+.cat-score.warn{color:var(--amber)}
+.cat-score.bad{color:var(--red)}
+.cat-denom{font-family:var(--mono);font-size:0.7rem;color:var(--muted);font-weight:500;margin-left:4px;letter-spacing:0}
+.cat-blurb{font-size:0.94rem;color:var(--muted);max-width:64ch;margin:0 0 24px;line-height:1.55}
+.cat-empty{font-size:0.9rem;color:var(--muted);font-style:italic;padding:20px 0}
+
+/* Factor item (native <details>) */
+.factor-item{border-top:1px solid var(--rule)}
+.factor-item:last-of-type{border-bottom:1px solid var(--rule)}
+.factor-summary{display:grid;grid-template-columns:26px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 4px;cursor:pointer;list-style:none}
+.factor-summary::-webkit-details-marker{display:none}
+.factor-summary:hover .factor-label{color:var(--gold)}
+.factor-status{font-family:var(--mono);font-size:1rem;font-weight:700;text-align:center}
+.factor-status.missing{color:var(--red)}
+.factor-status.partial{color:var(--amber)}
+.factor-status.ok{color:var(--green)}
+.factor-label{font-weight:600;font-size:0.98rem;line-height:1.35;transition:color .15s}
+.factor-sub{font-family:var(--mono);font-size:0.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.08em;margin-top:5px}
+.factor-chev{font-family:var(--mono);font-size:0.68rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.1em;white-space:nowrap}
+.factor-item[open] .factor-chev::after{content:' −'}
+.factor-item:not([open]) .factor-chev::after{content:' +'}
+.factor-body{padding:4px 4px 24px 40px;display:grid;gap:20px}
+@media(max-width:600px){.factor-body{padding-left:4px}}
+.factor-body h4{font-family:var(--mono);font-size:0.7rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin:0 0 6px;font-weight:600}
+.factor-body p{font-size:0.94rem;color:var(--ink-2);line-height:1.6}
+.factor-body a{color:var(--ink)}
+.obs-list{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.obs-row{padding:10px 14px;border-left:2px solid var(--rule);background:var(--paper-2);border-radius:0 4px 4px 0}
+.obs-row.missing{border-left-color:var(--red)}
+.obs-row.partial{border-left-color:var(--amber)}
+.obs-row.ok{border-left-color:var(--green)}
+.obs-url{font-family:var(--mono);font-size:0.68rem;color:var(--muted);word-break:break-all;margin-bottom:4px}
+.obs-status{font-family:var(--mono);font-size:0.7rem;font-weight:700;text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px}
+.obs-status.missing{color:var(--red)}
+.obs-status.partial{color:var(--amber)}
+.obs-status.ok{color:var(--green)}
+.obs-note{font-size:0.9rem;line-height:1.5;color:var(--ink-2)}
+.code-example{white-space:pre-wrap;background:var(--ink);color:#f4f4f4;border-radius:4px;padding:14px;overflow:auto;font-family:var(--mono);font-size:0.78rem;line-height:1.5;margin-top:6px}
+
+/* Tiny chips */
 .chip-line{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
-.ui-chip{font-family:var(--mono);font-size:0.64rem;text-transform:uppercase;letter-spacing:0.08em;border:1px solid var(--rule);background:var(--paper-2);padding:2px 7px;border-radius:3px;color:var(--ink-2)}
+.ui-chip{font-family:var(--mono);font-size:0.62rem;text-transform:uppercase;letter-spacing:0.08em;border:1px solid var(--rule);background:var(--paper-2);padding:2px 8px;border-radius:999px;color:var(--ink-2)}
 .ui-chip.patent{background:#EEE7FF;border-color:#C5B5FF}
 .ui-chip.schema{background:#E6F9EC;border-color:#9ED5B3}
-.dot-meter{display:inline-flex;gap:2px;vertical-align:middle}
-.dot-meter span{width:7px;height:7px;border-radius:50%;border:1px solid currentColor;display:inline-block}
-.dot-meter span.filled{background:currentColor}
-.ok-collapse{border-top:1px solid var(--rule);padding-top:14px;margin-top:8px}
-.ok-collapse summary{cursor:pointer;font-weight:700;color:var(--ink);font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em}
-.ok-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:8px;margin-top:12px}
-.ok-pill{border:1px solid var(--rule);border-radius:4px;padding:8px 10px;background:var(--paper);font-size:0.86rem}
-.factor-detail{border-top:2px solid var(--ink);padding-top:20px;margin-top:20px}
-.detail-head{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:18px}
-.detail-title h2{margin-bottom:6px}
-.detail-sections{display:grid;grid-template-columns:1fr;gap:16px}
-.detail-section{border-top:1px solid var(--rule);padding-top:14px}
-.detail-section h4{font-size:0.82rem;font-family:var(--mono);text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin-bottom:6px}
-.observation-list{display:flex;flex-direction:column;gap:10px}
-.observation-item{border:1px solid var(--rule);border-radius:4px;padding:10px 12px;background:var(--paper)}
-.observation-url{font-family:var(--mono);font-size:0.68rem;color:var(--muted);word-break:break-all;margin-bottom:4px}
-.code-example{white-space:pre-wrap;background:#111;color:#f4f4f4;border-radius:4px;padding:14px;overflow:auto;font-family:var(--mono);font-size:0.78rem;line-height:1.5}
-.appendix{border-top:1px solid var(--rule);padding-top:18px;margin-top:34px}
-.appendix summary{cursor:pointer;font-weight:700;font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted)}
-.appendix-body{margin-top:20px;display:grid;gap:28px}
+
+/* OK fold */
+.ok-fold{margin-top:18px}
+.ok-fold summary{cursor:pointer;font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:12px 0;list-style:none}
+.ok-fold summary::-webkit-details-marker{display:none}
+.ok-fold summary:hover{color:var(--ink)}
+.ok-fold[open] summary::after{content:' ↑'}
+.ok-fold:not([open]) summary::after{content:' ↓'}
+.ok-fold-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:6px;padding:6px 0 8px}
+.ok-fold-item{font-size:0.85rem;color:var(--ink-2);padding:7px 12px;background:var(--paper-2);border-radius:3px}
+.ok-fold-item::before{content:'✓ ';color:var(--green);font-weight:700;margin-right:4px}
+
+/* Extras (gaps, fan-out, domain, pages) */
+.extras{margin-top:96px;padding-top:48px;border-top:1px solid var(--rule)}
+.extra{margin-bottom:64px}
+.extra-head{display:flex;align-items:baseline;gap:14px;margin-bottom:6px}
+.extra-num{font-family:var(--mono);font-size:0.74rem;color:var(--gold);font-weight:600;letter-spacing:0.1em}
+.extra-head h2{font-size:1.4rem;margin:0}
+.extra-blurb{color:var(--muted);font-size:0.9rem;margin:0 0 18px;max-width:62ch}
 </style>
 </head>
 <body>
@@ -374,16 +329,7 @@ const progressMsg = document.getElementById('progressMsg');
 const results = document.getElementById('results');
 
 let currentMode = 'pro';
-let currentTab = 'eeat';
 let currentResult = null;
-
-function getGroupForCategory(cat) {
-  if (cat === 'eeat') return 'eeat';
-  if (cat === 'topical') return 'topical';
-  if (cat === 'geo') return 'geo';
-  if (cat === 'patent') return 'patent';
-  return 'accessibility';
-}
 
 document.getElementById('modeToggleNav').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-mode]');
@@ -439,235 +385,7 @@ function startAudit(url) {
   };
 }
 
-function scoreClass(pct) {
-  if (pct >= 70) return 'good';
-  if (pct >= 40) return 'warn';
-  return 'bad';
-}
-function scoreLabel(pct) {
-  if (pct >= 80) return 'Silna gotowość AI';
-  if (pct >= 60) return 'Średnia gotowość';
-  if (pct >= 40) return 'Wymaga poprawy';
-  return 'Pilna praca nad podstawami';
-}
 function esc(s) { return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
-
-function renderResult(r) {
-  currentMode = 'pro';
-  currentTab = 'eeat';
-  const meta = r.meta || {};
-  const factorMeta = meta.factor_meta || {};
-  const techMeta = meta.tech_factor_meta || {};
-  const domainMeta = meta.domain_tech_meta || {};
-
-  document.getElementById('modeToggleNav').classList.remove('hidden');
-  document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
-
-  const groupCounts = { eeat: 0, topical: 0, geo: 0, patent: 0, accessibility: 0 };
-
-  (r.page_audits || []).forEach(pa => {
-    Object.entries(pa.factors || {}).forEach(([fk]) => {
-      const cat = (factorMeta[fk] || {}).category || 'tech';
-      const grp = getGroupForCategory(cat);
-      if (grp) groupCounts[grp]++;
-    });
-    Object.keys(pa.tech_scores || {}).forEach(() => { groupCounts.accessibility++; });
-  });
-
-  // Use server-computed weighted category scores
-  const sc = r.scores?.category || {};
-  const chartData = [
-    sc.eeat ?? 0,
-    sc.topical ?? 0,
-    sc.geo ?? 0,
-    sc.patent ?? 0,
-    sc.accessibility ?? 0,
-  ];
-
-  const overall = r.scores?.overall || 0;
-  const verdict = scoreLabel(overall);
-  const cm = r.client_mode || {};
-
-  const overallColor = overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b';
-  const heroChartHtml = `
-    <div class="chart-wrap" style="width:100%; max-width:520px; height:100%; min-height:480px; margin:0 auto;">
-      <canvas id="radarChart"></canvas>
-    </div>
-  `;
-  document.getElementById('heroScoreContainer').innerHTML = heroChartHtml;
-  
-  const ctaScoreHtml = `
-    <div style="display:flex; align-items:baseline; color:${overallColor}; font-family:var(--sans); letter-spacing:-0.04em;">
-      <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
-      <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
-    </div>
-  `;
-  document.getElementById('ctaScoreWrapper').innerHTML = ctaScoreHtml;
-  document.getElementById('heroScoreContainer').style.display = 'flex';
-  document.getElementById('auditForm').style.display = 'none';
-  document.getElementById('ctaContainer').style.display = 'block';
-
-  let html = `
-    <div class="results-layout">
-      <aside class="sidebar-toc">
-        <h3 class="toc-title">Spis treści</h3>
-        <nav id="toc">
-          <ul>
-            <li><a href="#section-verdict">Werdykt</a></li>
-            <li><a href="#section-page-audits">Audyt podstron</a></li>
-            <li><a href="#section-gaps">Luki treści</a></li>
-            <li><a href="#section-fanout">Fan-out zapytań</a></li>
-            <li><a href="#section-domain">Tech domenowe</a></li>
-            <li><a href="#section-legend">Legenda pojęć</a></li>
-            <li><a href="#section-page-list">Lista podstron</a></li>
-          </ul>
-        </nav>
-      </aside>
-
-      <div class="results-content">
-        <section class="section" id="section-verdict" style="margin-top:0">
-          <div class="verdict-card" id="verdictCard" style="margin-top:0">${esc(r.synthesis?.overall_assessment || '')}</div>
-        </section>
-
-        <section class="section" id="section-page-audits">
-          <div class="section-label"><span class="num">01</span><h2>Audyt per podstrona</h2></div>
-          <p class="lede" style="margin-bottom:24px">Każda podstrona analizowana z factor setem dopasowanym do jej typu, razem ze sprawdzalnymi sygnałami wyprowadzonymi z bazy patentów Google.</p>
-
-          <div class="tabs" id="tabs">
-            <button class="tab active" data-tab="eeat">EEAT <span class="count">${groupCounts.eeat}</span></button>
-            <button class="tab" data-tab="topical">Topical Authority <span class="count">${groupCounts.topical}</span></button>
-            <button class="tab" data-tab="geo">GEO <span class="count">${groupCounts.geo}</span></button>
-            <button class="tab" data-tab="patent">Patenty Google <span class="count">${groupCounts.patent}</span></button>
-            <button class="tab" data-tab="accessibility">Dostępność <span class="count">${groupCounts.accessibility}</span></button>
-          </div>
-
-          <div id="pageAudits">${renderPageAudits(r, 'eeat', 'pro')}</div>
-        </section>
-
-        <div class="section-dark" id="section-gaps">
-          <div class="section-dark-inner">
-            <div class="section-label"><span class="num">02</span><h2>Luki treści (Topical Authority)</h2></div>
-            <div class="gap-list" id="gapList">${renderGaps(r, 'pro')}</div>
-          </div>
-        </div>
-
-        <section class="section" id="section-fanout">
-          <div class="section-label"><span class="num">03</span><h2>Fan-out zapytań</h2></div>
-          <p class="lede" style="margin-bottom:20px">Symulacja pytań użytkowników w ChatGPT/Perplexity dla wybranej podstrony — ile z nich pokrywa jej treść.${r.fan_out?.audited_url ? ` <span style="font-family:var(--mono);font-size:0.8em;opacity:0.7">Audytowana: ${esc(r.fan_out.audited_url)}</span>` : ''}</p>
-          <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
-        </section>
-
-        <section class="section" id="section-domain">
-          <div class="section-label"><span class="num">04</span><h2>Techniczne domenowe</h2></div>
-          <div class="factor-grid">${renderDomainTech(r, domainMeta)}</div>
-        </section>
-
-        <section class="section" id="section-legend">
-          <div class="section-label"><span class="num">05</span><h2>Legenda pojęć</h2></div>
-          <div class="factor-grid">
-            <div class="factor-card">
-              <div class="factor-card-head"><div class="factor-card-name">E-E-A-T</div></div>
-              <div class="factor-card-note">Doświadczenie, Ekspertyza, Autorytatywność i Wiarygodność (Experience, Expertise, Authoritativeness, Trustworthiness) - zbiór czynników branych pod uwagę przez algorytmy (w tym AI) do oceny jakości i wiarygodności treści.</div>
-            </div>
-            <div class="factor-card">
-              <div class="factor-card-head"><div class="factor-card-name">Topical Authority</div></div>
-              <div class="factor-card-note">Autorytet tematyczny - stopień, w jakim Twoja strona wyczerpuje dany temat, pokazując pełne zrozumienie i wiedzę w danej dziedzinie, co jest kluczowe dla odpowiedzi generowanych przez AI.</div>
-            </div>
-            <div class="factor-card">
-              <div class="factor-card-head"><div class="factor-card-name">GEO</div></div>
-              <div class="factor-card-note">Generative Engine Optimization - optymalizacja treści i struktury strony pod kątem wyszukiwarek opartych na generatywnej sztucznej inteligencji (np. AI Overviews, Perplexity).</div>
-            </div>
-            <div class="factor-card">
-              <div class="factor-card-head"><div class="factor-card-name">Patenty Google</div></div>
-              <div class="factor-card-note">Czynniki audytowe wyprowadzone z lokalnej bazy patentów. Są traktowane jako hipotezy i mechanizmy do weryfikacji, nie jako deklaracja aktualnych czynników rankingowych Google.</div>
-            </div>
-            <div class="factor-card">
-              <div class="factor-card-head"><div class="factor-card-name">Dostępność</div></div>
-              <div class="factor-card-note">Dostępność dla botów AI - techniczna przystępność witryny pozwalająca crawlerom LLM na łatwe pobieranie, przetwarzanie i rozumienie struktury oraz treści strony.</div>
-            </div>
-          </div>
-        </section>
-
-        <section class="section" id="section-page-list">
-          <div class="section-label"><span class="num">06</span><h2>Lista analizowanych podstron</h2></div>
-          ${renderPagesList(r.page_audits || [])}
-        </section>
-      </div>
-    </div>
-  `;
-
-  results.innerHTML = html;
-  results.classList.remove('hidden');
-
-  document.getElementById('tabs').addEventListener('click', (e) => {
-    const btn = e.target.closest('button[data-tab]');
-    if (!btn) return;
-    currentTab = btn.dataset.tab;
-    document.querySelectorAll('#tabs .tab').forEach(b => b.classList.toggle('active', b === btn));
-    document.getElementById('pageAudits').innerHTML = renderPageAudits(currentResult, currentTab, currentMode);
-  });
-
-  setTimeout(() => {
-    const canvas = document.getElementById('radarChart');
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    new Chart(ctx, {
-      type: 'radar',
-      data: {
-        labels: ['EEAT', ['Topical', 'Authority'], 'GEO', ['Patenty', 'Google'], 'Dostępność'],
-        datasets: [{
-          data: chartData,
-          backgroundColor: 'rgba(237, 217, 113, 0.18)',
-          borderColor: '#edd971',
-          pointBackgroundColor: '#edd971',
-          pointRadius: 5,
-          pointHoverRadius: 7,
-          borderWidth: 2.5,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false } },
-        scales: {
-          r: {
-            min: 0,
-            max: 100,
-            ticks: { display: false },
-            grid: { color: 'rgba(255, 255, 255, 0.18)' },
-            angleLines: { color: 'rgba(255, 255, 255, 0.18)' },
-            pointLabels: {
-              font: { family: "'Inter', sans-serif", size: 13, weight: '700' },
-              color: 'rgba(255, 255, 255, 0.9)',
-              padding: 12
-            }
-          }
-        }
-      }
-    });
-  }, 50);
-
-}
-
-function applyMode() {
-  if (!currentResult) return;
-  const r = currentResult;
-  const cm = r.client_mode || {};
-  const verdictEl = document.getElementById('verdictCard');
-  if (currentMode === 'client') {
-    verdictEl.classList.add('client');
-    verdictEl.innerHTML = esc(cm.client_verdict || r.synthesis?.overall_assessment || '') +
-      (cm.client_next_step ? `<div style="margin-top:14px;font-size:0.95rem;font-style:normal;color:var(--ink-2)"><strong style="font-family:var(--mono);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;color:var(--gold)">Pierwszy krok:</strong> ${esc(cm.client_next_step)}</div>` : '');
-  } else {
-    verdictEl.classList.remove('client');
-    verdictEl.innerHTML = esc(r.synthesis?.overall_assessment || '');
-  }
-  const gapList = document.getElementById('gapList');
-  if (gapList) gapList.innerHTML = renderGaps(r, currentMode);
-  const pageAudits = document.getElementById('pageAudits');
-  if (pageAudits) pageAudits.innerHTML = renderPageAudits(r, currentTab, currentMode);
-}
-
 
 function renderGaps(r, mode) {
   const gaps = mode === 'client'
@@ -687,112 +405,6 @@ function renderFanOut(fan) {
     </div>`).join('');
 }
 
-function renderPageAudits(r, tab, mode) {
-  const meta = r.meta || {};
-  const factorMeta = meta.factor_meta || {};
-  const techMeta = meta.tech_factor_meta || {};
-  const pages = r.page_audits || [];
-
-  if (!pages.length) return '<p style="color:var(--muted);font-style:italic">Brak wyników.</p>';
-
-  const grouped = {}; 
-
-  pages.forEach((pa, pageIndex) => {
-    const pageNum = pageIndex + 1;
-    const pageUrl = pa.url;
-    
-    Object.entries(pa.factors || {}).forEach(([k, v]) => {
-      if (!v || typeof v !== 'object' || !('score' in v)) return;
-      const cat = (factorMeta[k] || {}).category || 'tech';
-      if (getGroupForCategory(cat) !== tab) return;
-      
-      const sc = v.score;
-      const note = v.note || '';
-      const groupKey = `${k}|${sc}`;
-      
-      if (!grouped[groupKey]) {
-        grouped[groupKey] = { key: k, score: sc, pages: [], notesMap: new Map(), isTech: false };
-      }
-      grouped[groupKey].pages.push({ num: pageNum, url: pageUrl });
-      
-      if (note) {
-        if (!grouped[groupKey].notesMap.has(note)) {
-          grouped[groupKey].notesMap.set(note, []);
-        }
-        grouped[groupKey].notesMap.get(note).push(pageNum);
-      }
-    });
-
-    if (tab === 'accessibility') {
-      Object.entries(pa.tech_scores || {}).forEach(([k, v]) => {
-        const sc = v;
-        const groupKey = `${k}|${sc}|tech`;
-        if (!grouped[groupKey]) {
-          grouped[groupKey] = { key: k, score: sc, pages: [], notesMap: new Map(), isTech: true };
-        }
-        grouped[groupKey].pages.push({ num: pageNum, url: pageUrl });
-      });
-    }
-  });
-
-  const rowValues = Object.values(grouped);
-  if (!rowValues.length) return '<p style="color:var(--muted);font-style:italic">Brak wyników dla tej zakładki.</p>';
-
-  const rowsHtml = rowValues.map(g => {
-    const fm = g.isTech ? (techMeta[g.key] || {}) : (factorMeta[g.key] || {});
-    const label = fm.label || g.key;
-    const sc = g.score;
-    const cls = sc === 2 ? 'good' : sc === 1 ? 'warn' : 'bad';
-    const scTxt = sc === 2 ? 'OK' : sc === 1 ? 'CZĘŚC.' : 'BRAK';
-    const clientExp = r.client_mode?.client_factor_explanations?.[g.key] || '';
-    const sourceMeta = (!g.isTech && fm.source === 'google_patent')
-      ? `<div class="factor-source-meta">Patent · ${esc(fm.patent_category || '')} · confidence: ${esc(fm.confidence || '?')} · inference: ${esc(fm.seo_inference_level || '?')}</div>`
-      : '';
-    
-    const pageLinks = g.pages.map(p => `<span title="${esc(p.url)}" style="cursor:help;text-decoration:underline;text-decoration-style:dotted;padding:0 3px;font-family:var(--mono);font-weight:600;color:var(--ink);">${p.num}</span>`).join(', ');
-    
-    let obsHtml = '';
-    if (g.isTech) {
-      obsHtml = (mode === 'client' && clientExp) ? `<div class="factor-card-client">${esc(clientExp)}</div>` : '<span style="color:var(--muted);font-style:italic">Brak uwag technicznych.</span>';
-    } else {
-      let notesJoined = '';
-      if (g.notesMap.size === 1) {
-        notesJoined = esc(Array.from(g.notesMap.keys())[0]);
-      } else if (g.notesMap.size > 1) {
-        notesJoined = Array.from(g.notesMap.entries()).map(([note, pNums]) => {
-          return `<div style="margin-bottom:6px"><strong style="font-family:var(--mono);font-size:0.75rem;">Str. ${pNums.join(', ')}:</strong> ${esc(note)}</div>`;
-        }).join('');
-      }
-      obsHtml = `<div class="factor-card-note">${notesJoined}</div>` + ((mode === 'client' && clientExp) ? `<div class="factor-card-client">${esc(clientExp)}</div>` : '');
-    }
-
-    return `
-      <tr>
-        <td style="font-weight:600;color:var(--ink)">${esc(label)}${sourceMeta}</td>
-        <td style="text-align:center;">${pageLinks}</td>
-        <td style="text-align:center;"><span class="factor-card-score ${cls}">${scTxt}</span></td>
-        <td>${obsHtml}</td>
-      </tr>`;
-  }).join('');
-
-  return `
-    <div style="overflow-x:auto;">
-      <table class="audit-table">
-        <thead>
-          <tr>
-            <th style="width:25%">Czynnik</th>
-            <th style="width:80px;text-align:center;">Strona</th>
-            <th style="width:100px;text-align:center;">Ocena</th>
-            <th>Obserwacja</th>
-          </tr>
-        </thead>
-        <tbody>
-          ${rowsHtml}
-        </tbody>
-      </table>
-    </div>
-  `;
-}
 
 function renderDomainTech(r, domainMeta) {
   const scores = r.domain_technical?.scores || {};
@@ -826,7 +438,7 @@ function renderPagesList(pages) {
               <div style="color:var(--ink);font-weight:500;margin-bottom:4px;line-height:1.2;">${esc(pa.title || pa.url)}</div>
               <div style="color:var(--ink-2);word-break:break-all;font-size:0.8rem;">${esc(pa.url)}</div>
             </div>
-            <div class="page-audit-badges" style="margin-top:0;">
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
               <span class="badge page-type">${esc(pa.page_type_label || pa.page_type)}</span>
               ${pa.reason ? `<span class="badge">${esc(pa.reason)}</span>` : ''}
               <span class="badge">${pa.html_checks_summary?.word_count || 0} słów</span>
@@ -868,8 +480,6 @@ const HARD_TECH_CAPS_CLIENT = {
 };
 
 let currentScope = 'all';
-let currentGroupKey = 'technical';
-let currentDetailUid = null;
 let heroRadarChart = null;
 
 function groupOrder(r) {
@@ -904,11 +514,6 @@ function statusSymbol(status) {
 
 function statusLabel(status) {
   return {ok: 'OK', partial: 'Częściowo', missing: 'Brak'}[status] || status;
-}
-
-function dotMeter(value) {
-  const v = Math.max(1, Math.min(3, Number(value || 1)));
-  return `<span class="dot-meter">${[1,2,3].map(i => `<span class="${i <= v ? 'filled' : ''}"></span>`).join('')}</span>`;
 }
 
 function scopedObservations(factor, scope) {
@@ -1039,13 +644,8 @@ function renderResult(r) {
   currentResult = r;
   currentMode = 'pro';
   currentScope = 'all';
-  currentDetailUid = null;
 
   const initialState = computeScopeState(r, currentScope);
-  const weakestGroup = initialState.groups
-    .filter(g => g.score !== null)
-    .sort((a, b) => a.score - b.score)[0];
-  currentGroupKey = weakestGroup?.id || groupOrder(r)[0] || 'technical';
 
   document.getElementById('modeToggleNav').classList.remove('hidden');
   document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
@@ -1134,96 +734,79 @@ function refreshAuditView() {
   results.innerHTML = renderAuditShell(currentResult);
 }
 
+function scoreToneClass(score) {
+  if (score === null || score === undefined) return '';
+  if (score >= 70) return 'good';
+  if (score >= 40) return 'warn';
+  return 'bad';
+}
+
 function renderAuditShell(r) {
+  const state = computeScopeState(r, currentScope);
   return `
-    <div class="audit-shell" id="auditRoot">
-      <aside class="url-rail">
-        <div class="rail-title">Switch URL</div>
-        <div class="url-switch">${renderUrlSwitch(r)}</div>
-      </aside>
-      <div class="audit-main">
-        ${renderDashboardPanel(r)}
-        ${renderTopActionsPanel(r)}
-        <div id="levelPane">${currentDetailUid ? renderFactorDetail(r, currentDetailUid, currentScope) : renderGroupList(r, currentGroupKey, currentScope)}</div>
-        ${renderAppendix(r)}
-      </div>
+    <div class="report" id="auditRoot">
+      ${renderUrlSwitcher(r, state)}
+      ${renderCapBanner(state)}
+      ${renderPriority(r)}
+      ${groupOrder(r).map((g, i) => renderCategory(r, g, i + 1, state)).join('')}
+      ${renderExtras(r)}
     </div>
   `;
 }
 
-function renderUrlSwitch(r) {
-  const options = r.dashboard?.url_options || [{id:'all',label:'Wszystkie',count:(r.page_audits || []).length,score:computeScopeState(r,'all').overall}].concat((r.page_audits || []).map(pa => ({
-    id: pa.url,
-    label: pa.page_type_label || pa.page_type,
-    url: pa.url,
-    title: pa.title,
-    page_type_label: pa.page_type_label,
+function renderUrlSwitcher(r, state) {
+  const pages = r.page_audits || [];
+  const allScore = state.overall;
+  const items = [{scope:'all', label:'Wszystkie', score: allScore}].concat(pages.map(pa => ({
+    scope: pa.url,
+    label: pa.page_type_label || pa.page_type || pa.url,
     score: computeScopeState(r, pa.url).overall
   })));
-  return options.map(opt => {
-    const scope = opt.id === 'all' ? 'all' : opt.url || opt.id;
-    const meta = opt.id === 'all'
-      ? `${opt.count || 0} URL · średnia ważona`
-      : `${opt.page_type_label || opt.label || ''}${opt.url ? ' · ' + opt.url : ''}`;
-    return `
-      <button class="url-option ${currentScope === scope ? 'active' : ''}" data-scope="${esc(scope)}">
-        <span class="radio-dot"></span>
-        <span class="url-label">${esc(opt.label || 'URL')}</span>
-        <span class="url-score">${opt.score ?? computeScopeState(r, scope).overall}</span>
-        <span class="url-meta">${esc(meta)}</span>
-      </button>
-    `;
-  }).join('');
-}
-
-function renderDashboardPanel(r) {
-  const state = computeScopeState(r, currentScope);
   return `
-    <section class="dashboard-grid">
-      <div class="group-bars">
-        ${state.groups.map(group => {
-          const scoreTxt = group.score === null ? '—' : group.score;
-          const width = group.score === null ? 0 : Math.max(group.score, 2);
-          return `
-            <button class="group-row ${currentGroupKey === group.id ? 'active' : ''}" data-group="${esc(group.id)}">
-              <span class="group-label">${esc(group.label)}</span>
-              <span class="bar-track"><span class="bar-fill" style="width:${width}%"></span></span>
-              <span class="group-score">${scoreTxt}</span>
-            </button>
-          `;
-        }).join('')}
-        ${state.caps?.length ? `<div class="factor-meta-line" style="margin-top:8px;color:var(--red)">Sufit wyniku: max ${state.overall}/100 · ${esc(state.caps[0].reason)}</div>` : ''}
-      </div>
-    </section>
+    <div class="url-switcher">
+      <span class="url-switcher-label">URL:</span>
+      ${items.map(it => `
+        <button class="url-pill ${currentScope === it.scope ? 'active' : ''}" data-scope="${esc(it.scope)}">
+          <span class="pill-label">${esc(it.label)}</span>
+          <span class="pill-score">${it.score}</span>
+        </button>
+      `).join('')}
+    </div>
   `;
 }
 
-function renderTopActionsPanel(r) {
-  const actions = getTopActionsForScope(r, currentScope, 5);
-  if (!actions.length) {
-    return `
-      <section class="top-actions">
-        <h3>5 najpilniejszych akcji</h3>
-        <div style="color:var(--muted)">Brak krytycznych akcji w aktualnym zakresie.</div>
-      </section>`;
-  }
+function renderCapBanner(state) {
+  if (!state.caps?.length) return '';
   return `
-    <section class="top-actions">
-      <h3>5 najpilniejszych akcji</h3>
-      <div class="action-list">
+    <div class="cap-banner">
+      <strong>Sufit wyniku · max ${state.overall}/100</strong>
+      ${esc(state.caps[0].reason)}
+    </div>
+  `;
+}
+
+function renderPriority(r) {
+  const actions = getTopActionsForScope(r, currentScope, 5);
+  if (!actions.length) return '';
+  return `
+    <section class="priority">
+      <div class="priority-head">
+        <h2>Najpilniejsze akcje</h2>
+        <span class="count">${actions.length} z ${(r.factor_index || []).length} czynników</span>
+      </div>
+      <div class="priority-list">
         ${actions.map(view => {
-          const factor = view.factor;
+          const f = view.factor;
           const note = firstUsefulNote(view);
           return `
-            <div class="action-row">
-              <span class="status-mark ${view.status}">${statusSymbol(view.status)}</span>
+            <a class="priority-item" href="#cat-${esc(f.group)}">
+              <span class="priority-mark ${view.status}">${statusSymbol(view.status)}</span>
               <div>
-                <div class="action-title">${esc(factor.label)}</div>
-                <div class="factor-note">${esc(note)}</div>
-                <div class="action-meta">${esc(factor.group_label)} · ${view.affected.length} problem${view.affected.length === 1 ? '' : 'y'} · Impact ${factor.impact}/3 · Effort ${factor.effort}/3</div>
+                <div class="priority-name">${esc(f.label)}</div>
+                <div class="priority-meta">${esc(f.group_label)} · ${view.affected.length} URL · Impact ${f.impact}/3 · Effort ${f.effort}/3</div>
               </div>
-              <button class="small-btn" data-detail="${esc(factor.uid)}" data-group-jump="${esc(factor.group)}">Pokaż</button>
-            </div>
+              <span class="priority-jump">Sekcja →</span>
+            </a>
           `;
         }).join('')}
       </div>
@@ -1231,179 +814,149 @@ function renderTopActionsPanel(r) {
   `;
 }
 
-function renderGroupList(r, group, scope) {
-  const views = getGroupFactorViews(r, group, scope);
-  const active = views.filter(view => view.status !== 'ok');
-  const ok = views.filter(view => view.status === 'ok');
-  const groupName = groupLabel(r, group);
+function renderCategory(r, groupId, num, state) {
+  const groupState = state.groups.find(g => g.id === groupId) || {score: null};
+  const score = groupState.score;
+  const tone = scoreToneClass(score);
+  const views = getGroupFactorViews(r, groupId, currentScope);
+  const active = views.filter(v => v.status !== 'ok');
+  const ok = views.filter(v => v.status === 'ok');
+  const label = groupLabel(r, groupId);
+  const blurb = CAT_BLURBS[groupId] || '';
+  const numStr = String(num).padStart(2, '0');
+
+  let body;
   if (!views.length) {
-    return `
-      <section class="factor-list">
-        <h3>${esc(groupName)}</h3>
-        <p style="color:var(--muted);font-style:italic">Brak aplikowalnych czynników dla wybranego URL-a.</p>
-      </section>
-    `;
-  }
-  return `
-    <section class="factor-list">
-      <h3>${esc(groupName)}</h3>
-      ${active.length ? active.map(renderFactorRow).join('') : '<p style="color:var(--muted);font-style:italic">Brak problemów w tej grupie.</p>'}
+    body = `<div class="cat-empty">Brak aplikowalnych czynników dla wybranego URL-a.</div>`;
+  } else {
+    body = `
+      ${active.length ? active.map(view => renderFactorItem(r, view)).join('') : '<div class="cat-empty">Wszystko OK w tej kategorii — zero problemów.</div>'}
       ${ok.length ? `
-        <details class="ok-collapse">
-          <summary>${ok.length} czynników OK</summary>
-          <div class="ok-grid">
-            ${ok.map(view => `<div class="ok-pill"><span class="status-mark ok">✓</span> ${esc(view.factor.label)}</div>`).join('')}
+        <details class="ok-fold">
+          <summary>${ok.length} czynników OK · pokaż listę</summary>
+          <div class="ok-fold-grid">
+            ${ok.map(v => `<div class="ok-fold-item">${esc(v.factor.label)}</div>`).join('')}
           </div>
         </details>
       ` : ''}
+    `;
+  }
+
+  return `
+    <section class="cat" id="cat-${esc(groupId)}">
+      <div class="cat-head">
+        <span class="cat-num">${numStr}</span>
+        <h2 class="cat-title">${esc(label)}</h2>
+        <div class="cat-score-wrap">
+          <span class="cat-score ${tone}">${score === null ? '—' : score}</span><span class="cat-denom">/100</span>
+        </div>
+      </div>
+      ${blurb ? `<p class="cat-blurb">${esc(blurb)}</p>` : ''}
+      ${body}
     </section>
   `;
 }
 
-function renderFactorRow(view) {
-  const factor = view.factor;
-  const note = firstUsefulNote(view);
-  const affectedText = view.affected.length
-    ? `${view.affected.length} URL z problemem`
-    : `${view.observations.length} URL OK`;
-  return `
-    <div class="factor-row">
-      <span class="status-mark ${view.status}">${statusSymbol(view.status)}</span>
-      <div>
-        <div class="factor-name">${esc(factor.label)}</div>
-        <div class="factor-note">${esc(note)}</div>
-        <div class="chip-line">${pageTypeChips(view)}</div>
-        <div class="factor-meta-line">
-          Impact: ${dotMeter(factor.impact)} &nbsp; Effort: ${dotMeter(factor.effort)} &nbsp; ${esc(affectedText)}
-        </div>
-      </div>
-      <button class="small-btn" data-detail="${esc(factor.uid)}">Pokaż</button>
-    </div>
-  `;
-}
+const CAT_BLURBS = {
+  technical: 'Dostępność dla crawlerów AI: HTTPS, robots.txt, GPTBot/ClaudeBot/PerplexityBot, llms.txt.',
+  onpage: 'Czytelne tytuły, meta, struktura nagłówków — fundament rozumienia treści przez LLM.',
+  schema: 'Strukturalne dane (schema.org) dopasowane do typu strony — paliwo dla rich results i RAG.',
+  eeat: 'Doświadczenie, ekspertyza, autorytatywność, wiarygodność — sygnały jakości E-E-A-T.',
+  patents: 'Hipotezy audytowe wyprowadzone z bazy patentów Google — sprawdzalne sygnały, nie deklaracja czynników rankingowych.',
+  ai_aeo: 'Ekstraktywność dla RAG, fan-out zapytań, gotowość treści na cytowanie w AI Overviews i Perplexity.'
+};
 
-function renderFactorDetail(r, uid, scope) {
-  const factor = (r.factor_index || []).find(item => item.uid === uid);
-  if (!factor) {
-    currentDetailUid = null;
-    return renderGroupList(r, currentGroupKey, scope);
-  }
-  const view = scopedFactorView(factor, scope);
-  if (!view) {
-    currentDetailUid = null;
-    return renderGroupList(r, currentGroupKey, scope);
-  }
+function renderFactorItem(r, view) {
+  const factor = view.factor;
   const detail = factor.detail || {};
+  const note = firstUsefulNote(view);
   const clientExp = r.client_mode?.client_factor_explanations?.[factor.id] || '';
   const patentLinks = (factor.patent_ref || '').split(',').map(s => s.trim()).filter(Boolean).map(id => {
     return `<a href="https://patents.google.com/patent/${encodeURIComponent(id)}/en" target="_blank" rel="noopener">${esc(id)}</a>`;
   }).join(', ');
+  const affectedText = view.affected.length
+    ? `${view.affected.length} URL z problemem`
+    : `${view.observations.length} URL OK`;
+
   return `
-    <section class="factor-detail">
-      <div class="detail-head">
-        <div class="detail-title">
-          <button class="small-btn" id="backToList" style="margin-bottom:14px">← Lista</button>
-          <h2>${esc(factor.label)}</h2>
-          <div class="chip-line">${pageTypeChips(view)}</div>
-          <div class="factor-meta-line">Status: ${statusLabel(view.status)} · Impact ${factor.impact}/3 · Effort ${factor.effort}/3</div>
+    <details class="factor-item">
+      <summary class="factor-summary">
+        <span class="factor-status ${view.status}">${statusSymbol(view.status)}</span>
+        <div>
+          <div class="factor-label">${esc(factor.label)}</div>
+          <div class="factor-sub">${esc(affectedText)} · Impact ${factor.impact}/3 · Effort ${factor.effort}/3</div>
         </div>
-      </div>
-      <div class="detail-sections">
-        <div class="detail-section">
+        <span class="factor-chev">Detal</span>
+      </summary>
+      <div class="factor-body">
+        <div>
           <h4>Co to</h4>
-          <p>${esc(detail.what || 'Brak opisu czynnika.')}</p>
+          <p>${esc(detail.what || note || 'Brak opisu czynnika.')}</p>
         </div>
-        <div class="detail-section">
+        <div>
           <h4>Dlaczego ważne</h4>
-          <p>${esc(currentMode === 'client' && clientExp ? clientExp : (detail.why || 'Ten czynnik wpływa na jakość, czytelność lub dostępność audytowanej strony.'))}</p>
-          ${factor.group === 'patents' ? `<p style="margin-top:8px;color:var(--muted)">Czynnik patentowy jest traktowany jako hipoteza audytowa, nie jako potwierdzony aktualny czynnik rankingowy. ${patentLinks ? `Źródła: ${patentLinks}.` : ''}</p>` : ''}
-          ${factor.group === 'schema' ? `<p style="margin-top:8px"><a href="https://schema.org/" target="_blank" rel="noopener">schema.org</a></p>` : ''}
+          <p>${esc(currentMode === 'client' && clientExp ? clientExp : (detail.why || 'Wpływa na jakość, czytelność lub dostępność treści dla AI.'))}</p>
+          ${factor.group === 'patents' && patentLinks ? `<p style="margin-top:8px;color:var(--muted);font-size:0.85rem">Źródła: ${patentLinks}.</p>` : ''}
+          ${factor.group === 'schema' ? `<p style="margin-top:8px;font-size:0.85rem"><a href="https://schema.org/" target="_blank" rel="noopener">schema.org</a></p>` : ''}
         </div>
-        <div class="detail-section">
+        <div>
           <h4>Stan u Ciebie</h4>
-          <div class="observation-list">
+          <div class="obs-list">
             ${view.observations.map(obs => `
-              <div class="observation-item">
-                <div class="observation-url">${esc(obs.page_type_label || obs.page_type)} · ${esc(obs.url)}</div>
-                <div><span class="status-mark ${obs.status}">${statusSymbol(obs.status)}</span> <strong>${esc(obs.status_label || statusLabel(obs.status))}</strong></div>
-                <div class="factor-note">${esc(obs.note || (obs.scope === 'domain' ? 'Wynik dotyczy konfiguracji całej domeny.' : 'Brak notatki z audytu.'))}</div>
+              <div class="obs-row ${obs.status}">
+                <div class="obs-url">${esc(obs.page_type_label || obs.page_type)} · ${esc(obs.url)}</div>
+                <div class="obs-status ${obs.status}">${esc(obs.status_label || statusLabel(obs.status))}</div>
+                <div class="obs-note">${esc(obs.note || (obs.scope === 'domain' ? 'Wynik dotyczy konfiguracji całej domeny.' : 'Brak notatki z audytu.'))}</div>
               </div>
             `).join('')}
           </div>
         </div>
-        <div class="detail-section">
+        <div>
           <h4>Jak naprawić</h4>
           <p>${esc(detail.how_to_fix || 'Popraw ten element na wskazanych URL-ach i uruchom audyt ponownie.')}</p>
           ${detail.code_example ? `<pre class="code-example"><code>${esc(detail.code_example)}</code></pre>` : ''}
         </div>
-      </div>
-    </section>
-  `;
-}
-
-function renderAppendix(r) {
-  const domainMeta = r.meta?.domain_tech_meta || {};
-  return `
-    <details class="appendix">
-      <summary>Appendiks: luki, fan-out, tech domenowe, lista URL</summary>
-      <div class="appendix-body">
-        <section>
-          <div class="section-label"><span class="num">A1</span><h2>Luki treści</h2></div>
-          <div class="gap-list">${renderGaps(r, currentMode)}</div>
-        </section>
-        <section>
-          <div class="section-label"><span class="num">A2</span><h2>Fan-out zapytań</h2></div>
-          <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
-        </section>
-        <section>
-          <div class="section-label"><span class="num">A3</span><h2>Techniczne domenowe</h2></div>
-          <div class="factor-grid">${renderDomainTech(r, domainMeta)}</div>
-        </section>
-        <section>
-          <div class="section-label"><span class="num">A4</span><h2>Lista analizowanych podstron</h2></div>
-          ${renderPagesList(r.page_audits || [])}
-        </section>
+        <div class="chip-line">${pageTypeChips(view)}</div>
       </div>
     </details>
   `;
 }
 
+function renderExtras(r) {
+  const domainMeta = r.meta?.domain_tech_meta || {};
+  const fanUrl = r.fan_out?.audited_url ? ` · audytowana: ${esc(r.fan_out.audited_url)}` : '';
+  return `
+    <div class="extras">
+      <section class="extra">
+        <div class="extra-head"><span class="extra-num">07</span><h2>Luki treści</h2></div>
+        <p class="extra-blurb">Brakujące tematy w zasięgu topical authority — co warto dopisać, by domykać klastry tematyczne.</p>
+        <div class="gap-list">${renderGaps(r, currentMode)}</div>
+      </section>
+      <section class="extra">
+        <div class="extra-head"><span class="extra-num">08</span><h2>Fan-out zapytań</h2></div>
+        <p class="extra-blurb">Symulacja pytań użytkowników w ChatGPT/Perplexity${fanUrl} — ile z nich pokrywa treść.</p>
+        <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
+      </section>
+      <section class="extra">
+        <div class="extra-head"><span class="extra-num">09</span><h2>Techniczne domenowe</h2></div>
+        <p class="extra-blurb">Konfiguracja na poziomie całej domeny — wpływa na każdą podstronę.</p>
+        <div class="factor-grid">${renderDomainTech(r, domainMeta)}</div>
+      </section>
+      <section class="extra">
+        <div class="extra-head"><span class="extra-num">10</span><h2>Analizowane podstrony</h2></div>
+        ${renderPagesList(r.page_audits || [])}
+      </section>
+    </div>
+  `;
+}
+
 function handleAuditClick(e) {
   const urlBtn = e.target.closest('button[data-scope]');
-  if (urlBtn) {
-    currentScope = urlBtn.dataset.scope;
-    currentDetailUid = null;
-    const state = computeScopeState(currentResult, currentScope);
-    if (!state.groups.some(g => g.id === currentGroupKey && g.count > 0)) {
-      const first = state.groups.find(g => g.count > 0);
-      currentGroupKey = first?.id || groupOrder(currentResult)[0] || 'technical';
-    }
-    drawHeroRadar(state.groups);
-    refreshAuditView();
-    return;
-  }
-
-  const groupBtn = e.target.closest('button[data-group]');
-  if (groupBtn) {
-    currentGroupKey = groupBtn.dataset.group;
-    currentDetailUid = null;
-    refreshAuditView();
-    return;
-  }
-
-  const detailBtn = e.target.closest('button[data-detail]');
-  if (detailBtn) {
-    const jumpGroup = detailBtn.dataset.groupJump;
-    if (jumpGroup) currentGroupKey = jumpGroup;
-    currentDetailUid = detailBtn.dataset.detail;
-    refreshAuditView();
-    return;
-  }
-
-  if (e.target.closest('#backToList')) {
-    currentDetailUid = null;
-    refreshAuditView();
-  }
+  if (!urlBtn) return;
+  currentScope = urlBtn.dataset.scope;
+  const state = computeScopeState(currentResult, currentScope);
+  drawHeroRadar(state.groups);
+  refreshAuditView();
 }
 
 function applyMode() {
