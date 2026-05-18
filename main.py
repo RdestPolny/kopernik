@@ -3107,3 +3107,29 @@ async def audit_endpoint(url: str, picks: str = ""):
 @app.get("/health")
 async def health():
     return {"status": "ok"}
+
+
+class LeadRequest(BaseModel):
+    email: str
+    url: str | None = None
+    score: int | None = None
+
+
+@app.post("/lead")
+async def capture_lead(lead: LeadRequest):
+    email = (lead.email or "").strip()
+    if "@" not in email or "." not in email or len(email) > 200:
+        raise HTTPException(status_code=400, detail="Invalid email")
+    record = {
+        "ts": datetime.utcnow().isoformat() + "Z",
+        "email": email,
+        "url": (lead.url or "").strip()[:500],
+        "score": lead.score,
+    }
+    path = os.getenv("LEADS_FILE", "leads.jsonl")
+    try:
+        with open(path, "a", encoding="utf-8") as f:
+            f.write(json.dumps(record, ensure_ascii=False) + "\n")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Could not store lead: {e}")
+    return {"status": "ok"}

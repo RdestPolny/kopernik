@@ -123,6 +123,21 @@ button{font:inherit;cursor:pointer}
 /* --- UTILS --- */
 .hidden{display:none !important}
 
+/* --- LEAD-MAGNET GATE (Klient mode) --- */
+.locked-wrap{position:relative;overflow:hidden;border-radius:6px}
+.locked-wrap > .locked-content{filter:blur(6px);pointer-events:none;user-select:none;-webkit-user-select:none;opacity:0.55;transition:filter .2s, opacity .2s}
+.locked-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(to bottom, rgba(247,246,241,0.4) 0%, rgba(247,246,241,0.85) 35%, rgba(247,246,241,0.92) 100%);z-index:5}
+.locked-card{background:#fff;border:1px solid var(--rule);border-top:3px solid var(--gold);border-radius:6px;padding:28px 32px;max-width:520px;width:100%;box-shadow:0 18px 40px rgba(10,10,10,0.12);text-align:center}
+.locked-card h3{font-size:1.35rem;margin-bottom:10px}
+.locked-card p{color:var(--muted);font-size:0.95rem;margin-bottom:18px;line-height:1.55}
+.locked-card form{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.locked-card input[type="email"]{flex:1;min-width:220px;padding:11px 14px;border:1px solid var(--rule);border-radius:3px;font:inherit;font-size:0.95rem;outline:none;background:#fff}
+.locked-card input[type="email"]:focus{border-color:var(--ink)}
+.locked-card .btn{padding:11px 22px;font-size:0.74rem}
+.locked-card .lock-hint{font-family:var(--mono);font-size:0.66rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.12em;margin-top:14px}
+.locked-card .lock-error{color:var(--red);font-size:0.85rem;margin-top:10px;min-height:1em}
+.lead-thanks{background:#E8F4EC;border:1px solid #9ED5B3;color:#0F7B36;padding:10px 14px;border-radius:3px;font-size:0.9rem;margin-top:8px}
+
 /* --- CHART --- */
 .chart-wrap{width:320px;height:320px;margin:0;max-width:100%}
 
@@ -351,8 +366,10 @@ const progressFill = document.getElementById('progressFill');
 const progressMsg = document.getElementById('progressMsg');
 const results = document.getElementById('results');
 
-let currentMode = 'pro';
+const PRO_UNLOCKED = new URLSearchParams(location.search).has('pro');
+let currentMode = PRO_UNLOCKED ? 'pro' : 'client';
 let currentResult = null;
+let leadUnlocked = (() => { try { return localStorage.getItem('aiseo_lead_unlocked') === '1'; } catch(e){ return false; } })();
 
 document.getElementById('modeToggleNav').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-mode]');
@@ -720,14 +737,18 @@ function firstUsefulNote(view) {
 
 function renderResult(r) {
   currentResult = r;
-  currentMode = 'pro';
+  currentMode = PRO_UNLOCKED ? 'pro' : 'client';
   currentScope = 'all';
   currentCategory = 'all';
 
   const initialState = computeScopeState(r, currentScope);
 
-  document.getElementById('modeToggleNav').classList.remove('hidden');
-  document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'pro'));
+  if (PRO_UNLOCKED) {
+    document.getElementById('modeToggleNav').classList.remove('hidden');
+    document.querySelectorAll('#modeToggleNav button').forEach(b => b.classList.toggle('active', b.dataset.mode === currentMode));
+  } else {
+    document.getElementById('modeToggleNav').classList.add('hidden');
+  }
 
   const overall = initialState.overall;
   document.getElementById('heroScoreContainer').innerHTML = renderHeroRadarShell();
@@ -830,12 +851,43 @@ function renderAuditShell(r) {
   const state = computeScopeState(r, currentScope);
   const groups = groupOrder(r);
   const visibleGroups = currentCategory === 'all' ? groups : groups.filter(g => g === currentCategory);
+  const gated = currentMode === 'client' && !leadUnlocked;
+  const categoriesHtml = visibleGroups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('');
+  const extrasHtml = currentCategory === 'all' ? renderExtras(r) : '';
+  const lockedBlock = gated
+    ? `
+      <div class="locked-wrap">
+        <div class="locked-content" aria-hidden="true">
+          ${categoriesHtml}
+          ${extrasHtml}
+        </div>
+        ${renderLeadGate(r, state)}
+      </div>
+    `
+    : `${categoriesHtml}${extrasHtml}`;
   return `
     <div class="report" id="auditRoot">
       ${renderCategorySwitcher(r, state)}
-      ${currentCategory === 'all' ? renderPriority(r) : ''}
-      ${visibleGroups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('')}
-      ${currentCategory === 'all' ? renderExtras(r) : ''}
+      ${(currentCategory === 'all' || gated) ? renderPriority(r) : ''}
+      ${lockedBlock}
+    </div>
+  `;
+}
+
+function renderLeadGate(r, state) {
+  return `
+    <div class="locked-overlay">
+      <div class="locked-card">
+        <div class="eyebrow" style="margin-bottom:10px;">Pełny raport</div>
+        <h3>Chcesz zobaczyć wszystkie wyniki?</h3>
+        <p>Wynik ogólny i 5 najważniejszych akcji widzisz powyżej. Zostaw e-mail, a odblokujemy pełną listę wszystkich kategorii, luk treści i analiz — a my dodatkowo wyślemy szczegółowy raport PDF za darmo.</p>
+        <form id="leadForm" autocomplete="on">
+          <input type="email" id="leadEmail" placeholder="twoj@email.pl" required>
+          <button type="submit" class="btn">Odblokuj raport</button>
+        </form>
+        <div class="lock-error" id="leadError"></div>
+        <div class="lock-hint">Bez spamu. Wyniki wysyłamy raz, mailowo.</div>
+      </div>
     </div>
   `;
 }
@@ -1058,12 +1110,48 @@ function handleAuditClick(e) {
     return;
   }
   const urlBtn = e.target.closest('button[data-scope]');
-  if (!urlBtn) return;
-  currentScope = urlBtn.dataset.scope;
-  const state = computeScopeState(currentResult, currentScope);
-  drawHeroRadar(state.groups);
-  refreshAuditView();
+  if (urlBtn) {
+    currentScope = urlBtn.dataset.scope;
+    const state = computeScopeState(currentResult, currentScope);
+    drawHeroRadar(state.groups);
+    refreshAuditView();
+    return;
+  }
 }
+
+results.addEventListener('submit', async (e) => {
+  const form = e.target.closest('#leadForm');
+  if (!form) return;
+  e.preventDefault();
+  const emailEl = document.getElementById('leadEmail');
+  const errEl = document.getElementById('leadError');
+  const btn = form.querySelector('button');
+  const email = (emailEl.value || '').trim();
+  if (!email || email.indexOf('@') < 1 || email.indexOf('.') < 0) {
+    errEl.textContent = 'Podaj poprawny adres e-mail.';
+    return;
+  }
+  errEl.textContent = '';
+  btn.disabled = true;
+  const originalLabel = btn.textContent;
+  btn.textContent = 'Wysyłam...';
+  try {
+    const score = currentResult ? computeScopeState(currentResult, 'all').overall : null;
+    const r = await fetch('/lead', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({email, url: currentResult?.url || '', score}),
+    });
+    if (!r.ok) throw new Error('Nie udało się zapisać.');
+    leadUnlocked = true;
+    try { localStorage.setItem('aiseo_lead_unlocked', '1'); } catch(_) {}
+    refreshAuditView();
+  } catch (err) {
+    errEl.textContent = err.message || 'Błąd zapisu — spróbuj ponownie.';
+    btn.disabled = false;
+    btn.textContent = originalLabel;
+  }
+});
 
 function applyMode() {
   if (!currentResult) return;
