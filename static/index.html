@@ -124,10 +124,11 @@ button{font:inherit;cursor:pointer}
 .hidden{display:none !important}
 
 /* --- LEAD-MAGNET GATE (Klient mode) --- */
+.lead-banner{position:sticky;top:64px;z-index:6;margin:24px 0 16px;display:flex;justify-content:center}
 .locked-wrap{position:relative;overflow:hidden;border-radius:6px}
 .locked-wrap > .locked-content{filter:blur(6px);pointer-events:none;user-select:none;-webkit-user-select:none;opacity:0.55;transition:filter .2s, opacity .2s}
-.locked-overlay{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:24px;background:linear-gradient(to bottom, rgba(247,246,241,0.4) 0%, rgba(247,246,241,0.85) 35%, rgba(247,246,241,0.92) 100%);z-index:5}
-.locked-card{background:#fff;border:1px solid var(--rule);border-top:3px solid var(--gold);border-radius:6px;padding:28px 32px;max-width:520px;width:100%;box-shadow:0 18px 40px rgba(10,10,10,0.12);text-align:center}
+.locked-wrap::before{content:'';position:absolute;inset:0;background:linear-gradient(to bottom, rgba(247,246,241,0.55) 0%, rgba(247,246,241,0.85) 100%);pointer-events:none;z-index:1}
+.locked-card{background:#fff;border:1px solid var(--rule);border-top:3px solid var(--gold);border-radius:6px;padding:24px 28px;max-width:640px;width:100%;box-shadow:0 18px 40px rgba(10,10,10,0.18);text-align:center}
 .locked-card h3{font-size:1.35rem;margin-bottom:10px}
 .locked-card p{color:var(--muted);font-size:0.95rem;margin-bottom:18px;line-height:1.55}
 .locked-card form{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
@@ -168,8 +169,20 @@ button{font:inherit;cursor:pointer}
 .priority-head h2{font-family:var(--mono);font-size:0.78rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);font-weight:600;margin:0}
 .priority-head .count{font-family:var(--mono);font-size:0.72rem;color:var(--muted)}
 .priority-list{display:grid;gap:1px;background:var(--rule);border:1px solid var(--rule);border-radius:6px;overflow:hidden}
-.priority-item{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 20px;background:var(--paper);text-decoration:none;color:var(--ink);transition:background .15s}
-.priority-item:hover{background:var(--paper-2)}
+.priority-item{display:block;background:var(--paper);text-decoration:none;color:var(--ink);transition:background .15s}
+.priority-item > summary{display:grid;grid-template-columns:30px minmax(0,1fr) auto;gap:14px;align-items:center;padding:16px 20px;cursor:pointer;list-style:none}
+.priority-item > summary::-webkit-details-marker{display:none}
+.priority-item:hover > summary{background:var(--paper-2)}
+.priority-item[open] > summary{background:var(--paper-2);border-bottom:1px solid var(--rule)}
+.priority-item[open] .priority-jump::after{content:' −'}
+.priority-item:not([open]) .priority-jump::after{content:' +'}
+.priority-item .priority-body{padding:18px 20px 22px 64px;display:grid;gap:14px;background:#fafaf6}
+@media(max-width:600px){.priority-item .priority-body{padding-left:20px}}
+.priority-item .priority-body h4{font-family:var(--mono);font-size:0.68rem;color:var(--gold);text-transform:uppercase;letter-spacing:0.1em;margin:0 0 4px;font-weight:600}
+.priority-item .priority-body p{font-size:0.92rem;color:var(--ink-2);line-height:1.55;margin:0}
+.priority-item .priority-body .pb-card{padding:12px 14px;border-radius:5px;background:#f5f4ef;border-left:3px solid #c4c2bb}
+.priority-item .priority-body .pb-card.why{background:#fdf6dd;border-left-color:#edd971}
+.priority-item .priority-body .pb-card.fix{background:#e8f4ec;border-left-color:#4ade80}
 .priority-mark{font-family:var(--mono);font-size:0.95rem;font-weight:700;width:30px;height:30px;display:flex;align-items:center;justify-content:center;border-radius:50%}
 .priority-mark.missing{background:#FBE6E4;color:var(--red)}
 .priority-mark.partial{background:#FBF1DD;color:var(--amber)}
@@ -869,12 +882,12 @@ function renderAuditShell(r) {
   const extrasHtml = currentCategory === 'all' ? renderExtras(r) : '';
   const lockedBlock = gated
     ? `
+      ${renderLeadGate(r, state)}
       <div class="locked-wrap">
         <div class="locked-content" aria-hidden="true">
           ${categoriesHtml}
           ${extrasHtml}
         </div>
-        ${renderLeadGate(r, state)}
       </div>
     `
     : `${categoriesHtml}${extrasHtml}`;
@@ -889,11 +902,11 @@ function renderAuditShell(r) {
 
 function renderLeadGate(r, state) {
   return `
-    <div class="locked-overlay">
+    <div class="lead-banner">
       <div class="locked-card">
         <div class="eyebrow" style="margin-bottom:10px;">Pełny raport</div>
         <h3>Chcesz zobaczyć wszystkie wyniki?</h3>
-        <p>Wynik ogólny i 5 najważniejszych akcji widzisz powyżej. Zostaw e-mail, a odblokujemy pełną listę wszystkich kategorii, luk treści i analiz — a my dodatkowo wyślemy szczegółowy raport PDF za darmo.</p>
+        <p>Wynik ogólny i 5 najważniejszych akcji widzisz powyżej (z opisem). Zostaw e-mail, a odblokujemy pełną listę wszystkich kategorii, luk treści i analiz — szczegółowy raport wyślemy też mailem za darmo.</p>
         <form id="leadForm" autocomplete="on">
           <input type="email" id="leadEmail" placeholder="twoj@email.pl" required>
           <button type="submit" class="btn">Odblokuj raport</button>
@@ -940,22 +953,45 @@ function renderPriority(r) {
         <span class="count">${actions.length} z ${(r.factor_index || []).length} czynników</span>
       </div>
       <div class="priority-list">
-        ${actions.map(view => {
-          const f = view.factor;
-          const note = firstUsefulNote(view);
-          return `
-            <a class="priority-item" href="#cat-${esc(f.group)}">
-              <span class="priority-mark ${view.status}">${statusSymbol(view.status)}</span>
-              <div>
-                <div class="priority-name">${esc(f.label)}</div>
-                <div class="priority-meta">${esc(f.group_label)} · ${view.affected.length} URL · Impact ${f.impact}/3 · Effort ${f.effort}/3</div>
-              </div>
-              <span class="priority-jump">Sekcja →</span>
-            </a>
-          `;
-        }).join('')}
+        ${actions.map(view => renderPriorityItem(r, view)).join('')}
       </div>
     </section>
+  `;
+}
+
+function renderPriorityItem(r, view) {
+  const f = view.factor;
+  const detail = f.detail || {};
+  const note = firstUsefulNote(view);
+  const clientExp = r.client_mode?.client_factor_explanations?.[f.id] || '';
+  const whyText = (currentMode === 'client' && clientExp) ? clientExp : (detail.why || 'Wpływa na jakość, czytelność lub dostępność treści dla AI.');
+  const whatText = detail.what || note || 'Brak opisu czynnika.';
+  const fixText = detail.how_to_fix || 'Popraw ten element na wskazanych URL-ach i uruchom audyt ponownie.';
+  return `
+    <details class="priority-item">
+      <summary>
+        <span class="priority-mark ${view.status}">${statusSymbol(view.status)}</span>
+        <div>
+          <div class="priority-name">${esc(f.label)}</div>
+          <div class="priority-meta">${esc(f.group_label)} · ${view.affected.length} URL · Impact ${f.impact}/3 · Effort ${f.effort}/3</div>
+        </div>
+        <span class="priority-jump">Rozwiń</span>
+      </summary>
+      <div class="priority-body">
+        <div class="pb-card what">
+          <h4>Co to</h4>
+          <p>${esc(whatText)}</p>
+        </div>
+        <div class="pb-card why">
+          <h4>Dlaczego to ważne</h4>
+          <p>${esc(whyText)}</p>
+        </div>
+        <div class="pb-card fix">
+          <h4>Jak naprawić</h4>
+          <p>${esc(fixText)}</p>
+        </div>
+      </div>
+    </details>
   `;
 }
 
