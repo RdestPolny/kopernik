@@ -69,11 +69,39 @@ class AuditRequest(BaseModel):
 
 PAGE_TYPE_PATTERNS = {
     "contact": ["/kontakt", "/contact"],
-    "about": ["/o-nas", "/about", "/o-firmie", "/zespol", "/team", "/kim-jestesmy", "/our-team", "/company"],
-    "article": ["/blog/", "/artykul", "/article/", "/post/", "/news/", "/aktualnosci", "/poradnik", "/poradniki", "/wiedza/", "/insights/", "/case-study", "/case-studies", "/baza-wiedzy"],
-    "service": ["/uslugi", "/oferta", "/services", "/produkt", "/product/", "/cennik", "/pricing", "/service/", "/usluga/"],
-    "category": ["/kategoria/", "/category/", "/tag/", "/tags/", "/archive/"],
+    "about": [
+        "/o-nas", "/o-firmie", "/o_nas", "/about", "/about-us", "/aboutus",
+        "/zespol", "/zespół", "/team", "/our-team", "/nasz-zespol",
+        "/kim-jestesmy", "/poznaj-nas", "/historia", "/nasza-historia",
+        "/misja", "/wartosci", "/wartości", "/ludzie", "/eksperci",
+        "/firma", "/company", "/agencja", "/o-agencji",
+    ],
+    "article": [
+        "/blog/", "/artykul/", "/artykuly/", "/article/", "/articles/",
+        "/post/", "/posts/", "/news/", "/aktualnosci/", "/aktualności/",
+        "/poradnik/", "/poradniki/", "/wiedza/", "/insights/",
+        "/case-study/", "/case-studies/", "/baza-wiedzy/", "/blog-post/",
+    ],
+    "service": [
+        "/uslugi/", "/usługi/", "/usluga/", "/usługa/", "/oferta/", "/services/",
+        "/service/", "/produkt/", "/product/", "/produkty/", "/products/",
+        "/cennik", "/pricing", "/rozwiazania/", "/solutions/", "/co-robimy/",
+    ],
+    "category": ["/kategoria/", "/category/", "/tag/", "/tags/", "/archive/", "/archiwum/"],
 }
+
+# Sub-paths that are listing/index pages, NOT individual articles. We avoid
+# classifying these as 'article' even though they live under e.g. /blog.
+ARTICLE_LISTING_PATHS = {
+    "/blog", "/aktualnosci", "/aktualności", "/news", "/artykuly", "/artykuły",
+    "/poradniki", "/poradnik", "/wiedza", "/insights", "/baza-wiedzy",
+    "/case-studies", "/case-study", "/posts", "/post", "/articles", "/article",
+}
+
+
+def _is_article_listing(path: str) -> bool:
+    p = path.lower().rstrip("/")
+    return p in ARTICLE_LISTING_PATHS
 
 
 def classify_page_type_heuristic(url: str, base_url: str) -> str | None:
@@ -82,10 +110,35 @@ def classify_page_type_heuristic(url: str, base_url: str) -> str | None:
     base_p = urlparse(base_url).path.rstrip("/")
     if path == base_p or path == "":
         return "homepage"
-    for type_name, patterns in PAGE_TYPE_PATTERNS.items():
-        if any(p in path for p in patterns):
+    if _is_article_listing(path):
+        return "category"
+    # Article requires a slug AFTER the listing prefix (e.g. /blog/some-title).
+    for prefix in PAGE_TYPE_PATTERNS["article"]:
+        if prefix in (path + "/"):
+            remainder = (path + "/").split(prefix, 1)[1]
+            if remainder.strip("/"):
+                return "article"
+    for type_name in ("about", "contact", "service", "category"):
+        if any(p.rstrip("/") in path for p in PAGE_TYPE_PATTERNS[type_name]):
             return type_name
     return None
+
+
+def normalize_input_url(raw: str) -> str:
+    """Accept bare domains ('strategiczni.pl'), with or without scheme/www/trailing slash."""
+    v = (raw or "").strip()
+    if not v:
+        return ""
+    v = v.strip().strip("/")
+    if not re.match(r"^https?://", v, re.I):
+        v = "https://" + v.lstrip("/")
+    try:
+        pu = urlparse(v)
+        if not pu.netloc or "." not in pu.netloc:
+            return ""
+        return f"{pu.scheme}://{pu.netloc}{pu.path or ''}".rstrip("/") or f"{pu.scheme}://{pu.netloc}"
+    except Exception:
+        return ""
 
 
 PAGE_TYPE_LABELS = {
@@ -1556,6 +1609,59 @@ def _parse_sitemap_xml(xml_text: str, base_url: str) -> list[str]:
     return urls
 
 
+def fetch_homepage_nav_links(homepage_url: str, base_url: str) -> list[dict]:
+    """GET the homepage and return links from <nav>/<header>/menu-classed elements.
+
+    These are the site's main entrypoints — usually About, Services, Blog, Contact.
+    Used to bias Gemini's candidate selection toward what the site itself promotes.
+    """
+    try:
+        r = requests.get(
+            homepage_url,
+            timeout=15,
+            allow_redirects=True,
+            headers={"User-Agent": "Mozilla/5.0 (compatible; KopernikAudit/1.0)"},
+        )
+        if r.status_code != 200 or not r.text:
+            return []
+        soup = BeautifulSoup(r.text, "html.parser")
+    except Exception:
+        return []
+
+    domain = urlparse(base_url).netloc
+    seen: set[str] = set()
+    out: list[dict] = []
+
+    containers = soup.find_all(["nav", "header"])
+    for el in soup.find_all(attrs={"class": True}):
+        cls = " ".join(el.get("class") or []).lower()
+        if any(k in cls for k in ("menu", "navigation", "nav-", "navbar", "main-nav", "primary-menu")):
+            containers.append(el)
+
+    for cont in containers:
+        for a in cont.find_all("a", href=True):
+            href = (a.get("href") or "").strip()
+            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+                continue
+            full = urljoin(homepage_url, href)
+            pu = urlparse(full)
+            if pu.netloc and pu.netloc != domain:
+                continue
+            if not pu.path or pu.path in ("/", ""):
+                continue
+            if re.search(r"\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|xml|pdf)(\?|$)", full, re.I):
+                continue
+            clean = f"{pu.scheme or 'https'}://{pu.netloc or domain}{pu.path.rstrip('/')}"
+            if clean in seen:
+                continue
+            seen.add(clean)
+            label = (a.get_text(strip=True) or "")[:80]
+            out.append({"url": clean, "label": label})
+            if len(out) >= 40:
+                return out
+    return out
+
+
 def fetch_firecrawl_map(base_url: str) -> list[str]:
     try:
         r = requests.post(
@@ -1690,53 +1796,83 @@ def _ensure_about_page(picked: list[dict], candidates: list[str], base_url: str)
     return picked
 
 
-def propose_page_candidates(all_urls: list[str], homepage_url: str, base_url: str, per_type: int = 4) -> dict:
+def propose_page_candidates(all_urls: list[str], homepage_url: str, base_url: str, per_type: int = 4, nav_links: list[dict] | None = None) -> dict:
     """Gemini groups sitemap URLs into buckets (service/article/about/other). User confirms picks."""
     domain = urlparse(base_url).netloc
     clean: list[str] = []
     seen = set()
-    for u in all_urls:
+    nav_url_set = {n["url"] for n in (nav_links or [])}
+
+    def _clean_add(u: str) -> None:
         pu = urlparse(u)
         if pu.netloc and pu.netloc != domain:
-            continue
+            return
         if re.search(r"\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|xml|woff2?|ttf|mp4|zip|pdf)(\?|$)", u, re.I):
-            continue
+            return
         key = (pu.path.rstrip("/"), pu.query)
         if key in seen or pu.path in ("", "/"):
-            continue
+            return
+        if _is_article_listing(pu.path):
+            return
         seen.add(key)
         clean.append(u)
+
+    # Surface nav-menu URLs first — these are the site's own "important pages" signal.
+    for nav in (nav_links or []):
+        _clean_add(nav["url"])
+    for u in all_urls:
+        _clean_add(u)
 
     empty = {"service": [], "article": [], "about": [], "other": []}
     if not clean:
         return empty
-    candidates = clean[:80]
+    candidates = clean[:100]
+
+    nav_block = ""
+    if nav_links:
+        nav_block = "\n<menu_glowne_strony>\nLinki z nawigacji strony głównej (najwyższy priorytet — to są strony, które witryna sama promuje):\n" + "\n".join(
+            f"- {n['url']}" + (f"  [label: {n['label']}]" if n.get("label") else "")
+            for n in nav_links[:30]
+        ) + "\n</menu_glowne_strony>\n"
 
     prompt = f"""Jesteś ekspertem SEO. Klasyfikujesz podstrony witryny i sugerujesz NAJLEPSZYCH kandydatów do audytu.
 
 <cel>
-Pogrupuj kandydatów w 4 kubełki: service (sprzedażowa/oferta/produkt/cennik/landing), article (blog/poradnik/case study/news),
-about (o nas/zespół/historia), other (portfolio, FAQ, referencje). Dla każdego kubełka WYBIERZ do {per_type} najbardziej reprezentatywnych URL-i.
+Pogrupuj kandydatów w 4 kubełki: service, article, about, other. Dla każdego wybierz do {per_type} najbardziej reprezentatywnych URL-i.
 Strona główna {homepage_url} jest JUŻ wybrana — nie wliczaj jej.
 </cel>
 
-<wykluczenia>
-polityka prywatności, regulamin, RODO, cookies; paginacja; tagi/archiwa/wyniki wyszukiwania; logowanie/koszyk/konto;
-URL-e z parametrami śledzenia; strony błędów/staging.
-</wykluczenia>
+<definicje_kubelkow>
+- service: konkretna strona oferty/usługi/produktu/cennika/landingu (np. /uslugi/seo, /oferta/google-ads, /produkt/abc, /cennik). NIE listingi typu /uslugi.
+- article: KONKRETNY wpis blogowy/poradnik/case study — URL z pełnym slugiem tytułowym (np. /blog/jak-zoptymalizowac-strone, /poradniki/audyt-seo-krok-po-kroku). NIGDY sam /blog, /aktualnosci, /poradniki, /news — to listingi, nie artykuły.
+- about: strona "o nas / o firmie / zespół / nasza historia / misja / wartości / poznaj-nas / ludzie / eksperci / agencja / o-agencji". Szukaj też nieoczywistych wariantów slugów.
+- other: portfolio, FAQ, referencje, case studies (jeśli nie wpadły do article), partnerzy.
+</definicje_kubelkow>
 
-<wskazówki>
-- Slug głębszy = bardziej konkretna treść (preferuj "/uslugi/seo-techniczny" nad "/uslugi").
-- Dla 'article' wybierz najmocniejsze tematycznie wpisy (nie listingi).
+<bezwzgledne_wykluczenia>
+- polityka prywatności, regulamin, RODO, cookies, disclaimer
+- paginacja (/page/N, ?page=, /strona/N)
+- tagi, kategorie, archiwa, wyniki wyszukiwania
+- logowanie, rejestracja, koszyk, checkout, konto
+- URL-e z trackingiem (?utm_, ?fbclid=, ?gclid=)
+- LISTINGI bez slugu artykułu (np. sam /blog, /blog/, /aktualnosci, /news, /poradniki, /case-studies, /artykuly) — NIGDY nie wrzucaj ich do 'article'
+- strony błędów, staging, testowe
+</bezwzgledne_wykluczenia>
+
+<heurystyki_wyboru>
+- Strony z menu głównego (sekcja <menu_glowne_strony>) zwykle reprezentują najważniejsze sekcje — preferuj je przy doborze.
+- Slug głębszy + opisowy = bardziej konkretna treść. Preferuj "/uslugi/seo-techniczny" nad "/uslugi", "/blog/audyt-seo-2024" nad "/blog/2024".
+- Dla 'article': URL MUSI mieć segment slugu po prefiksie (/blog/COS-TU-JEST, nie samo /blog).
+- Dla 'about': jeśli nie ma oczywistego /o-nas, sprawdź alternatywy: /o-firmie, /zespol, /poznaj-nas, /historia, /misja, /ludzie, /eksperci, /agencja.
 - W każdym kubełku unikaj duplikatów tematycznych.
-- Jeśli kubełek pusty - zwróć [].
-</wskazówki>
-
+- Pusty kubełek = zwróć [].
+</heurystyki_wyboru>
+{nav_block}
 <kandydaci>
 {chr(10).join(f"- {u}" for u in candidates)}
 </kandydaci>
 
-Zwróć TYLKO JSON:
+Zwróć TYLKO JSON (bez markdown, bez komentarzy):
 {{
   "service": [{{"url":"https://...","reason":"krótkie uzasadnienie po polsku"}}, ...],
   "article": [...],
@@ -3063,32 +3199,32 @@ async def index():
 
 @app.get("/audit/candidates")
 async def audit_candidates(url: str):
+    url = normalize_input_url(url)
     if not url:
-        raise HTTPException(status_code=400, detail="URL required")
-    if not url.startswith("http"):
-        url = "https://" + url
+        raise HTTPException(status_code=400, detail="Invalid URL or domain")
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
     sitemap_urls = fetch_sitemap_urls(base_url)
     source = "sitemap" if sitemap_urls else "firecrawl-map"
     if not sitemap_urls:
         sitemap_urls = fetch_firecrawl_map(base_url)
-    candidates = propose_page_candidates(sitemap_urls, url, base_url)
+    nav_links = fetch_homepage_nav_links(url, base_url)
+    candidates = propose_page_candidates(sitemap_urls, url, base_url, nav_links=nav_links)
     return {
         "homepage": url,
         "base_url": base_url,
         "discovery_source": source,
         "sitemap_count": len(sitemap_urls),
+        "nav_link_count": len(nav_links),
         "candidates": candidates,
     }
 
 
 @app.get("/audit/stream")
 async def audit_endpoint(url: str, picks: str = ""):
+    url = normalize_input_url(url)
     if not url:
-        raise HTTPException(status_code=400, detail="URL required")
-    if not url.startswith("http"):
-        url = "https://" + url
+        raise HTTPException(status_code=400, detail="Invalid URL or domain")
     parsed_picks: list[dict] | None = None
     if picks:
         try:
