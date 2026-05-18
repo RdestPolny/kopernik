@@ -973,7 +973,11 @@ function renderPriorityItem(r, view) {
         <span class="priority-mark ${view.status}">${statusSymbol(view.status)}</span>
         <div>
           <div class="priority-name">${esc(f.label)}</div>
-          <div class="priority-meta">${esc(f.group_label)} · ${view.affected.length} URL · Impact ${f.impact}/3 · Effort ${f.effort}/3</div>
+          <div class="factor-sub">
+            <span class="ui-chip">${esc(f.group_label)}</span>
+            <span class="meta-stat">Wpływ ${signalBars(f.impact)}</span>
+            <span class="meta-stat">Trudność ${signalBars(f.effort)}</span>
+          </div>
         </div>
         <span class="priority-jump">Rozwiń</span>
       </summary>
