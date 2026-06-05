@@ -300,8 +300,9 @@ button{font:inherit;cursor:pointer}
     </a>
     <div class="topnav-right">
       <div class="mode-toggle hidden" id="modeToggleNav">
-        <button class="active" data-mode="pro">PRO</button>
-        <button data-mode="client">Klient</button>
+        <button data-mode="lead">Lead</button>
+        <button class="active" data-mode="sales">Sprzedaż</button>
+        <button data-mode="seo">SEO</button>
       </div>
       <span>v2.0</span>
       <span>·</span>
@@ -380,7 +381,8 @@ const progressMsg = document.getElementById('progressMsg');
 const results = document.getElementById('results');
 
 const PRO_UNLOCKED = new URLSearchParams(location.search).has('pro');
-let currentMode = PRO_UNLOCKED ? 'pro' : 'client';
+const isBizMode = (m) => m === 'lead' || m === 'sales';
+let currentMode = PRO_UNLOCKED ? 'sales' : 'lead';
 let currentResult = null;
 let leadUnlocked = (() => { try { return localStorage.getItem('aiseo_lead_unlocked') === '1'; } catch(e){ return false; } })();
 
@@ -547,7 +549,7 @@ function normalizeUrl(raw) {
 }
 
 function renderGaps(r, mode) {
-  const gaps = mode === 'client'
+  const gaps = isBizMode(mode)
     ? (r.client_mode?.client_content_gaps || [])
     : (r.synthesis?.content_gaps || []);
   if (!gaps.length) return '<div class="gap-card">Brak istotnych luk treści.</div>';
@@ -580,7 +582,7 @@ function renderDomainTech(r, domainMeta) {
           <div class="factor-card-name">${esc(label)}</div>
           <span class="factor-card-score ${cls}">${scTxt}</span>
         </div>
-        ${mode === 'client' && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
+        ${isBizMode(mode) && clientExp ? `<div class="factor-card-client">${esc(clientExp)}</div>` : ''}
       </div>`;
   }).join('');
 }
@@ -763,7 +765,7 @@ function firstUsefulNote(view) {
 
 function renderResult(r) {
   currentResult = r;
-  currentMode = PRO_UNLOCKED ? 'pro' : 'client';
+  currentMode = PRO_UNLOCKED ? 'sales' : 'lead';
   currentScope = 'all';
   currentCategory = 'all';
 
@@ -877,7 +879,7 @@ function renderAuditShell(r) {
   const state = computeScopeState(r, currentScope);
   const groups = groupOrder(r);
   const visibleGroups = currentCategory === 'all' ? groups : groups.filter(g => g === currentCategory);
-  const gated = currentMode === 'client' && !leadUnlocked;
+  const gated = currentMode === 'lead' && !leadUnlocked;
   const categoriesHtml = visibleGroups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('');
   const extrasHtml = currentCategory === 'all' ? renderExtras(r) : '';
   const lockedBlock = gated
@@ -964,7 +966,7 @@ function renderPriorityItem(r, view) {
   const detail = f.detail || {};
   const note = firstUsefulNote(view);
   const clientExp = r.client_mode?.client_factor_explanations?.[f.id] || '';
-  const whyText = (currentMode === 'client' && clientExp) ? clientExp : (detail.why || 'Wpływa na jakość, czytelność lub dostępność treści dla AI.');
+  const whyText = (isBizMode(currentMode) && clientExp) ? clientExp : (detail.why || 'Wpływa na jakość, czytelność lub dostępność treści dla AI.');
   const whatText = detail.what || note || 'Brak opisu czynnika.';
   const fixText = detail.how_to_fix || 'Popraw ten element na wskazanych URL-ach i uruchom audyt ponownie.';
   return `
@@ -1097,7 +1099,7 @@ function renderFactorItem(r, view) {
           </div>
           <div class="factor-context-card why">
             <h4>Dlaczego ważne dla AI SEO</h4>
-            <p>${esc(currentMode === 'client' && clientExp ? clientExp : (detail.why || 'Wpływa na jakość, czytelność lub dostępność treści dla AI.'))}</p>
+            <p>${esc(isBizMode(currentMode) && clientExp ? clientExp : (detail.why || 'Wpływa na jakość, czytelność lub dostępność treści dla AI.'))}</p>
             ${factor.group === 'patents' && patentLinks ? `<p style="margin-top:8px;color:var(--muted);font-size:0.82rem">Źródła: ${patentLinks}.</p>` : ''}
           </div>
         </div>
