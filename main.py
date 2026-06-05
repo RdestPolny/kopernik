@@ -18,7 +18,7 @@ from pydantic import BaseModel
 
 FIRECRAWL_KEY = os.environ["FIRECRAWL_KEY"]
 GEMINI_KEY = os.environ["GEMINI_KEY"]
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_SCRAPE = "https://api.firecrawl.dev/v1/scrape"
 FIRECRAWL_MAP = "https://api.firecrawl.dev/v1/map"
@@ -2827,6 +2827,61 @@ Zwróć TYLKO JSON:
     return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=2500))
 
 
+def generate_strategic_overview(page_audits: list[dict], synthesis: dict, scores: dict, fan_out: dict, site_title: str, client_mode_obj: dict | None = None) -> dict:
+    """Strategiczne streszczenie wykonawcze (executive summary) + 5 priorytetów biznesowych.
+    Inny poziom abstrakcji niż 'Najpilniejsze akcje' (factor-level) — myśli kierunkami biznesowymi."""
+    overall = scores.get("overall", 0)
+    group_scores = scores.get("groups", {}) or {}
+    verdict_src = synthesis.get("overall_assessment", "")
+
+    top_recs = synthesis.get("top_recommendations", [])[:8]
+    top_recs_txt = "\n".join(f"- [{r.get('page_type','?')}] {r.get('text','')}" for r in top_recs) or "(brak)"
+
+    gaps = (client_mode_obj or {}).get("client_content_gaps") or synthesis.get("content_gaps", [])
+    gaps_txt = "\n".join(f"- {g}" for g in gaps[:6]) or "(brak)"
+
+    missing_queries = [q.get("query","") for q in fan_out.get("queries", []) if q.get("coverage") in ("missing","partial")][:8]
+    queries_txt = "\n".join(f"- {q}" for q in missing_queries) or "(brak)"
+
+    group_summary = ", ".join(f"{k}:{v}" for k, v in group_scores.items()) or "(brak)"
+
+    prompt = f"""Jesteś strategiem AI SEO przygotowującym EXECUTIVE SUMMARY dla zarządu firmy.
+
+<kontekst>
+Strona: {site_title}
+Wynik ogólny: {overall}/100
+Wyniki kategorii: {group_summary}
+Werdykt ekspercki: {verdict_src}
+
+Rekomendacje techniczne (do uogólnienia, NIE kopiuj 1:1):
+{top_recs_txt}
+
+Luki treści:
+{gaps_txt}
+
+Brakujące pytania klientów w AI:
+{queries_txt}
+</kontekst>
+
+<zadanie>
+Napisz STRATEGICZNE streszczenie sytuacji + 5 priorytetów BIZNESOWYCH (nie techniczne fixy).
+Język biznesowy, dla CEO. ZERO żargonu SEO (no schema/E-E-A-T/canonical/crawler/RAG).
+Priorytety = kierunki działania ("Zbuduj autorytet eksperta", "Otwórz domenę dla AI", "Uzupełnij blog o tematy klientów"), NIE pojedyncze poprawki techniczne.
+Mów o KONSEKWENCJACH biznesowych: utracony ruch, klienci pytający ChatGPT trafiają do konkurencji, brak rekomendacji w AI.
+</zadanie>
+
+Zwróć TYLKO JSON:
+{{
+  "headline": "1 zdanie — strategiczna diagnoza w stylu nagłówka prasowego",
+  "summary": "3-4 zdania: gdzie jesteście, co to znaczy dla biznesu, co stracicie bez działań, co zyskacie z działaniami",
+  "priorities": [
+    {{"title": "Kierunek (2-5 słów)", "rationale": "Dlaczego to priorytet — biznesowy powód (1 zdanie)", "outcome": "Co konkretnie zyska firma (1 zdanie)"}},
+    ... (DOKŁADNIE 5 pozycji, posortowane od najpilniejszego)
+  ]
+}}"""
+    return _extract_json(_gemini_call(prompt, temperature=0.35, max_tokens=1800))
+
+
 # --- SCORING ---
 
 def factor_score_pct(factors: dict) -> int:
@@ -3146,6 +3201,12 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         except Exception as e:
             client_mode = {"client_verdict": f"Tłumaczenie nieudane: {e}", "client_recommendations": [], "client_content_gaps": [], "client_next_step": "", "client_factor_explanations": CLIENT_FACTOR_EXPLANATIONS}
 
+        yield event("progress", {"message": "Strategiczne streszczenie wykonawcze (Gemini)...", "pct": 97})
+        try:
+            overview = generate_strategic_overview(page_audits, synth, scores_obj, fan_out, homepage_title, client_mode)
+        except Exception as e:
+            overview = {"headline": "", "summary": f"Nie udało się wygenerować streszczenia: {e}", "priorities": []}
+
         result = {
             "url": url,
             "discovery_source": discovery_source,
@@ -3169,6 +3230,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             "synthesis": synth,
             "ai_snippet_preview": ai_snippet,
             "client_mode": client_mode,
+            "overview": overview,
             "meta": {
                 "factor_meta": FACTOR_META,
                 "tech_factor_meta": TECH_FACTOR_META,

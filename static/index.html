@@ -163,6 +163,19 @@ button{font:inherit;cursor:pointer}
 .url-pill.active.tone-warn{background:#ca9a13;color:#fff;border-color:#ca9a13}
 .url-pill.active.tone-bad{background:#dc2626;color:#fff;border-color:#dc2626}
 
+/* Strategic Overview */
+.overview{margin:0 0 48px;background:linear-gradient(135deg,#1e3351 0%,#28456d 100%);color:#fff;border-radius:8px;padding:32px 36px;box-shadow:0 8px 24px rgba(30,51,81,0.15)}
+.overview-eyebrow{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold-2);font-weight:600;margin-bottom:14px}
+.overview-headline{font-family:var(--sans);font-size:1.6rem;line-height:1.25;font-weight:600;letter-spacing:-0.02em;margin:0 0 16px;color:#fff}
+.overview-summary{font-size:1rem;line-height:1.6;color:rgba(255,255,255,0.86);max-width:780px;margin:0 0 28px}
+.overview-priorities{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:8px}
+.overview-prio{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-left:3px solid var(--gold-2);border-radius:5px;padding:14px 16px}
+.overview-prio-rank{font-family:var(--mono);font-size:0.66rem;color:var(--gold-2);letter-spacing:0.1em;font-weight:700;margin-bottom:6px}
+.overview-prio-title{font-family:var(--sans);font-weight:600;font-size:0.98rem;line-height:1.3;color:#fff;margin-bottom:8px}
+.overview-prio-rationale{font-size:0.84rem;line-height:1.5;color:rgba(255,255,255,0.75);margin-bottom:6px}
+.overview-prio-outcome{font-size:0.82rem;line-height:1.5;color:var(--gold-2);font-style:italic}
+@media(max-width:600px){.overview{padding:24px 20px}.overview-headline{font-size:1.3rem}}
+
 /* Priority strip */
 .priority{margin:0 0 64px}
 .priority-head{display:flex;align-items:baseline;justify-content:space-between;margin-bottom:16px;gap:16px;flex-wrap:wrap}
@@ -896,6 +909,7 @@ function renderAuditShell(r) {
   return `
     <div class="report" id="auditRoot">
       ${renderCategorySwitcher(r, state)}
+      ${currentCategory === 'all' ? renderOverview(r) : ''}
       ${(currentCategory === 'all' || gated) ? renderPriority(r) : ''}
       ${lockedBlock}
     </div>
@@ -942,6 +956,31 @@ function renderCategorySwitcher(r, state) {
         </button>
       `;}).join('')}
     </div>
+  `;
+}
+
+function renderOverview(r) {
+  const ov = r.overview;
+  if (!ov || (!ov.headline && !ov.summary && !(ov.priorities && ov.priorities.length))) return '';
+  const priorities = (ov.priorities || []).slice(0, 5);
+  return `
+    <section class="overview">
+      <div class="overview-eyebrow">Strategiczne streszczenie</div>
+      ${ov.headline ? `<h2 class="overview-headline">${esc(ov.headline)}</h2>` : ''}
+      ${ov.summary ? `<p class="overview-summary">${esc(ov.summary)}</p>` : ''}
+      ${priorities.length ? `
+        <div class="overview-priorities">
+          ${priorities.map((p, i) => `
+            <div class="overview-prio">
+              <div class="overview-prio-rank">Priorytet ${String(i+1).padStart(2,'0')}</div>
+              <div class="overview-prio-title">${esc(p.title || '')}</div>
+              ${p.rationale ? `<div class="overview-prio-rationale">${esc(p.rationale)}</div>` : ''}
+              ${p.outcome ? `<div class="overview-prio-outcome">→ ${esc(p.outcome)}</div>` : ''}
+            </div>
+          `).join('')}
+        </div>
+      ` : ''}
+    </section>
   `;
 }
 

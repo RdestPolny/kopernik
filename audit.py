@@ -17,7 +17,7 @@ from urllib.parse import urlparse, urljoin
 # --- CONFIG ---
 FIRECRAWL_KEY = os.environ["FIRECRAWL_KEY"]
 GEMINI_KEY = os.environ["GEMINI_KEY"]
-GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite-preview")
+GEMINI_MODEL = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 GEMINI_URL = f"https://generativelanguage.googleapis.com/v1beta/models/{GEMINI_MODEL}:generateContent"
 FIRECRAWL_URL = "https://api.firecrawl.dev/v1/scrape"
 
