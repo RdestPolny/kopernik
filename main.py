@@ -755,6 +755,591 @@ PERFORMANCE_FACTOR_META = {
     "fcp_mobile_ok": {"label": "FCP – First Contentful Paint (mobile)", "category": "performance"},
 }
 
+# Stable per-factor descriptions (PRO/tech tone). Used by _generic_detail() before falling back to group templates.
+FACTOR_DETAILS = {
+    # --- FACTOR_META: HOMEPAGE ---
+    "clear_value_proposition_above_fold": {
+        "what": "Sprawdza, czy w pierwszym ekranie (above the fold) znajduje się jednoznaczne zdanie określające czym firma się zajmuje i dla kogo — wykrywane przez analizę pierwszych H1/H2 oraz hero copy.",
+        "why": "LLM-y i crawlery używają pierwszego widocznego bloku tekstu jako głównego sygnału klasyfikacji entity; brak VP w hero powoduje, że RAG ekstraktuje przypadkowy fragment lub boilerplate jako definicję firmy.",
+        "how_to_fix": "Umieść w hero jedno zdanie w formacie 'X dla Y dające Z' jako H1 lub leadowy <p>, bez ogólnych sloganów."
+    },
+    "primary_cta_visible": {
+        "what": "Wykrywa obecność wyraźnie wyróżnionego przycisku/linku akcji (kontrastowy <a>/<button>) w pierwszym widoku strony, prowadzącego do konwersji.",
+        "why": "Sygnał intencji strony dla klasyfikatorów (transactional vs informational) — pomaga AI poprawnie przypisać typ strony do query intent.",
+        "how_to_fix": "Dodaj jeden dominujący CTA w hero z czasownikiem akcji ('Umów konsultację', 'Pobierz ofertę') prowadzący do dedykowanego URL."
+    },
+    "navigation_to_key_sections_clear": {
+        "what": "Analizuje strukturę <nav> i top-bar — czy istnieją bezpośrednie linki do kluczowych sekcji (oferta, o nas, kontakt, blog) z czytelnymi anchor textami.",
+        "why": "Crawler buduje site graph z menu głównego; semantyczne anchory są ważnym sygnałem topical hierarchy dla Google i kontekstu dla LLM.",
+        "how_to_fix": "Spłaszcz nawigację do 5-7 pozycji z opisowymi anchorami zamiast ogólnych ('Usługi' → 'Audyt SEO', 'Pozycjonowanie B2B')."
+    },
+    "trust_signals_logos_reviews_numbers": {
+        "what": "Skanuje stronę pod kątem konkretnych liczb (lata działalności, klienci, projekty), logotypów klientów oraz cytowanych opinii z atrybucją.",
+        "why": "Silny sygnał E-E-A-T (Experience, Trustworthiness) dla Google; LLM-y wykorzystują konkretne metryki jako evidence przy generowaniu odpowiedzi typu 'czy X jest godne zaufania'.",
+        "how_to_fix": "Dodaj sekcję z 3-4 metrykami (np. '120 klientów B2B', '8 lat na rynku') oraz pasem logotypów klientów z prawdziwą atrybucją."
+    },
+    "organization_entity_clearly_stated": {
+        "what": "Sprawdza czy nazwa firmy, forma prawna i opis tożsamości są jednoznacznie obecne w treści i wzmocnione schema Organization.",
+        "why": "Entity disambiguation w Knowledge Graph i bazach wiedzy LLM wymaga jasnego sygnału — bez tego brand nie zostaje rozpoznany jako encja, tylko jako string.",
+        "how_to_fix": "Umieść pełną nazwę i krótki opis firmy w footerze + JSON-LD Organization z legalName, foundingDate i sameAs."
+    },
+    "contact_info_accessible_from_home": {
+        "what": "Wykrywa czy ze strony głównej (header/footer) widoczny jest telefon, e-mail lub link do strony kontaktu w max. jednym kliknięciu.",
+        "why": "Sygnał lokalności i wiarygodności dla Google LocalBusiness; AI cytując firmę często szuka kontaktu w surowym HTML jako proof-of-existence.",
+        "how_to_fix": "Umieść telefon/e-mail w headerze oraz pełen NAP w footerze z klikalnymi linkami tel:/mailto:."
+    },
+    "brand_identity_consistent_and_unique": {
+        "what": "Ocenia spójność elementów wizualnych i językowych (logo, kolory, tone of voice, naming) oraz unikalność względem szablonowych template'ów.",
+        "why": "LLM-y i Google wykorzystują sygnały unikalności brand voice do oceny czy strona reprezentuje realną organizację czy churn-content site.",
+        "how_to_fix": "Wprowadź własny brand voice w copy, unikaj stockowych template'ów, zachowaj spójną typografię i naming sekcji w całej domenie."
+    },
+    "no_generic_marketing_fluff": {
+        "what": "Wykrywa nadmiar pustych fraz marketingowych ('innowacyjne rozwiązania', 'najwyższa jakość', 'profesjonalny zespół') bez konkretów.",
+        "why": "Google QRG i klasyfikatory LLM penalizują 'thin content' z niską gęstością informacji; AI ekstraktor pomija strony bez konkretnej propozycji.",
+        "how_to_fix": "Zamień ogólniki na konkretne dane (technologia, metodologia, liczby, branże) — usuń puste przymiotniki."
+    },
+    "internal_links_to_services_or_products": {
+        "what": "Sprawdza obecność kontekstowych linków wewnętrznych z homepage do podstron usługowych/produktowych z opisowym anchor textem.",
+        "why": "Strona główna ma najwyższy PageRank w domenie — linki stąd przekazują autorytet do hubów tematycznych i pomagają crawlerom mapować site structure.",
+        "how_to_fix": "Z hero/sekcji oferty linkuj do każdej głównej usługi opisowym anchorem (nie 'czytaj więcej')."
+    },
+    "external_proof_social_press_awards": {
+        "what": "Wykrywa wzmianki o publikacjach prasowych, nagrodach, certyfikatach lub linkach do profili social z atrybucją.",
+        "why": "Off-domain validation jest silnym sygnałem E-E-A-T; LLM-y traktują wzmianki w prasie jako weryfikowalne źródła autorytetu marki.",
+        "how_to_fix": "Dodaj sekcję 'Jak o nas mówią' z logotypami mediów + outbound linki do oryginalnych publikacji i sameAs w schema Organization."
+    },
+    # --- FACTOR_META: SERVICE ---
+    "clear_offer_or_service_definition": {
+        "what": "Sprawdza czy strona usługi zawiera jednoznaczną definicję — co dokładnie zawiera usługa, zakres prac, deliverables.",
+        "why": "Klasyfikatory intencji wymagają precyzyjnego mapowania query → service offering; bez definicji RAG nie wybierze strony jako odpowiedzi.",
+        "how_to_fix": "Dodaj sekcję 'Co zawiera usługa' z bulletlistą konkretnych komponentów i zakresu prac."
+    },
+    "benefits_stated_explicitly_not_just_features": {
+        "what": "Wykrywa czy strona przekłada cechy techniczne na biznesowe efekty (np. 'audyt 200 URL' → 'zidentyfikujemy luki indeksacji').",
+        "why": "LLM-y generując odpowiedzi 'po co X' wymagają jawnie sformułowanych benefitów; same features są ekstraktowane jako spec, nie value-prop.",
+        "how_to_fix": "Pod każdą cechą dodaj zdanie 'co to oznacza dla klienta' — przełóż technikalia na rezultat."
+    },
+    "pricing_or_price_range_indication": {
+        "what": "Sprawdza obecność jakiejkolwiek informacji o cenie — kwota, widełki, model rozliczenia (od/do, godzinowo, projektowo).",
+        "why": "Cena jest jednym z najczęściej fan-outowanych podzapytań w AI search; brak danych = strona pominięta na rzecz konkurencji z widełkami.",
+        "how_to_fix": "Podaj minimum 'od X PLN' lub model rozliczenia oraz JSON-LD Offer z priceRange."
+    },
+    "use_cases_or_target_customer_defined": {
+        "what": "Wykrywa konkretne opisy scenariuszy użycia oraz profilu idealnego klienta (branża, wielkość firmy, problem).",
+        "why": "AI personalizując odpowiedzi dopasowuje stronę do profilu pytającego; bez ICP strona nie matchuje do 'X dla mojej branży'.",
+        "how_to_fix": "Dodaj sekcję 'Dla kogo' z 3-5 ICP oraz 'Kiedy nas wybrać' z konkretnymi sytuacjami biznesowymi."
+    },
+    "social_proof_testimonials_clients_case_studies": {
+        "what": "Skanuje pod kątem opinii z atrybucją (imię, firma, zdjęcie), logotypów klientów oraz linkowanych case studies z metrykami.",
+        "why": "Najsilniejszy sygnał Experience w E-E-A-T; LLM-y używają cytatów klientów jako evidence przy ocenie wiarygodności.",
+        "how_to_fix": "Dodaj 3+ opinie z pełną atrybucją oraz linki do case studies z konkretnymi wynikami i Review schema."
+    },
+    "faq_section_addressing_objections": {
+        "what": "Wykrywa sekcję FAQ adresującą realne obiekcje zakupowe, nie generyczne pytania ('Czym się zajmujecie?').",
+        "why": "FAQ to najczęściej cytowana sekcja przez AI Overviews i Perplexity (passage-level retrieval); pytania są bezpośrednim matchem dla long-tail queries.",
+        "how_to_fix": "Dodaj 5-8 pytań adresujących obiekcje (cena, czas, ryzyko, alternatywy) + FAQPage JSON-LD."
+    },
+    "clear_primary_cta_to_contact_or_buy": {
+        "what": "Sprawdza obecność wyraźnego CTA prowadzącego do konwersji (formularz, zakup, kalendarz) — minimum jeden powyżej i poniżej treści.",
+        "why": "Brak CTA klasyfikuje stronę jako informational; intent-mismatch względem transactional queries powoduje obniżenie pozycji.",
+        "how_to_fix": "Dodaj jeden dominujący CTA w hero i powtórz na końcu sekcji opisowej oraz sticky bar mobile."
+    },
+    "differentiation_vs_competition": {
+        "what": "Wykrywa jawnie sformułowane wyróżniki — co odróżnia firmę od konkurencji (metodologia, technologia, gwarancje).",
+        "why": "LLM-y porównując dostawców szukają unique selling points jako evidence; bez wyróżników strona jest jedną z wielu w komoditowej kategorii.",
+        "how_to_fix": "Dodaj sekcję 'Czym się różnimy' z 3-5 konkretnymi punktami (nie 'lepsza jakość' — np. 'własny crawler', 'gwarancja TOP10')."
+    },
+    "content_substance_over_fluff": {
+        "what": "Ocenia gęstość informacyjną treści — stosunek konkretów (dane, metodologia, liczby) do ogólników.",
+        "why": "Klasyfikatory thin content i helpful content Google obniżają strony o niskiej density; LLM ekstrakcja pomija strony bez actionable info.",
+        "how_to_fix": "Wytnij 30% ogólników i zastąp danymi, procesem, listą deliverables i konkretnymi narzędziami."
+    },
+    "risk_reversal_guarantee_trial_or_process_clarity": {
+        "what": "Wykrywa elementy redukujące ryzyko zakupu — gwarancje, okresy próbne, jasno opisany proces współpracy z etapami.",
+        "why": "Sygnał Trustworthiness E-E-A-T; AI cytując ofertę często wyciąga sekcję 'jak wygląda współpraca' jako evidence wiarygodności.",
+        "how_to_fix": "Dodaj proces krok-po-kroku (4-6 etapów z czasem) oraz politykę zwrotu/gwarancji lub model billing-as-you-go."
+    },
+    # --- FACTOR_META: ARTICLE ---
+    "author_bio_with_name_and_credentials": {
+        "what": "Sprawdza obecność widocznego boxa autora z imieniem, fotografią i credentials (stanowisko, doświadczenie, linki do profili).",
+        "why": "Krytyczny sygnał E-E-A-T zwłaszcza dla YMYL; LLM-y przypisują autorytet treści na podstawie atrybucji autora-encji w Knowledge Graph.",
+        "how_to_fix": "Dodaj box autora pod H1 z imieniem, jobTitle, linkiem do strony autora oraz JSON-LD author w Article schema."
+    },
+    "publication_date_visible_inline": {
+        "what": "Wykrywa widoczną w treści (nie tylko w meta) datę publikacji w formacie zrozumiałym dla użytkownika i parserów.",
+        "why": "Freshness signal dla Google i AI; Perplexity/ChatGPT priorytetyzują źródła z jawnymi datami przy queries time-sensitive.",
+        "how_to_fix": "Wstaw datę publikacji pod tytułem ('Opublikowano: 15.03.2026') oraz datePublished w schema Article."
+    },
+    "last_updated_date_visible": {
+        "what": "Sprawdza obecność daty ostatniej aktualizacji odrębnej od publikacji, sygnalizującej maintenance treści.",
+        "why": "AI search engines wyraźnie preferują 'updated' content nad 'published'; dateModified jest jednym z silniejszych freshness signals.",
+        "how_to_fix": "Dodaj 'Zaktualizowano: DD.MM.RRRR' obok daty publikacji oraz dateModified w Article schema."
+    },
+    "external_authoritative_citations_with_links": {
+        "what": "Wykrywa outbound linki do autorytatywnych źródeł (badania, dokumentacja, oficjalne publikacje) z kontekstowym anchor textem.",
+        "why": "Co-citation z autorytatywnymi domenami wzmacnia topical authority; LLM-y traktują strony cytujące źródła jako bardziej trustworthy.",
+        "how_to_fix": "Dodaj 3-5 outbound linków do oficjalnych źródeł (Google, dokumentacja, akademickie) z opisowym anchorem."
+    },
+    "firsthand_experience_or_original_data": {
+        "what": "Wykrywa elementy świadczące o własnym doświadczeniu — własne badania, screenshoty, dane z projektów, autorski POV.",
+        "why": "Pierwsza litera E w E-E-A-T (Experience) — Google jawnie premiuje content z first-hand evidence nad agregowanym; AI rozróżnia 'experience' od 'rehash'.",
+        "how_to_fix": "Dodaj własne dane (wykresy, screeny narzędzi, własne case study) oraz wzmianki o realnych projektach."
+    },
+    "direct_answer_near_content_start": {
+        "what": "Sprawdza czy w pierwszych 100-200 słowach znajduje się bezpośrednia odpowiedź na pytanie z tytułu (TL;DR/lead).",
+        "why": "Featured snippets, AI Overviews i Perplexity ekstraktują 40-60 słów z początku treści jako passage; bez direct answer cytowany jest losowy fragment lub konkurent.",
+        "how_to_fix": "Dodaj pod H1 lead w formie 'TL;DR' z 2-3 zdaniową odpowiedzią na pytanie z tytułu."
+    },
+    "scannable_structure_headings_lists_tables": {
+        "what": "Analizuje strukturę dokumentu pod kątem podziału na sekcje H2/H3, list, tabel i krótkich akapitów (<150 słów).",
+        "why": "Passage indexing Google i chunking w RAG działają na poziomie sekcji; dobrze posegmentowana treść jest częściej cytowana per-passage przez LLM.",
+        "how_to_fix": "Podziel długie akapity na sekcje H2 co 200-400 słów, zamień bloki tekstu na listy/tabele tam gdzie zasadne."
+    },
+    "unique_pov_not_generic_rehash": {
+        "what": "Ocenia oryginalność perspektywy — czy treść wnosi nową tezę/argument zamiast powielać top10 SERP.",
+        "why": "Google Helpful Content i klasyfikatory LLM penalizują rehash; AI preferuje strony wnoszące unikalny argument do query.",
+        "how_to_fix": "Zawrzyj jawną tezę/opinię autora oraz kontr-argument wobec mainstreamowego ujęcia tematu."
+    },
+    "depth_comprehensive_treatment_of_topic": {
+        "what": "Mierzy kompleksowość pokrycia tematu — czy artykuł adresuje główne podpytania i powiązane subtopiki (topical coverage).",
+        "why": "Topical authority i query deserves diversity faworyzują głębokie ujęcia; LLM fan-out generuje wiele podzapytań — pełne pokrycie maksymalizuje cytowalność.",
+        "how_to_fix": "Zmapuj 'people also ask' i fan-out queries; dodaj sekcje H2 pokrywające każdy podtemat."
+    },
+    "internal_links_to_related_content": {
+        "what": "Sprawdza obecność 3+ kontekstowych linków wewnętrznych do powiązanych artykułów/zasobów z opisowym anchor textem.",
+        "why": "Internal linking buduje topical clusters i pillar structure; crawler i LLM mapują relacje tematyczne na podstawie linkowania kontekstowego.",
+        "how_to_fix": "Wpleć 3-5 linków wewnętrznych w body do powiązanych artykułów (nie w 'related posts' boxie)."
+    },
+    # --- FACTOR_META: ABOUT ---
+    "founder_or_team_profiles_with_names": {
+        "what": "Wykrywa profile członków zespołu z imionami, stanowiskami, zdjęciami i biografiami.",
+        "why": "Atrybucja personalna jest silnym sygnałem Authoritativeness; LLM-y budują encje 'osoba w organizacji' z tych danych do later citation.",
+        "how_to_fix": "Dodaj sekcję 'Zespół' z imieniem, jobTitle, foto i bio dla każdej kluczowej osoby + Person schema."
+    },
+    "credentials_certifications_or_qualifications": {
+        "what": "Sprawdza wzmianki o certyfikatach (Google, branżowe), wykształceniu, latach doświadczenia członków zespołu.",
+        "why": "Authoritativeness w E-E-A-T; weryfikowalne credentials są ekstraktowane przez AI jako evidence kompetencji.",
+        "how_to_fix": "Dodaj listę certyfikatów (Google Ads, ISO, branżowych) z logotypami i datami pod profilami osób."
+    },
+    "company_history_mission_or_founding_story": {
+        "what": "Wykrywa narrację o historii powstania firmy, misji lub kluczowych kamieniach milowych.",
+        "why": "Buduje encję organizacji w bazach wiedzy LLM (foundingDate, founder); historia jest cytowana przy queries 'kim jest X'.",
+        "how_to_fix": "Dodaj sekcję 'Nasza historia' z konkretnym rokiem założenia, motywacją founderów i 3-5 milestone'ami."
+    },
+    "external_validation_awards_partners_media": {
+        "what": "Skanuje pod kątem wzmianek o nagrodach branżowych, partnerstwach technologicznych, wystąpieniach w mediach.",
+        "why": "Trzecio-stronna walidacja jest najsilniejszym sygnałem autorytetu; sameAs w schema Organization linkuje encję do oficjalnych źródeł.",
+        "how_to_fix": "Dodaj logo partnerów i nagród z linkami do oficjalnych stron + sameAs w JSON-LD Organization."
+    },
+    "office_location_or_physical_presence": {
+        "what": "Sprawdza obecność informacji o fizycznej lokalizacji — adres biura, zdjęcia, mapa, regiony działania.",
+        "why": "Sygnał realnej organizacji vs shell company; krytyczne dla LocalBusiness i lokalnych queries w AI.",
+        "how_to_fix": "Podaj pełny adres + osadzoną mapę + zdjęcia biura + LocalBusiness JSON-LD z geo coordinates."
+    },
+    "values_or_real_differentiators": {
+        "what": "Wykrywa autentyczne wartości firmowe lub differentiatory (nie generyczne 'zaangażowanie' i 'pasja').",
+        "why": "Sygnał unikalności brand identity; LLM-y rozróżniają strony z autentycznym voice od template'owych dzięki konkretnym wartościom.",
+        "how_to_fix": "Zamień ogólne wartości na konkretne ('open-sourceujemy nasze narzędzia', 'gwarantujemy SLA 4h') z dowodem realizacji."
+    },
+    "links_to_linkedin_or_professional_profiles": {
+        "what": "Wykrywa outbound linki z profili członków zespołu do LinkedIn lub profili zawodowych.",
+        "why": "Cross-platform identity verification dla Google Knowledge Graph; LinkedIn jest jednym z głównych źródeł weryfikacji encji-osób.",
+        "how_to_fix": "Dodaj ikonę/link LinkedIn pod każdym profilem zespołu oraz sameAs w Person JSON-LD."
+    },
+    "real_photos_not_stock_implied": {
+        "what": "Ocenia czy zdjęcia zespołu/biura wyglądają na autentyczne — sygnatury stockowe (Unsplash, Shutterstock) są degradujące.",
+        "why": "Trustworthiness signal; AI image classifiers i ręczni reviewerzy Google rozpoznają stock photography jako sygnał thin/template site.",
+        "how_to_fix": "Zrób sesję zdjęciową zespołu i biura; usuń wszystkie stockowe ilustracje z About."
+    },
+    "clients_or_projects_showcased": {
+        "what": "Sprawdza prezentację konkretnych klientów lub projektów na stronie About — logotypy z atrybucją, linki do case studies.",
+        "why": "Experience signal — realne projekty są weryfikowalnym dowodem doświadczenia; AI cytuje portfolio przy queries 'kto robił X'.",
+        "how_to_fix": "Dodaj pas logotypów klientów + 3-5 linków do szczegółowych case studies z About."
+    },
+    "contact_pathway_from_about": {
+        "what": "Wykrywa CTA lub link na końcu About prowadzący do kontaktu/oferty, zamykający conversion path.",
+        "why": "Page-level conversion intent signal; About bez ścieżki dalej klasyfikowany jako dead-end informational.",
+        "how_to_fix": "Dodaj na końcu About wyraźny CTA 'Porozmawiajmy o projekcie' linkujący do kontaktu lub kalendarza."
+    },
+    # --- FACTOR_META: CONTACT ---
+    "nap_name_address_phone_complete_and_visible": {
+        "what": "Sprawdza obecność i widoczność pełnego NAP — nazwy firmy, adresu pocztowego i telefonu — w identycznym formacie jak w GBP/rejestrach.",
+        "why": "NAP consistency jest fundamentem local SEO i entity resolution; AI verifikuje istnienie firmy crawlując NAP po wielu źródłach.",
+        "how_to_fix": "Umieść identyczny NAP na stronie kontakt + footer + LocalBusiness schema; format zgodny z GBP."
+    },
+    "contact_form_present_and_clear": {
+        "what": "Wykrywa obecność funkcjonalnego formularza kontaktowego z polami imię/e-mail/wiadomość i mechanizmem anty-spam.",
+        "why": "Conversion enabler; AI klasyfikuje stronę kontakt z formularzem jako fully functional vs link-only.",
+        "how_to_fix": "Dodaj <form> z 3-5 polami, reCAPTCHA i stroną dziękującą do trackowania konwersji."
+    },
+    "opening_hours_visible": {
+        "what": "Sprawdza widoczność godzin otwarcia w czytelnym formacie oraz openingHours w JSON-LD.",
+        "why": "Krytyczne dla local pack i 'open now' queries w Google/AI; brak danych = exclusion z lokalnych wyników czasowo-zależnych.",
+        "how_to_fix": "Podaj godziny w formacie 'Pn-Pt: 9-17' oraz openingHours w LocalBusiness schema."
+    },
+    "phone_clickable_tel_link": {
+        "what": "Wykrywa czy numer telefonu jest opakowany w <a href=\"tel:\"> umożliwiający bezpośrednie połączenie z mobile.",
+        "why": "Mobile UX signal i conversion enabler; brakujący tel: zmniejsza mobile call rate (sygnał behawioralny dla Google).",
+        "how_to_fix": "Zamień wszystkie numery na <a href=\"tel:+48...\">+48 ...</a>."
+    },
+    "email_clickable_mailto": {
+        "what": "Sprawdza czy adres e-mail jest klikalny przez mailto: link otwierający klienta pocztowego.",
+        "why": "UX i sygnał funkcjonalnej strony kontakt; AI parsery preferują klikalne kontakty przy ekstrakcji.",
+        "how_to_fix": "Owiń e-mail w <a href=\"mailto:...\">."
+    },
+    "map_or_embedded_location": {
+        "what": "Wykrywa osadzoną mapę Google/OSM lub statyczny obraz lokalizacji z geocoordinates.",
+        "why": "Visual proof of location dla local SEO; geo signal wzmacnia LocalBusiness entity w Knowledge Graph.",
+        "how_to_fix": "Osadź Google Maps iframe lub statyczny snapshot oraz geo (lat/long) w LocalBusiness JSON-LD."
+    },
+    "multiple_contact_channels": {
+        "what": "Sprawdza obecność więcej niż jednego kanału kontaktu (telefon + e-mail + formularz + chat/messenger).",
+        "why": "Accessibility i trustworthiness signal; brak alternatyw klasyfikuje firmę jako trudną do osiągnięcia.",
+        "how_to_fix": "Dodaj minimum 3 kanały: tel, e-mail, formularz; opcjonalnie chat lub messenger."
+    },
+    "department_or_role_specific_contacts": {
+        "what": "Wykrywa rozdzielenie kontaktów per dział/rola (sprzedaż, support, prasa) zamiast jednego ogólnego adresu.",
+        "why": "Sygnał skali organizacji i profesjonalnej struktury; pomaga AI routować zapytania do właściwego punktu kontaktu.",
+        "how_to_fix": "Wydziel sekcje 'Sprzedaż', 'Wsparcie', 'Prasa' z dedykowanymi adresami i osobami kontaktowymi."
+    },
+    "response_time_expectation": {
+        "what": "Sprawdza obecność jawnej informacji o spodziewanym czasie odpowiedzi (np. 'odpowiadamy w 24h').",
+        "why": "Expectation setting jako sygnał profesjonalizmu; AI w odpowiedziach typu 'jak szybko skontaktować się z X' wykorzystuje tę daną.",
+        "how_to_fix": "Dodaj zdanie 'Odpowiadamy w ciągu X godzin roboczych' przy formularzu i adresach e-mail."
+    },
+    "physical_office_photo_or_proof": {
+        "what": "Wykrywa zdjęcie biura, wnętrza lub fasady budynku jako wizualny dowód fizycznej obecności.",
+        "why": "Local proof signal — odróżnia faktyczną lokalizację od adresu wirtualnego; istotne dla LocalBusiness ranking.",
+        "how_to_fix": "Dodaj 1-3 prawdziwe zdjęcia biura (zewnętrze lub recepcja) na stronie kontakt."
+    },
+    # --- FACTOR_META: CATEGORY ---
+    "meaningful_category_intro_copy_not_thin": {
+        "what": "Sprawdza obecność opisowego wstępu kategorii (200-500 słów) definiującego zakres tematyczny, nie samej listy produktów.",
+        "why": "Bez intro kategoria jest klasyfikowana jako thin content; LLM-y nie mają contextu do mapowania query → category.",
+        "how_to_fix": "Dodaj 200-400 słów intro nad listingiem z definicją kategorii, kluczowymi cechami i przewodnikiem zakupowym."
+    },
+    "unique_category_h1_and_title": {
+        "what": "Wykrywa czy H1 i <title> kategorii są unikalne w obrębie domeny i opisowe (nie 'Produkty' lub 'Kategoria 1').",
+        "why": "Title/H1 to najsilniejszy on-page signal; duplikaty powodują keyword cannibalization i obniżenie rankingu wszystkich kanibalizujących URL.",
+        "how_to_fix": "Ustaw unikalny H1 z nazwą kategorii i modyfikatorem ('Buty trekkingowe damskie') oraz spójny title."
+    },
+    "category_specific_meta_description": {
+        "what": "Sprawdza obecność unikalnej meta description dla danej kategorii, opisującej zakres oferty i CTA.",
+        "why": "Wpływa na CTR z SERP; AI Overviews wykorzystują meta description jako jeden z preview signals.",
+        "how_to_fix": "Napisz dedykowaną meta description 120-160 znaków z liczbą produktów, kluczowymi markami i value-prop."
+    },
+    "internal_links_to_items_with_context": {
+        "what": "Wykrywa czy linki do produktów/elementów listy mają opisowy anchor i kontekstowe modyfikatory, nie tylko miniaturkę.",
+        "why": "Anchor text jest sygnałem topical relevance dla docelowego URL; crawler dystrybuuje autorytet kategorii do produktów przez kontekstowe linkowanie.",
+        "how_to_fix": "Upewnij się że każdy element listy ma tekstowy anchor z pełną nazwą produktu, nie tylko klikalne foto."
+    },
+    "filters_or_facets_if_applicable": {
+        "what": "Sprawdza obecność funkcjonalnych filtrów/fasetów na listingu kategorii — cena, atrybuty, marka.",
+        "why": "UX i dłuższe sesje (sygnał behawioralny); jednocześnie wymaga kontroli indeksacji aby nie generować thin/duplicate URL.",
+        "how_to_fix": "Dodaj filtry per atrybut produktu + canonical/noindex dla kombinacji fasetowych aby uniknąć duplicate content."
+    },
+    "pagination_or_load_more_sensible": {
+        "what": "Wykrywa obecność mechanizmu paginacji (rel=next/prev lub crawlowalne URL z ?page=N) dla długich list.",
+        "why": "Crawler musi dotrzeć do produktów na dalszych stronach; infinite scroll bez fallbackowego URL ukrywa głębsze produkty przed botami.",
+        "how_to_fix": "Wprowadź crawlowalne URL paginacji (/?page=2) z linkami w HTML lub progressive enhancement przy infinite scroll."
+    },
+    "subcategory_links_exposed": {
+        "what": "Sprawdza widoczność linków do podkategorii z poziomu kategorii nadrzędnej — bezpośrednio w HTML, nie tylko w menu.",
+        "why": "Hierarchia kategoryjna buduje topical clusters i przekazuje PageRank w głąb taksonomii.",
+        "how_to_fix": "Dodaj sekcję 'Podkategorie' pod intro z linkami do każdej podkategorii i krótkim opisem."
+    },
+    "no_boilerplate_content_duplicated": {
+        "what": "Wykrywa powtarzające się szablonowe bloki tekstu identyczne na wielu kategoriach (boilerplate).",
+        "why": "Boilerplate jest filtrowany przez Google jako near-duplicate content i obniża wartość unikalnej treści na stronie.",
+        "how_to_fix": "Zamień powtarzalne bloki na unikalny content per kategoria lub wytnij je ze strony."
+    },
+    "visual_hierarchy_for_scannability": {
+        "what": "Ocenia czytelność listingu — siatka produktów, jasna typografia, kontrast, separacja sekcji.",
+        "why": "UX/dwell time signal dla Google; LLM-y nie analizują wizualnie, ale dobra struktura HTML koreluje z accessibility.",
+        "how_to_fix": "Zastosuj spójny grid produktów, czytelną typografię z hierarchią i wyraźną separację sekcji."
+    },
+    "related_categories_linked": {
+        "what": "Wykrywa linki do powiązanych kategorii na końcu lub w sidebarze listingu.",
+        "why": "Buduje horyzontalne powiązania w taxonomy graph; pomaga crawlerowi i LLM zrozumieć relacje siblings w katalogu.",
+        "how_to_fix": "Dodaj sekcję 'Powiązane kategorie' z 4-6 linkami do siblings i komplementarnych kategorii."
+    },
+    # --- FACTOR_META: OTHER ---
+    "clear_page_purpose_stated": {
+        "what": "Sprawdza czy strona w pierwszej sekcji jednoznacznie komunikuje swój cel i odbiorcę.",
+        "why": "Klasyfikatory intencji wymagają jasnego sygnału; ambivalent purpose powoduje misclassification i niski match score do query.",
+        "how_to_fix": "W pierwszym akapicie pod H1 określ jednym zdaniem 'po co' istnieje ta podstrona i 'dla kogo'."
+    },
+    "value_for_user_evident": {
+        "what": "Ocenia czy user value (informacja, narzędzie, rozwiązanie) jest widoczna od razu, bez konieczności scrollowania.",
+        "why": "Helpful Content System Google penalizuje strony bez jasnej wartości; AI ekstraktor odrzuca strony bez evidentnego value-prop.",
+        "how_to_fix": "Umieść główną wartość strony (insight, tool, answer) above the fold."
+    },
+    "heading_hierarchy_correct": {
+        "what": "Sprawdza poprawną hierarchię nagłówków — jeden H1, sekwencyjnie zagnieżdżone H2/H3 bez skoków poziomów.",
+        "why": "Hierarchia nagłówków odpowiada za document outline używany przez accessibility, passage indexing i RAG chunking.",
+        "how_to_fix": "Zostaw jeden H1, ułóż H2 jako sekcje główne, H3 jako podpunkty; eliminuj skoki H1→H4."
+    },
+    "meta_description_descriptive_and_unique": {
+        "what": "Wykrywa obecność unikalnej dla URL meta description w przedziale 120-160 znaków, opisującej treść.",
+        "why": "Wpływa na CTR z SERP; chociaż nie jest ranking factorem direct, brak/duplikaty obniżają widoczność w wynikach.",
+        "how_to_fix": "Napisz unikalną meta description 120-160 znaków z value-prop i nieoficjalnym CTA."
+    },
+    "scannable_structure_lists_or_subheadings": {
+        "what": "Sprawdza obecność list, podtytułów i krótkich akapitów dzielących treść na łatwo skanowalne sekcje.",
+        "why": "Passage retrieval i RAG chunking preferują dobrze posegmentowane dokumenty; AI cytuje sekcje per H2/list.",
+        "how_to_fix": "Podziel długie bloki na listy bullet/numerowane oraz sekcje H2 co 200-400 słów."
+    },
+    "appropriate_schema_for_content_type": {
+        "what": "Sprawdza czy typ schema.org (Article, Product, Service, FAQPage) odpowiada faktycznemu typowi treści strony.",
+        "why": "Schema disambiguuje typ contentu dla crawlera i pozwala uzyskać rich results; mismatch może być filtrowany jako spam.",
+        "how_to_fix": "Dobierz schema do typu strony: Article→blog, Service→oferty, Product→produkty, FAQPage→FAQ."
+    },
+    "internal_links_to_contextual_content": {
+        "what": "Wykrywa linki wewnętrzne do tematycznie powiązanych treści z kontekstowym anchor textem (nie 'kliknij tutaj').",
+        "why": "Buduje topical clusters i przekazuje autorytet; pomaga AI mapować relacje semantyczne w domenie.",
+        "how_to_fix": "Wpleć 3-5 kontekstowych linków wewnętrznych w body z opisowymi anchorami."
+    },
+    "no_generic_ai_generated_content": {
+        "what": "Wykrywa cechy generycznego AI-generated contentu — szablonowe frazy, brak konkretnych przykładów, jednakowa struktura sekcji.",
+        "why": "Google Spam Update i SpamBrain klasyfikują scaled content abuse; LLM-y rozpoznają własne template'y i obniżają cytowalność.",
+        "how_to_fix": "Dodaj osobiste przykłady, własne dane, autentyczny POV; przepisz template'owe sekcje na unikalny voice."
+    },
+    "external_sources_or_proof_where_relevant": {
+        "what": "Sprawdza obecność outbound linków do źródeł lub dowodów potwierdzających fakty i twierdzenia w treści.",
+        "why": "Trustworthiness signal i co-citation z autorytetami; AI woli cytować strony które same cytują weryfikowalne źródła.",
+        "how_to_fix": "Linkuj do oficjalnych źródeł (dokumentacja, badania, statystyki) przy każdym kluczowym twierdzeniu."
+    },
+    "clear_next_step_or_cta": {
+        "what": "Wykrywa obecność jasnej akcji do podjęcia na końcu strony — CTA, link do powiązanego zasobu, formularz.",
+        "why": "Conversion path completion; brak next step generuje dead-end signal i niski dwell time.",
+        "how_to_fix": "Dodaj na końcu strony jednoznaczny CTA lub link do logicznie następnego kroku w user journey."
+    },
+    # --- TECH_FACTOR_META ---
+    "meta_title_present": {
+        "what": "Weryfikuje obecność tagu <title> w <head> z niepustą zawartością w przedziale 30-65 znaków.",
+        "why": "Title jest najsilniejszym on-page rankingiem; jego brak powoduje że Google sam generuje fallback (zwykle gorszy) z H1 lub treści.",
+        "how_to_fix": "Dodaj <title>Główne słowo kluczowe — Marka</title> w <head>, 50-60 znaków."
+    },
+    "meta_description": {
+        "what": "Sprawdza obecność meta description w <head> w długości 120-160 znaków.",
+        "why": "Mimo że nie jest direct ranking factor, wpływa na CTR z SERP i jest używana przez AI search engines jako preview.",
+        "how_to_fix": "Dodaj <meta name=\"description\" content=\"…\"> z value-prop, 120-160 znaków."
+    },
+    "canonical_tag": {
+        "what": "Wykrywa obecność <link rel=\"canonical\"> wskazującego preferowany URL kanoniczny strony.",
+        "why": "Eliminuje duplicate content z parametrów, trailing slash, http/https; konsoliduje sygnały rankingowe do jednego URL.",
+        "how_to_fix": "Dodaj <link rel=\"canonical\" href=\"https://domena.pl/url/\"> w <head> z pełnym absolute URL."
+    },
+    "h1_single": {
+        "what": "Sprawdza czy strona zawiera dokładnie jeden tag H1 z głównym tematem.",
+        "why": "H1 jest głównym sygnałem o czym jest strona; multiple H1 rozmywają fokus i utrudniają klasyfikację.",
+        "how_to_fix": "Pozostaw jeden H1 z głównym tematem, pozostałe semantyczne nagłówki zamień na H2/H3."
+    },
+    "heading_hierarchy": {
+        "what": "Analizuje sekwencję nagłówków H1-H6 pod kątem braku skoków poziomów (np. H1→H4) i poprawnego zagnieżdżenia.",
+        "why": "Hierarchia nagłówków odpowiada za document outline używany przez accessibility tools, passage indexing i chunking w RAG.",
+        "how_to_fix": "Ułóż nagłówki sekwencyjnie H1→H2→H3 bez skoków poziomów."
+    },
+    "og_tags": {
+        "what": "Wykrywa obecność tagów Open Graph (og:title, og:description, og:image, og:url) w <head>.",
+        "why": "Steruje wyglądem strony przy udostępnianiu w social media i messengerach; brak generuje fallback z często niewłaściwym preview.",
+        "how_to_fix": "Dodaj og:title, og:description, og:image (min 1200x630), og:url w <head>."
+    },
+    "viewport_meta": {
+        "what": "Sprawdza obecność <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">.",
+        "why": "Krytyczne dla mobile-friendliness; brak powoduje że strona jest renderowana w trybie desktop na mobile (skalowana), co psuje UX i mobile ranking.",
+        "how_to_fix": "Dodaj <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\"> w <head>."
+    },
+    "lang_attribute": {
+        "what": "Wykrywa atrybut lang w tagu <html> określający język strony (np. lang=\"pl\").",
+        "why": "Sygnał dla crawlerów, screen readerów i tłumaczy o języku contentu; wpływa na geo-targeting i accessibility.",
+        "how_to_fix": "Ustaw <html lang=\"pl\"> (lub odpowiedni ISO code)."
+    },
+    "image_alt_coverage": {
+        "what": "Mierzy procent obrazów <img> z wypełnionym atrybutem alt — opisującym treść lub pustym dla dekoracyjnych.",
+        "why": "Accessibility (screen readers), image search ranking, oraz semantyczny kontekst obrazu dla AI multimodalnych modeli.",
+        "how_to_fix": "Dodaj alt do każdego <img>: opisowy dla content images (5-12 słów), alt=\"\" dla dekoracji."
+    },
+    "semantic_html5_tags": {
+        "what": "Wykrywa użycie semantycznych tagów HTML5 (<main>, <article>, <section>, <nav>, <header>, <footer>) zamiast <div>.",
+        "why": "Daje crawlerowi i parserom AI eksplicytny document structure ułatwiający rozpoznanie funkcji bloków (boilerplate vs main content).",
+        "how_to_fix": "Zamień strukturalne <div> na semantyczne tagi <main>, <article>, <section>, <nav>, <header>, <footer>."
+    },
+    "response_size_ok": {
+        "what": "Sprawdza czy rozmiar HTML response mieści się w rozsądnych granicach (zwykle ≤200-300 KB).",
+        "why": "Duży HTML spowalnia parsing, render i crawl budget; bloated markup często sygnalizuje słabej jakości template.",
+        "how_to_fix": "Usuń inline CSS/JS, komentarze i nieużywany markup; włącz minifikację i kompresję."
+    },
+    "organization_schema": {
+        "what": "Wykrywa JSON-LD typu Organization z polami name, url, logo, sameAs.",
+        "why": "Definiuje encję organizacji dla Knowledge Graph; sameAs łączy z oficjalnymi profilami social/LinkedIn do entity verification.",
+        "how_to_fix": "Dodaj JSON-LD Organization z name, url, logo, sameAs (LinkedIn, GBP, social)."
+    },
+    "website_schema": {
+        "what": "Wykrywa JSON-LD typu WebSite z polami name, url i opcjonalnie potentialAction (SearchAction).",
+        "why": "Pomaga AI rozpoznać markę i włączyć sitelinks search box w SERP.",
+        "how_to_fix": "Dodaj JSON-LD WebSite z name, url i potentialAction SearchAction."
+    },
+    "any_schema": {
+        "what": "Sprawdza obecność jakiegokolwiek poprawnego schema.org JSON-LD na stronie.",
+        "why": "Schema disambiguuje typ contentu i encje dla AI; strony bez schemy są klasyfikowane wyłącznie heurystycznie z HTML.",
+        "how_to_fix": "Dodaj minimum jeden JSON-LD pasujący do typu strony (Organization, Article, Service, Product)."
+    },
+    "product_or_service_schema": {
+        "what": "Wykrywa JSON-LD typu Product lub Service z polami name, description, offers/provider.",
+        "why": "Umożliwia rich results dla ofert (cena, dostępność) i jednoznacznie klasyfikuje stronę jako transactional.",
+        "how_to_fix": "Dodaj Service/Product JSON-LD z name, description, provider, areaServed, offers (price/priceCurrency)."
+    },
+    "faq_schema_bonus": {
+        "what": "Wykrywa JSON-LD FAQPage z parami pytanie-odpowiedź odpowiadającymi widocznej treści.",
+        "why": "Bardzo często ekstraktowane przez AI Overviews i Perplexity jako bezpośrednie odpowiedzi na long-tail queries.",
+        "how_to_fix": "Dodaj FAQPage JSON-LD odzwierciedlający widoczne FAQ (nie ukryte — to violation guidelines)."
+    },
+    "breadcrumb_schema": {
+        "what": "Sprawdza obecność JSON-LD BreadcrumbList z sekwencją position/name/item od korzenia do bieżącej strony.",
+        "why": "Wzbogaca SERP o breadcrumb path zamiast URL, podnosząc CTR; pomaga crawlerowi mapować taxonomy.",
+        "how_to_fix": "Dodaj BreadcrumbList JSON-LD odzwierciedlający faktyczną hierarchię nawigacyjną."
+    },
+    "article_schema": {
+        "what": "Wykrywa JSON-LD typu Article lub BlogPosting z headline, author, datePublished, dateModified.",
+        "why": "Umożliwia Top Stories, Discover i article rich results; krytyczne dla atrybucji autora-encji.",
+        "how_to_fix": "Dodaj Article/BlogPosting JSON-LD z headline, author, datePublished, dateModified, image, publisher."
+    },
+    "schema_author_field": {
+        "what": "Sprawdza obecność pola author w Article schema z typem Person i wypełnionym name/url.",
+        "why": "Najsilniejszy sygnał atrybucji autora dla E-E-A-T; bez tego pola Article schema jest niekompletna.",
+        "how_to_fix": "Uzupełnij \"author\": {\"@type\":\"Person\",\"name\":\"…\",\"url\":\"…\"} w Article JSON-LD."
+    },
+    "schema_dates": {
+        "what": "Wykrywa obecność datePublished i dateModified w Article schema w formacie ISO 8601.",
+        "why": "Freshness signal jawnie deklarowany; AI search engines wyraźnie premiują content z poprawnymi datami.",
+        "how_to_fix": "Dodaj datePublished i dateModified w formacie ISO 8601 (YYYY-MM-DD) do Article JSON-LD."
+    },
+    "person_schema_team": {
+        "what": "Wykrywa JSON-LD typu Person dla członków zespołu z name, jobTitle, sameAs.",
+        "why": "Buduje encje-osoby w Knowledge Graph powiązane z Organization; krytyczne dla atrybucji eksperckiej w E-E-A-T.",
+        "how_to_fix": "Dla każdej osoby zespołu dodaj Person JSON-LD z name, jobTitle, sameAs (LinkedIn), worksFor."
+    },
+    "localbusiness_or_organization_schema": {
+        "what": "Sprawdza obecność JSON-LD LocalBusiness lub Organization z address, telephone, openingHours, geo.",
+        "why": "Krytyczne dla local pack ranking i lokalnych queries w AI; geo coordinates łączą encję z mapą Google.",
+        "how_to_fix": "Dodaj LocalBusiness JSON-LD z PostalAddress, telephone, openingHours, geo (latitude/longitude)."
+    },
+    "tel_link_present": {
+        "what": "Wykrywa minimum jeden link <a href=\"tel:\"> umożliwiający bezpośrednie wybranie numeru na urządzeniu mobilnym.",
+        "why": "Mobile UX i conversion enabler; krytyczne dla local businesses zależnych od call tracking.",
+        "how_to_fix": "Zamień telefony w treści na <a href=\"tel:+48123456789\">."
+    },
+    "mailto_link_present": {
+        "what": "Wykrywa minimum jeden link <a href=\"mailto:\"> otwierający klienta pocztowego.",
+        "why": "UX signal i sygnał funkcjonalnej strony kontaktowej.",
+        "how_to_fix": "Zamień e-maile w treści na <a href=\"mailto:...\">."
+    },
+    "contact_form_present": {
+        "what": "Wykrywa obecność tagu <form> z polami input służącego do kontaktu.",
+        "why": "Zwiększa konwersję i sygnalizuje funkcjonalność strony; AI rozpoznaje funkcjonalność strony kontakt na podstawie obecności form.",
+        "how_to_fix": "Dodaj <form> z imię, e-mail, wiadomość + reCAPTCHA i stroną dziękującą."
+    },
+    "itemlist_schema": {
+        "what": "Wykrywa JSON-LD typu ItemList z position/url/name dla elementów listy (produkty, kategoria, zespół).",
+        "why": "Pozwala AI rozpoznać typ strony listingowej i prawidłowo paginować/cytować pojedyncze elementy.",
+        "how_to_fix": "Dodaj ItemList JSON-LD z position/url/name każdego elementu na listingu."
+    },
+    # --- DOMAIN_TECH_META ---
+    "robots_txt_accessible": {
+        "what": "Sprawdza czy /robots.txt zwraca HTTP 200 z poprawnym text/plain i parsowalnymi dyrektywami.",
+        "why": "Pierwszy plik odwiedzany przez crawlery; brak/błąd 500 może blokować całą domenę lub powodować nieoptymalny crawl.",
+        "how_to_fix": "Udostępnij /robots.txt zwracający HTTP 200 z minimalną zawartością User-agent + Sitemap."
+    },
+    "gptbot_not_blocked": {
+        "what": "Weryfikuje czy User-agent: GPTBot nie jest zablokowany przez Disallow: / w robots.txt.",
+        "why": "GPTBot odpowiada za crawl dla ChatGPT i indeksu OpenAI; jego zablokowanie wyłącza domenę z citation pool ChatGPT.",
+        "how_to_fix": "Usuń z robots.txt User-agent: GPTBot z Disallow: / lub zmień na Allow."
+    },
+    "perplexitybot_not_blocked": {
+        "what": "Sprawdza czy User-agent: PerplexityBot nie jest blokowany w robots.txt.",
+        "why": "PerplexityBot indeksuje dla Perplexity.ai — jednego z największych AI search engines; blokada eliminuje cytowanie.",
+        "how_to_fix": "Usuń z robots.txt User-agent: PerplexityBot z Disallow: /."
+    },
+    "claudebot_not_blocked": {
+        "what": "Weryfikuje czy ClaudeBot (oraz anthropic-ai) nie są zablokowane w robots.txt.",
+        "why": "ClaudeBot odpowiada za crawl dla Claude i Anthropic; blokada wyłącza domenę z bazy wiedzy Claude.",
+        "how_to_fix": "Usuń z robots.txt User-agent: ClaudeBot oraz anthropic-ai z Disallow: /."
+    },
+    "google_extended_not_blocked": {
+        "what": "Sprawdza czy User-agent: Google-Extended nie jest blokowany w robots.txt.",
+        "why": "Google-Extended steruje wykorzystaniem treści w Gemini i AI Overviews — blokada wyłącza z AI features Google przy zachowaniu klasycznego rankingu.",
+        "how_to_fix": "Usuń z robots.txt User-agent: Google-Extended z Disallow: / aby pojawiać się w AI Overviews."
+    },
+    "crawl_delay_ok": {
+        "what": "Sprawdza wartość dyrektywy Crawl-delay w robots.txt — czy nie jest absurdalnie wysoka (>10s).",
+        "why": "Wysoki crawl-delay ogranicza crawl rate i sygnalizuje słabą infrastrukturę; Googlebot ignoruje, ale inne boty respektują.",
+        "how_to_fix": "Usuń lub obniż Crawl-delay do ≤10 w robots.txt."
+    },
+    "sitemap_present": {
+        "what": "Wykrywa obecność pliku sitemap.xml (na /sitemap.xml lub zgłoszonego w robots/GSC) z poprawną strukturą XML.",
+        "why": "Sitemap przyspiesza discovery i indeksację — krytyczne dla dużych serwisów i nowych URL.",
+        "how_to_fix": "Wygeneruj sitemap.xml (Yoast/RankMath/Screaming Frog), opublikuj pod /sitemap.xml i zgłoś w GSC."
+    },
+    "sitemap_in_robots": {
+        "what": "Sprawdza czy robots.txt zawiera dyrektywę Sitemap: wskazującą lokalizację sitemap.xml.",
+        "why": "Pozwala crawlerom (zwłaszcza tym, które nie używają GSC) automatycznie wykryć sitemap.",
+        "how_to_fix": "Dodaj na końcu robots.txt: Sitemap: https://domena.pl/sitemap.xml."
+    },
+    "llms_txt_present": {
+        "what": "Wykrywa plik /llms.txt zgodny ze standardem llmstxt.org — markdown z TOC kluczowych URL, opisem firmy, licencją.",
+        "why": "Standard pozwala LLM-om efektywnie pobrać curated knowledge o firmie bez crawlowania całej domeny; jeden z najsilniejszych aktualnie AI SEO sygnałów.",
+        "how_to_fix": "Stwórz /llms.txt z markdown TOC najważniejszych URL, opisem firmy i licencją zgodnie z llmstxt.org."
+    },
+    "https_enabled": {
+        "what": "Sprawdza czy domena obsługuje HTTPS z ważnym certyfikatem SSL/TLS i przekierowuje HTTP→HTTPS.",
+        "why": "Confirmed ranking factor Google; brak HTTPS powoduje 'Not Secure' w przeglądarce i drastyczne obniżenie zaufania.",
+        "how_to_fix": "Zainstaluj certyfikat (np. Let's Encrypt) i wymusz redirect 301 HTTP→HTTPS na serwerze."
+    },
+    "hreflang_used": {
+        "what": "Wykrywa tagi <link rel=\"alternate\" hreflang=\"…\"> dla wersji językowych/regionalnych strony.",
+        "why": "Kluczowe dla geo-targetingu i unikania duplicate content między wersjami językowymi; bez hreflang Google sam wybiera 'kanoniczną' wersję.",
+        "how_to_fix": "Dodaj <link rel=\"alternate\" hreflang=\"…\" href=\"…\"> per język + hreflang=\"x-default\" — tylko jeśli masz wersje językowe."
+    },
+    "hsts_enabled": {
+        "what": "Sprawdza obecność nagłówka serwera Strict-Transport-Security z max-age.",
+        "why": "Wymusza HTTPS w przeglądarce nawet przy pierwszym wejściu (po preload); chroni przed SSL stripping i wzmacnia security signal.",
+        "how_to_fix": "Dodaj header Strict-Transport-Security: max-age=31536000; includeSubDomains."
+    },
+    "compression_enabled": {
+        "what": "Weryfikuje czy serwer kompresuje odpowiedzi (Content-Encoding: gzip lub brotli).",
+        "why": "Kompresja redukuje TTFB i payload o 60-80%, bezpośrednio wpływając na Core Web Vitals i crawl efficiency.",
+        "how_to_fix": "Włącz gzip lub brotli na serwerze (nginx: gzip on / brotli on; Apache: mod_deflate)."
+    },
+    # --- PERFORMANCE_FACTOR_META ---
+    "performance_score_mobile": {
+        "what": "Łączna ocena Lighthouse Performance (0-100) dla wersji mobilnej, agregująca LCP, CLS, TBT, FCP, SI, TTI.",
+        "why": "Mobile-first indexing Google używa wydajności mobilnej jako rankingowego signalu; niski score koreluje z wysokim bounce rate.",
+        "how_to_fix": "Optymalizuj wszystkie Core Web Vitals jednocześnie — kompresja obrazów (WebP/AVIF), lazy-load, deferred JS, krytyczny CSS inline."
+    },
+    "lcp_mobile_ok": {
+        "what": "Mierzy Largest Contentful Paint — czas wczytania największego widocznego elementu (zwykle hero image/heading); cel <2.5s.",
+        "why": "Core Web Vital — confirmed ranking factor; reprezentuje perceived load speed kluczową dla mobile UX.",
+        "how_to_fix": "Preload hero image, użyj WebP/AVIF, dodaj fetchpriority=\"high\", optymalizuj TTFB serwera, eliminuj render-blocking resources."
+    },
+    "cls_mobile_ok": {
+        "what": "Mierzy Cumulative Layout Shift — sumę nieoczekiwanych przesunięć layoutu w czasie sesji; cel <0.1.",
+        "why": "Core Web Vital — wysokie CLS powoduje misclick'i i frustrację, jest karane w mobile ranking.",
+        "how_to_fix": "Ustaw width/height na <img>/<video>, rezerwuj miejsce dla embedów i reklam, unikaj wstrzykiwania DOM nad fold."
+    },
+    "tbt_mobile_ok": {
+        "what": "Mierzy Total Blocking Time — sumę czasu blokowania głównego wątku przez długie zadania JS między FCP a TTI; cel <200ms.",
+        "why": "Proxy dla INP (Interaction to Next Paint) — Core Web Vital decydujący o reaktywności strony.",
+        "how_to_fix": "Code-splitting, defer/async non-critical JS, web workers do ciężkich obliczeń, eliminuj third-party scripts."
+    },
+    "fcp_mobile_ok": {
+        "what": "Mierzy First Contentful Paint — czas do renderu pierwszego elementu treści (tekst, obraz); cel <1.8s.",
+        "why": "Pierwsze wrażenie performance; wpływa na bounce rate i sygnalizuje czy strona w ogóle 'się ładuje'.",
+        "how_to_fix": "Inline critical CSS, preconnect do third-party origins, optymalizuj TTFB, eliminuj render-blocking resources."
+    },
+}
+
+
 PERFORMANCE_FACTOR_WHY = {
     "performance_score_mobile": "Łączna ocena Lighthouse — wpływa na ranking mobilny i UX.",
     "lcp_mobile_ok": "Czas wczytania największego elementu. Core Web Vitals.",
@@ -940,6 +1525,15 @@ def _schema_code_example(factor_id: str) -> str | None:
 
 def _generic_detail(factor_id: str, label: str, group: str, meta: dict | None = None, *, is_tech: bool = False, is_domain: bool = False) -> dict:
     meta = meta or {}
+    # Stable per-factor descriptions take precedence over group templates (patent factors keep their own metadata).
+    stable = FACTOR_DETAILS.get(factor_id)
+    if stable and meta.get("source") != "google_patent":
+        return {
+            "what": stable["what"],
+            "why": stable["why"],
+            "how_to_fix": stable["how_to_fix"],
+            "code_example": _schema_code_example(factor_id) if (factor_id in SCHEMA_FACTOR_IDS or "schema" in factor_id) else None,
+        }
     if meta.get("source") == "google_patent" and factor_id in PATENT_FACTORS:
         patent = PATENT_FACTORS[factor_id]
         patents = [p.get("patent_id", "") for p in patent.get("source_patents", []) if p.get("patent_id")]
@@ -2845,7 +3439,7 @@ def generate_strategic_overview(page_audits: list[dict], synthesis: dict, scores
 
     group_summary = ", ".join(f"{k}:{v}" for k, v in group_scores.items()) or "(brak)"
 
-    prompt = f"""Jesteś strategiem AI SEO przygotowującym EXECUTIVE SUMMARY dla zarządu firmy.
+    prompt = f"""Jesteś analitykiem AI SEO przygotowującym DIAGNOSTYCZNE streszczenie audytu dla zarządu.
 
 <kontekst>
 Strona: {site_title}
@@ -2864,19 +3458,20 @@ Brakujące pytania klientów w AI:
 </kontekst>
 
 <zadanie>
-Napisz STRATEGICZNE streszczenie sytuacji + 5 priorytetów BIZNESOWYCH (nie techniczne fixy).
-Język biznesowy, dla CEO. ZERO żargonu SEO (no schema/E-E-A-T/canonical/crawler/RAG).
-Priorytety = kierunki działania ("Zbuduj autorytet eksperta", "Otwórz domenę dla AI", "Uzupełnij blog o tematy klientów"), NIE pojedyncze poprawki techniczne.
-Mów o KONSEKWENCJACH biznesowych: utracony ruch, klienci pytający ChatGPT trafiają do konkurencji, brak rekomendacji w AI.
+Napisz NEUTRALNE, DIAGNOSTYCZNE streszczenie stanu domeny po audycie + 5 priorytetów do naprawy.
+ZAKAZ sprzedażowego tonu. NIE mów "co stracicie", "co zyskacie", "klienci trafią do konkurencji", "więcej leadów", "wzrost przychodów".
+NIE przekonuj do dalszych działań SEO. NIE buduj urgency. Po prostu OPISZ stan i wskaż największe problemy.
+Język rzeczowy, biznesowy, dla CEO — ale bez żargonu SEO (no schema/E-E-A-T/canonical/crawler/RAG).
+Priorytety = obszary do naprawy w kolejności od najpilniejszego ("Brak otwartego dostępu dla botów AI", "Niekompletne dane kontaktowe", "Brak treści odpowiadającej na pytania klientów"). Każdy priorytet = obserwacja + krótki opis problemu, BEZ obietnic rezultatu.
 </zadanie>
 
 Zwróć TYLKO JSON:
 {{
-  "headline": "1 zdanie — strategiczna diagnoza w stylu nagłówka prasowego",
-  "summary": "3-4 zdania: gdzie jesteście, co to znaczy dla biznesu, co stracicie bez działań, co zyskacie z działaniami",
+  "headline": "1 zdanie — rzeczowa diagnoza stanu domeny (np. 'Domena ma solidne fundamenty techniczne, ale brakuje sygnałów eksperckości i otwartego dostępu dla AI')",
+  "summary": "3-4 zdania opisujące obecny stan: co działa dobrze, gdzie są największe luki, jaki jest największy pojedynczy problem po audycie. Neutralnie, bez ocen typu 'źle/dobrze', bez sprzedaży.",
   "priorities": [
-    {{"title": "Kierunek (2-5 słów)", "rationale": "Dlaczego to priorytet — biznesowy powód (1 zdanie)", "outcome": "Co konkretnie zyska firma (1 zdanie)"}},
-    ... (DOKŁADNIE 5 pozycji, posortowane od najpilniejszego)
+    {{"title": "Obszar problemu (2-5 słów)", "rationale": "Co konkretnie nie działa lub czego brakuje (1 zdanie, opis stanu)", "outcome": "Co zostanie rozwiązane po naprawie (1 zdanie, opisowo, BEZ obietnic biznesowych)"}},
+    ... (DOKŁADNIE 5 pozycji, posortowane od największego problemu)
   ]
 }}"""
     return _extract_json(_gemini_call(prompt, temperature=0.35, max_tokens=1800))
