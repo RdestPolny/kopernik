@@ -163,18 +163,25 @@ button{font:inherit;cursor:pointer}
 .url-pill.active.tone-warn{background:#ca9a13;color:#fff;border-color:#ca9a13}
 .url-pill.active.tone-bad{background:#dc2626;color:#fff;border-color:#dc2626}
 
-/* Strategic Overview */
-.overview{margin:0 0 48px;background:linear-gradient(135deg,#1e3351 0%,#28456d 100%);color:#fff;border-radius:8px;padding:32px 36px;box-shadow:0 8px 24px rgba(30,51,81,0.15)}
+/* Diagnoza (audit summary card) */
+.overview{margin:0 0 48px;background:linear-gradient(135deg,#1e3351 0%,#28456d 100%);color:#fff;border-radius:8px;padding:32px 40px;box-shadow:0 8px 24px rgba(30,51,81,0.15);display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.1fr);gap:40px;align-items:start}
+.overview-left{min-width:0}
+.overview-right{min-width:0;border-left:1px solid rgba(255,255,255,0.12);padding-left:36px}
 .overview-eyebrow{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold-2);font-weight:600;margin-bottom:14px}
-.overview-headline{font-family:var(--sans);font-size:1.6rem;line-height:1.25;font-weight:600;letter-spacing:-0.02em;margin:0 0 16px;color:#fff}
-.overview-summary{font-size:1rem;line-height:1.6;color:rgba(255,255,255,0.86);max-width:780px;margin:0 0 28px}
-.overview-priorities{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px;margin-top:8px}
-.overview-prio{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-left:3px solid var(--gold-2);border-radius:5px;padding:14px 16px}
-.overview-prio-rank{font-family:var(--mono);font-size:0.66rem;color:var(--gold-2);letter-spacing:0.1em;font-weight:700;margin-bottom:6px}
-.overview-prio-title{font-family:var(--sans);font-weight:600;font-size:0.98rem;line-height:1.3;color:#fff;margin-bottom:8px}
-.overview-prio-rationale{font-size:0.84rem;line-height:1.5;color:rgba(255,255,255,0.75);margin-bottom:6px}
-.overview-prio-outcome{font-size:0.82rem;line-height:1.5;color:var(--gold-2);font-style:italic}
-@media(max-width:600px){.overview{padding:24px 20px}.overview-headline{font-size:1.3rem}}
+.overview-headline{font-family:var(--sans);font-size:1.45rem;line-height:1.3;font-weight:600;letter-spacing:-0.02em;margin:0 0 16px;color:#fff}
+.overview-summary{font-size:0.96rem;line-height:1.65;color:rgba(255,255,255,0.86);margin:0}
+.overview-prio-head{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold-2);font-weight:600;margin-bottom:14px}
+.overview-prio-list{list-style:none;padding:0;margin:0;counter-reset:diag}
+.overview-prio-item{counter-increment:diag;position:relative;padding:14px 0 14px 44px;border-bottom:1px solid rgba(255,255,255,0.08)}
+.overview-prio-item:last-child{border-bottom:none;padding-bottom:0}
+.overview-prio-item:first-child{padding-top:0}
+.overview-prio-item::before{content:counter(diag,decimal-leading-zero);position:absolute;left:0;top:14px;font-family:var(--mono);font-size:0.95rem;font-weight:700;color:var(--gold-2);width:32px;text-align:left;letter-spacing:-0.02em}
+.overview-prio-item:first-child::before{top:0}
+.overview-prio-title{font-family:var(--sans);font-weight:600;font-size:1rem;line-height:1.35;color:#fff;margin:0 0 6px}
+.overview-prio-rationale{font-size:0.86rem;line-height:1.55;color:rgba(255,255,255,0.78);margin:0 0 6px}
+.overview-prio-outcome{font-size:0.82rem;line-height:1.5;color:var(--gold-2);margin:0}
+@media(max-width:900px){.overview{grid-template-columns:1fr;gap:28px;padding:28px 24px}.overview-right{border-left:none;border-top:1px solid rgba(255,255,255,0.12);padding-left:0;padding-top:24px}}
+@media(max-width:600px){.overview{padding:24px 20px}.overview-headline{font-size:1.25rem}}
 
 /* Priority strip */
 .priority{margin:0 0 64px}
@@ -724,6 +731,21 @@ function computeScopeState(r, scope) {
   return {overall, raw_overall: overall, groups};
 }
 
+// Factors wykluczone z top-5 priorytetów — kosmetyczne lub trywialne, nie powinny
+// wyświetlać się jako "najpilniejsze akcje" nawet jeśli wykryto mass-failure.
+const TRIVIAL_TOP_ACTIONS_BLOCKLIST = new Set([
+  'image_alt_coverage',
+  'viewport_meta',
+  'lang_attribute',
+  'og_tags',
+  'response_size_ok',
+  'semantic_html5_tags',
+  'fcp_mobile_ok',
+  'compression_enabled',
+  'hreflang_used',
+  'hsts_enabled',
+]);
+
 function scopedFactorView(factor, scope) {
   const obs = scopedObservations(factor, scope);
   if (!obs.length) return null;
@@ -732,7 +754,11 @@ function scopedFactorView(factor, scope) {
   const avg = scores.reduce((a, b) => a + b, 0) / scores.length;
   const status = scoreStatusFromValue(worst);
   const affected = obs.filter(o => Number(o.score || 0) < 2);
-  const priority = ((2 - worst) * Number(factor.impact || 2) / Math.max(Number(factor.effort || 1), 1)) + affected.length * 0.15;
+  // Wpływ silnie premiuje czynniki o wysokim impact; effort jako delikatny mnożnik;
+  // affected.length nie podnosi priorytetu (inaczej trywialne mass-issues wygrywają).
+  const impact = Number(factor.impact || 2);
+  const effort = Math.max(Number(factor.effort || 1), 1);
+  const priority = (2 - worst) * impact * impact / effort;
   return {factor, observations: obs, affected, worst, avg, status, priority};
 }
 
@@ -754,9 +780,12 @@ function getTopActionsForScope(r, scope, limit = 5) {
   return (r.factor_index || [])
     .map(factor => scopedFactorView(factor, scope))
     .filter(view => view && view.affected.length)
+    .filter(view => !TRIVIAL_TOP_ACTIONS_BLOCKLIST.has(view.factor.id))
+    .filter(view => Number(view.factor.impact || 2) >= 2)
     .sort((a, b) => {
       if (b.priority !== a.priority) return b.priority - a.priority;
-      if (b.affected.length !== a.affected.length) return b.affected.length - a.affected.length;
+      const impactDiff = Number(b.factor.impact || 2) - Number(a.factor.impact || 2);
+      if (impactDiff !== 0) return impactDiff;
       return a.factor.label.localeCompare(b.factor.label, 'pl');
     })
     .slice(0, limit);
@@ -965,19 +994,23 @@ function renderOverview(r) {
   const priorities = (ov.priorities || []).slice(0, 5);
   return `
     <section class="overview">
-      <div class="overview-eyebrow">Strategiczne streszczenie</div>
-      ${ov.headline ? `<h2 class="overview-headline">${esc(ov.headline)}</h2>` : ''}
-      ${ov.summary ? `<p class="overview-summary">${esc(ov.summary)}</p>` : ''}
+      <div class="overview-left">
+        <div class="overview-eyebrow">Diagnoza</div>
+        ${ov.headline ? `<h2 class="overview-headline">${esc(ov.headline)}</h2>` : ''}
+        ${ov.summary ? `<p class="overview-summary">${esc(ov.summary)}</p>` : ''}
+      </div>
       ${priorities.length ? `
-        <div class="overview-priorities">
-          ${priorities.map((p, i) => `
-            <div class="overview-prio">
-              <div class="overview-prio-rank">Priorytet ${String(i+1).padStart(2,'0')}</div>
-              <div class="overview-prio-title">${esc(p.title || '')}</div>
-              ${p.rationale ? `<div class="overview-prio-rationale">${esc(p.rationale)}</div>` : ''}
-              ${p.outcome ? `<div class="overview-prio-outcome">→ ${esc(p.outcome)}</div>` : ''}
-            </div>
-          `).join('')}
+        <div class="overview-right">
+          <div class="overview-prio-head">Największe problemy</div>
+          <ol class="overview-prio-list">
+            ${priorities.map(p => `
+              <li class="overview-prio-item">
+                <div class="overview-prio-title">${esc(p.title || '')}</div>
+                ${p.rationale ? `<div class="overview-prio-rationale">${esc(p.rationale)}</div>` : ''}
+                ${p.outcome ? `<div class="overview-prio-outcome">→ ${esc(p.outcome)}</div>` : ''}
+              </li>
+            `).join('')}
+          </ol>
         </div>
       ` : ''}
     </section>
