@@ -747,6 +747,32 @@ UI_GROUP_WEIGHTS = {
     "ai_aeo": 20,
 }
 
+# Czynniki o najsłabszym impacie: higiena techniczna/UX, którą zdaje niemal każdy
+# nowoczesny szablon/CMS i która słabo koreluje z cytowalnością przez LLM. Domyślny
+# impact czynnika to 2 (grupowo-krytyczny 3); tu celowo schodzimy PONIŻEJ floora=1,
+# aby te "zawsze na plus" sygnały przestały zawyżać wynik ogólny. Wartość = absolutna
+# waga (impact) nadpisująca wynik z _impact_effort_for_factor. Łatwe do strojenia.
+LOW_IMPACT_FACTORS = {
+    # Trywialne, niemal 100% pass-rate, znikomy wpływ na AI -> waga 0.25
+    "image_alt_coverage": 0.25,      # atrybuty alt (przykład podany przez użytkownika)
+    "viewport_meta": 0.25,           # każdy responsywny szablon to ma
+    "lang_attribute": 0.25,          # near-universal
+    "semantic_html5_tags": 0.25,     # standard w nowoczesnych templa­tkach
+    "response_size_ok": 0.25,        # słaby sygnał jakości
+    "og_tags": 0.25,                 # meta social, nie napędza cytowań AI
+    "meta_title_present": 0.25,      # sprawdzana sama OBECNOŚĆ -> ~100% pass
+    # Drobna higiena kontaktu/UX, niski wpływ na ekstrakcję przez LLM -> waga 0.5
+    "tel_link_present": 0.5,
+    "mailto_link_present": 0.5,
+    "contact_form_present": 0.5,
+    "phone_clickable_tel_link": 0.5,
+    "email_clickable_mailto": 0.5,
+    "opening_hours_visible": 0.5,
+    "map_or_embedded_location": 0.5,
+    "pagination_or_load_more_sensible": 0.5,
+    "filters_or_facets_if_applicable": 0.5,
+}
+
 PERFORMANCE_FACTOR_META = {
     "performance_score_mobile": {"label": "Lighthouse Performance (mobile)", "category": "performance"},
     "lcp_mobile_ok": {"label": "LCP – Largest Contentful Paint (mobile)", "category": "performance"},
@@ -1475,7 +1501,12 @@ def _impact_effort_for_factor(factor_id: str, group: str, meta: dict | None = No
     if any(token in factor_id for token in low_effort_tokens):
         effort = min(effort, 1)
 
-    return _clamp_score(impact), _clamp_score(effort)
+    impact_final, effort_final = _clamp_score(impact), _clamp_score(effort)
+    # Nadpisanie dla czynników o najsłabszym impacie — celowo poniżej floora clampu (1),
+    # żeby trywialne, zawsze-zdawane sygnały nie zawyżały wyniku ogólnego.
+    if factor_id in LOW_IMPACT_FACTORS:
+        impact_final = LOW_IMPACT_FACTORS[factor_id]
+    return impact_final, effort_final
 
 
 def _schema_code_example(factor_id: str) -> str | None:
