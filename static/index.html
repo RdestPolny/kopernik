@@ -82,9 +82,23 @@ button{font:inherit;cursor:pointer}
 .progress-fill{height:100%;background:var(--gold);transition:width .6s}
 .progress-msg{margin-top:14px;font-family:var(--mono);font-size:0.8rem;color:var(--muted);letter-spacing:0.04em}
 
-/* --- AUDIT LOADER (spinner + lecące kroki, w miejscu wykresu radarowego) --- */
-.audit-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;width:100%;min-height:480px;align-self:center}
-.audit-spinner{width:88px;height:88px;border-radius:50%;border:4px solid rgba(255,255,255,0.14);border-top-color:var(--gold);animation:audit-spin 0.85s linear infinite}
+/* --- AUDIT LOADER (pierścień postępu z kometą + lecące kroki, w miejscu wykresu radarowego) --- */
+@property --auditpct{syntax:'<number>';inherits:false;initial-value:0}
+.audit-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:30px;width:100%;min-height:480px;align-self:center}
+.audit-ring{position:relative;width:172px;height:172px;--rw:14px}
+.audit-ring > div{position:absolute;inset:0;border-radius:50%;
+  -webkit-mask:radial-gradient(farthest-side,transparent calc(100% - var(--rw)),#000 calc(100% - var(--rw) + 0.5px));
+  mask:radial-gradient(farthest-side,transparent calc(100% - var(--rw)),#000 calc(100% - var(--rw) + 0.5px))}
+/* tor (tło pierścienia) */
+.audit-ring-track{background:rgba(255,255,255,0.12)}
+/* wypełnienie wg realnego % — płynnie animowane przez @property */
+.audit-ring-prog{--auditpct:0;background:conic-gradient(var(--gold) calc(var(--auditpct)*1%), transparent 0);transition:--auditpct .6s ease}
+/* kometa ze znikającym ogonem — kręci się w kółko */
+.audit-ring-comet{background:conic-gradient(from 0deg, transparent 0deg 286deg, rgba(255,255,255,0.95) 358deg, #fff 360deg);animation:audit-spin 1s linear infinite;filter:drop-shadow(0 0 5px rgba(255,255,255,0.4))}
+.audit-ring-pct{inset:0;display:flex;align-items:center;justify-content:center;-webkit-mask:none;mask:none;
+  font-family:var(--sans);font-weight:700;color:#fff;letter-spacing:-0.03em;line-height:1}
+.audit-ring-pct span{font-size:2.9rem}
+.audit-ring-pct i{font-style:normal;font-size:1.2rem;color:rgba(255,255,255,0.55);margin-left:2px;align-self:flex-start;margin-top:6px}
 @keyframes audit-spin{to{transform:rotate(360deg)}}
 .audit-steps{display:flex;flex-direction:column;align-items:center;gap:7px;min-height:78px;max-width:380px;text-align:center}
 .audit-step{font-family:var(--mono);font-size:0.8rem;letter-spacing:0.02em;line-height:1.35;color:rgba(255,255,255,0.4);animation:audit-step-in .45s ease both}
@@ -426,10 +440,23 @@ function showAuditLoader(firstStep) {
   box.style.display = 'flex';
   box.innerHTML = `
     <div class="audit-loader">
-      <div class="audit-spinner"></div>
+      <div class="audit-ring">
+        <div class="audit-ring-track"></div>
+        <div class="audit-ring-prog" id="auditRingProg"></div>
+        <div class="audit-ring-comet"></div>
+        <div class="audit-ring-pct"><span id="auditPct">0</span><i>%</i></div>
+      </div>
       <div class="audit-steps" id="auditSteps"></div>
     </div>`;
+  setAuditPct(0);
   if (firstStep) setAuditStep(firstStep);
+}
+function setAuditPct(pct) {
+  const p = Math.max(0, Math.min(100, Math.round(Number(pct) || 0)));
+  const prog = document.getElementById('auditRingProg');
+  const num = document.getElementById('auditPct');
+  if (prog) prog.style.setProperty('--auditpct', p);
+  if (num) num.textContent = p;
 }
 function setAuditStep(msg) {
   const wrap = document.getElementById('auditSteps');
@@ -474,6 +501,7 @@ async function fetchCandidatesAndPick(url) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Szukam podstron...';
   showAuditLoader('Pobieram sitemapę i klasyfikuję podstrony...');
+  setAuditPct(5);
   try {
     const r = await fetch(`/audit/candidates?url=${encodeURIComponent(url)}`);
     if (!r.ok) throw new Error('Błąd pobierania kandydatów');
@@ -574,7 +602,9 @@ function startAudit(url, picks) {
     const data = JSON.parse(e.data);
     if (data.step === 'progress') {
       setAuditStep(data.message || '');
+      setAuditPct(data.pct);
     } else if (data.step === 'done') {
+      setAuditPct(100);
       setAuditStep('Audyt zakończony.');
       es.close();
       currentResult = data.result;
