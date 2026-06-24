@@ -938,14 +938,18 @@ function renderAuditShell(r) {
   const groups = groupOrder(r);
   const gated = currentMode === 'lead' && !leadUnlocked;
 
-  // Widok pojedynczej kategorii: tylko ta kategoria (top 5 problemów, reszta zwinięta).
-  // Bez globalnej listy "Najpilniejsze akcje" i bez bramki — dzięki temu każda zakładka
-  // pokazuje WŁASNE, różne błędy, a nie powtórzony ten sam zestaw.
+  // Widok pojedynczej kategorii: tylko ta kategoria (top 5 problemów). Każda zakładka pokazuje
+  // WŁASNE błędy. W trybie lead reszta problemów jest rozmyta za bramką mailową (po 5 widocznych),
+  // żeby nie dało się obejść blokady przełączając zakładki.
   if (currentCategory !== 'all') {
+    const num = groups.indexOf(currentCategory) + 1;
+    const catHtml = gated
+      ? renderCategoryGated(r, currentCategory, num, state)
+      : renderCategory(r, currentCategory, num, state);
     return `
       <div class="report" id="auditRoot">
         ${renderCategorySwitcher(r, state)}
-        ${renderCategory(r, currentCategory, groups.indexOf(currentCategory) + 1, state)}
+        ${catHtml}
       </div>
     `;
   }
@@ -1110,7 +1114,12 @@ function renderPriorityItem(r, view) {
   `;
 }
 
-function renderCategory(r, groupId, num, state) {
+const CATEGORY_VISIBLE_LIMIT = 5;
+
+// Wspólne elementy renderu kategorii — dzieli widok na część "darmową" (top 5 problemów)
+// i część "ukrytą" (pozostałe problemy + lista OK), z której korzystają zarówno tryb
+// normalny (zwijanie), jak i tryb lead (blur + bramka mailowa).
+function categoryParts(r, groupId, num, state) {
   const groupState = state.groups.find(g => g.id === groupId) || {score: null};
   const score = groupState.score;
   const tone = scoreToneClass(score);
@@ -1121,48 +1130,74 @@ function renderCategory(r, groupId, num, state) {
   const blurb = CAT_BLURBS[groupId] || '';
   const numStr = String(num).padStart(2, '0');
 
-  // Pokazujemy maks. 5 najważniejszych problemów w kategorii (posortowanych po priorytecie),
-  // resztę chowamy w zwijanej liście.
-  const VISIBLE_LIMIT = 5;
-  const activeTop = active.slice(0, VISIBLE_LIMIT);
-  const activeRest = active.slice(VISIBLE_LIMIT);
+  const activeTop = active.slice(0, CATEGORY_VISIBLE_LIMIT);
+  const activeRest = active.slice(CATEGORY_VISIBLE_LIMIT);
 
-  let body;
-  if (!views.length) {
-    body = `<div class="cat-empty">Brak aplikowalnych czynników dla wybranego URL-a.</div>`;
-  } else {
-    body = `
-      ${active.length ? activeTop.map(view => renderFactorItem(r, view)).join('') : '<div class="cat-empty">Wszystko OK w tej kategorii — zero problemów.</div>'}
-      ${activeRest.length ? `
-        <details class="more-fold">
-          <summary>Pokaż pozostałe problemy (${activeRest.length})</summary>
-          <div class="more-fold-body">
-            ${activeRest.map(view => renderFactorItem(r, view)).join('')}
-          </div>
-        </details>
-      ` : ''}
-      ${ok.length ? `
-        <details class="ok-fold">
-          <summary>${ok.length} czynników OK · pokaż listę</summary>
-          <div class="ok-fold-grid">
-            ${ok.map(v => `<div class="ok-fold-item">${esc(v.factor.label)}</div>`).join('')}
-          </div>
-        </details>
-      ` : ''}
-    `;
-  }
+  const head = `
+    <div class="cat-head">
+      <span class="cat-num">${numStr}</span>
+      <h2 class="cat-title">${esc(label)}</h2>
+      <div class="cat-score-wrap">
+        <span class="cat-score ${tone}">${score === null ? '—' : score}</span><span class="cat-denom">/100</span>
+      </div>
+    </div>
+    ${blurb ? `<p class="cat-blurb">${esc(blurb)}</p>` : ''}
+  `;
 
+  const empty = !views.length;
+  const freeBody = empty
+    ? `<div class="cat-empty">Brak aplikowalnych czynników dla wybranego URL-a.</div>`
+    : (active.length
+        ? activeTop.map(view => renderFactorItem(r, view)).join('')
+        : '<div class="cat-empty">Wszystko OK w tej kategorii — zero problemów.</div>');
+
+  const restActiveHtml = activeRest.length ? activeRest.map(view => renderFactorItem(r, view)).join('') : '';
+  const okHtml = ok.length ? `
+    <details class="ok-fold">
+      <summary>${ok.length} czynników OK · pokaż listę</summary>
+      <div class="ok-fold-grid">
+        ${ok.map(v => `<div class="ok-fold-item">${esc(v.factor.label)}</div>`).join('')}
+      </div>
+    </details>` : '';
+
+  return {head, freeBody, activeRest, restActiveHtml, okHtml, empty};
+}
+
+function renderCategory(r, groupId, num, state) {
+  const p = categoryParts(r, groupId, num, state);
+  const moreFold = p.activeRest.length ? `
+    <details class="more-fold">
+      <summary>Pokaż pozostałe problemy (${p.activeRest.length})</summary>
+      <div class="more-fold-body">${p.restActiveHtml}</div>
+    </details>` : '';
   return `
     <section class="cat" id="cat-${esc(groupId)}">
-      <div class="cat-head">
-        <span class="cat-num">${numStr}</span>
-        <h2 class="cat-title">${esc(label)}</h2>
-        <div class="cat-score-wrap">
-          <span class="cat-score ${tone}">${score === null ? '—' : score}</span><span class="cat-denom">/100</span>
+      ${p.head}
+      ${p.freeBody}
+      ${moreFold}
+      ${p.okHtml}
+    </section>
+  `;
+}
+
+// Wariant kategorii dla trybu lead: 5 problemów widocznych, reszta (pozostałe problemy + lista OK)
+// rozmyta za bramką mailową — analogicznie do widoku "Wszystkie".
+function renderCategoryGated(r, groupId, num, state) {
+  const p = categoryParts(r, groupId, num, state);
+  const hiddenHtml = `${p.restActiveHtml}${p.okHtml}`;
+  const hasHidden = !!hiddenHtml.trim();
+  return `
+    <section class="cat" id="cat-${esc(groupId)}">
+      ${p.head}
+      ${p.freeBody}
+      ${hasHidden ? `
+        ${renderLeadGate(r, state)}
+        <div class="locked-wrap">
+          <div class="locked-content" aria-hidden="true">
+            ${hiddenHtml}
+          </div>
         </div>
-      </div>
-      ${blurb ? `<p class="cat-blurb">${esc(blurb)}</p>` : ''}
-      ${body}
+      ` : ''}
     </section>
   `;
 }
