@@ -172,7 +172,7 @@ button{font:inherit;cursor:pointer}
 /* URL switcher — horizontal sticky pills */
 .url-switcher{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0;border-bottom:1px solid var(--rule);margin-bottom:32px;position:sticky;top:64px;background:var(--paper);z-index:10}
 .url-switcher-label{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);align-self:center;margin-right:6px}
-.url-pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border:1px solid var(--rule);background:var(--paper);border-radius:999px;font-size:0.85rem;color:var(--ink-2);cursor:pointer;font:inherit;transition:all .15s;max-width:280px}
+.url-pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border:1px solid var(--rule);background:var(--paper);border-radius:4px;font-size:0.85rem;color:var(--ink-2);cursor:pointer;font:inherit;transition:all .15s;max-width:280px}
 .url-pill:hover{border-color:var(--ink);color:var(--ink)}
 .url-pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .url-pill .pill-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:200px}
@@ -344,10 +344,6 @@ button{font:inherit;cursor:pointer}
   <div class="topnav-inner">
     <a href="/" class="brand">
       <img src="/static/assets/logo.png" alt="Strategiczni">
-      <span class="brand-meta">
-        <span class="t1">AI SEO Audit</span>
-        <span class="t2">Strategiczni · LLM-Ready</span>
-      </span>
     </a>
     <div class="topnav-right">
       <div class="mode-toggle hidden" id="modeToggleNav">
