@@ -3637,7 +3637,12 @@ WERSJA A — DIAGNOSTYCZNA (pola: headline, summary, priorities[].title/rational
 NEUTRALNA, rzeczowa, dla CEO. ZAKAZ sprzedażowego tonu. NIE mów "co stracicie", "co zyskacie", "klienci trafią do konkurencji", "więcej leadów", "wzrost przychodów". NIE buduj urgency. Po prostu OPISZ stan i wskaż największe problemy. Bez żargonu SEO (no schema/E-E-A-T/canonical/crawler/RAG).
 
 WERSJA B — SPRZEDAŻOWA (pola: headline_sales, summary_sales, priorities[].title_sales/rationale_sales/outcome_sales)
-Prosty język dla właściciela firmy BEZ wiedzy technicznej. Mów językiem korzyści i konsekwencji biznesowych: "klienci pytający ChatGPT/Perplexity Cię nie znajdą", "AI nie poleci Twojej firmy", "zyskasz widoczność w odpowiedziach AI". ZERO żargonu (zamiast "schema/E-E-A-T/crawler/RAG/llms.txt" → proste opisy: "AI takie jak ChatGPT i Perplexity", "oznaki, że jesteś ekspertem", "otwarcie strony dla botów AI"). Krótko, konkretnie, motywująco — ale BEZ przesady i fałszywych obietnic liczbowych.
+Prosty język dla właściciela firmy BEZ wiedzy technicznej. Mów językiem korzyści i konsekwencji biznesowych: "klienci pytający ChatGPT/Perplexity Cię nie znajdą", "AI nie poleci Twojej firmy", "zyskasz widoczność w odpowiedziach AI". ZERO żargonu (zamiast "schema/E-E-A-T/crawler/RAG/llms.txt" → proste opisy: "AI takie jak ChatGPT i Perplexity", "oznaki, że jesteś ekspertem", "otwarcie strony dla botów AI"). Krótko, konkretnie — ale BEZ przesady i fałszywych obietnic liczbowych.
+
+KLUCZOWE — nagłówek tej listy brzmi "Największe problemy", więc title_sales i rationale_sales MUSZĄ PIĘTNOWAĆ BRAK/PROBLEM, a nie opisywać cel czy rozwiązanie.
+ŹLE (cel/rozwiązanie): "Pokazanie sukcesów Twojej firmy", "Budowanie wizerunku eksperta", "Ułatwienie botom AI zrozumienia oferty".
+DOBRZE (brak/problem): "Brak ekspozycji opinii i realizacji", "Brak dowodów eksperckości dla AI", "Oferta nieczytelna dla AI", "Brak otwartego dostępu dla botów AI".
+Zaczynaj title_sales od słów typu "Brak…", "Niejasne…", "Słabe…", "Niewidoczne…" — to ma być nazwa problemu prostym językiem, nie żargon techniczny. Dopiero outcome_sales (pole "→") mówi językiem korzyści, co firma zyska po naprawie.
 
 Priorytety w obu wersjach to TE SAME 5 obszarów, w tej samej kolejności (od najpilniejszego) — różni się tylko ton.
 </zadanie>
@@ -3649,7 +3654,7 @@ Zwróć TYLKO JSON:
   "headline_sales": "WERSJA B: 1 zdanie prostym językiem korzyści dla właściciela firmy — co ten audyt oznacza dla jego biznesu w świecie AI.",
   "summary_sales": "WERSJA B: 3-4 zdania prostym językiem sprzedażowym: gdzie firma traci szansę w AI, co jest największym problemem i co realnie zmieni jego naprawa. Bez żargonu.",
   "priorities": [
-    {{"title": "WERSJA A: obszar problemu (2-5 słów)", "rationale": "WERSJA A: co konkretnie nie działa lub czego brakuje (1 zdanie, opis stanu)", "outcome": "WERSJA A: co zostanie rozwiązane po naprawie (1 zdanie, opisowo, BEZ obietnic biznesowych)", "title_sales": "WERSJA B: ten sam obszar prostym językiem (2-6 słów)", "rationale_sales": "WERSJA B: dlaczego to ważne dla biznesu w świecie AI (1 zdanie, język korzyści)", "outcome_sales": "WERSJA B: co firma zyska po naprawie (1 zdanie, prosto i konkretnie)"}},
+    {{"title": "WERSJA A: obszar problemu (2-5 słów)", "rationale": "WERSJA A: co konkretnie nie działa lub czego brakuje (1 zdanie, opis stanu)", "outcome": "WERSJA A: co zostanie rozwiązane po naprawie (1 zdanie, opisowo, BEZ obietnic biznesowych)", "title_sales": "WERSJA B: NAZWA PROBLEMU/BRAKU prostym językiem, NIE cel ani rozwiązanie (np. 'Brak ekspozycji opinii i realizacji', 'Oferta nieczytelna dla AI'). 2-7 słów, zwykle zaczyna się od 'Brak…/Niejasne…/Słabe…'.", "rationale_sales": "WERSJA B: dlaczego ten brak szkodzi biznesowi w świecie AI (1 zdanie, prosto, językiem konsekwencji)", "outcome_sales": "WERSJA B: co firma zyska po naprawie (1 zdanie, język korzyści — to jedyne pole pozytywne)"}},
     ... (DOKŁADNIE 5 pozycji, posortowane od największego problemu)
   ]
 }}"""
