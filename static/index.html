@@ -82,6 +82,15 @@ button{font:inherit;cursor:pointer}
 .progress-fill{height:100%;background:var(--gold);transition:width .6s}
 .progress-msg{margin-top:14px;font-family:var(--mono);font-size:0.8rem;color:var(--muted);letter-spacing:0.04em}
 
+/* --- AUDIT LOADER (spinner + lecące kroki, w miejscu wykresu radarowego) --- */
+.audit-loader{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:26px;width:100%;min-height:480px;align-self:center}
+.audit-spinner{width:88px;height:88px;border-radius:50%;border:4px solid rgba(255,255,255,0.14);border-top-color:var(--gold);animation:audit-spin 0.85s linear infinite}
+@keyframes audit-spin{to{transform:rotate(360deg)}}
+.audit-steps{display:flex;flex-direction:column;align-items:center;gap:7px;min-height:78px;max-width:380px;text-align:center}
+.audit-step{font-family:var(--mono);font-size:0.8rem;letter-spacing:0.02em;line-height:1.35;color:rgba(255,255,255,0.4);animation:audit-step-in .45s ease both}
+.audit-step.current{color:#fff}
+@keyframes audit-step-in{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
 /* --- BADGE (pages list) --- */
 .badge{display:inline-block;padding:3px 10px;border-radius:2px;font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.08em;background:var(--paper-2);border:1px solid var(--rule);color:var(--ink-2)}
 .badge.page-type{background:var(--gold-2);border-color:var(--gold);color:var(--ink)}
@@ -408,6 +417,37 @@ const progressFill = document.getElementById('progressFill');
 const progressMsg = document.getElementById('progressMsg');
 const results = document.getElementById('results');
 
+// --- Loader: kręcące się kółko w miejscu wykresu radarowego + lecące kolejne kroki ---
+const heroBox = () => document.getElementById('heroScoreContainer');
+function showAuditLoader(firstStep) {
+  const box = heroBox();
+  if (!box) return;
+  if (progress) progress.classList.add('hidden'); // chowamy stary pasek postępu
+  box.style.display = 'flex';
+  box.innerHTML = `
+    <div class="audit-loader">
+      <div class="audit-spinner"></div>
+      <div class="audit-steps" id="auditSteps"></div>
+    </div>`;
+  if (firstStep) setAuditStep(firstStep);
+}
+function setAuditStep(msg) {
+  const wrap = document.getElementById('auditSteps');
+  if (!wrap || !msg) return;
+  // poprzedni krok przygaszamy, nowy "wlatuje" na górze — efekt migających kolejnych kroków
+  wrap.querySelectorAll('.audit-step.current').forEach(el => el.classList.remove('current'));
+  const line = document.createElement('div');
+  line.className = 'audit-step current';
+  line.textContent = msg;
+  wrap.appendChild(line);
+  // trzymamy tylko 3 ostatnie kroki
+  while (wrap.children.length > 3) wrap.removeChild(wrap.firstChild);
+}
+function auditLoaderError(msg) {
+  const wrap = document.getElementById('auditSteps');
+  if (wrap) { setAuditStep(msg); const last = wrap.lastChild; if (last) last.style.color = '#ff6b6b'; }
+}
+
 const PRO_UNLOCKED = new URLSearchParams(location.search).has('pro');
 const isBizMode = (m) => m === 'lead' || m === 'sales';
 let currentMode = PRO_UNLOCKED ? 'sales' : 'lead';
@@ -433,17 +473,16 @@ form.addEventListener('submit', async (e) => {
 async function fetchCandidatesAndPick(url) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Szukam podstron...';
-  progress.classList.remove('hidden');
-  progressFill.style.width = '5%';
-  progressMsg.textContent = 'Pobieram sitemapę i klasyfikuję podstrony (Gemini)...';
+  showAuditLoader('Pobieram sitemapę i klasyfikuję podstrony...');
   try {
     const r = await fetch(`/audit/candidates?url=${encodeURIComponent(url)}`);
     if (!r.ok) throw new Error('Błąd pobierania kandydatów');
     const data = await r.json();
-    progress.classList.add('hidden');
+    const box = heroBox();
+    if (box) { box.style.display = 'none'; box.innerHTML = ''; }
     showPagePicker(data);
   } catch (err) {
-    progressMsg.textContent = 'Błąd: ' + err.message;
+    auditLoaderError('Błąd: ' + err.message);
     submitBtn.disabled = false;
     submitBtn.textContent = 'Spróbuj ponownie';
   }
@@ -524,11 +563,9 @@ function closePagePicker() {
 function startAudit(url, picks) {
   submitBtn.disabled = true;
   submitBtn.textContent = 'Audytuję...';
-  progress.classList.remove('hidden');
   results.classList.add('hidden');
   results.innerHTML = '';
-  progressFill.style.width = '3%';
-  progressMsg.textContent = 'Łączenie ze streamem...';
+  showAuditLoader('Łączę ze streamem audytu...');
 
   let qs = `url=${encodeURIComponent(url)}`;
   if (picks && picks.length) qs += `&picks=${encodeURIComponent(JSON.stringify(picks))}`;
@@ -536,27 +573,24 @@ function startAudit(url, picks) {
   es.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if (data.step === 'progress') {
-      progressFill.style.width = (data.pct || 0) + '%';
-      progressMsg.textContent = data.message || '';
+      setAuditStep(data.message || '');
     } else if (data.step === 'done') {
-      progressFill.style.width = '100%';
-      progressMsg.textContent = 'Audyt zakończony.';
+      setAuditStep('Audyt zakończony.');
       es.close();
       currentResult = data.result;
-      renderResult(data.result);
+      renderResult(data.result); // zastępuje loader wykresem radarowym
       submitBtn.disabled = false;
       submitBtn.textContent = 'Audytuj kolejną';
-      setTimeout(() => progress.classList.add('hidden'), 600);
     } else if (data.step === 'error') {
       es.close();
-      progressMsg.textContent = 'Błąd: ' + (data.message || 'nieznany');
+      auditLoaderError('Błąd: ' + (data.message || 'nieznany'));
       submitBtn.disabled = false;
       submitBtn.textContent = 'Spróbuj ponownie';
     }
   };
   es.onerror = () => {
     es.close();
-    progressMsg.textContent = 'Połączenie przerwane.';
+    auditLoaderError('Połączenie przerwane.');
     submitBtn.disabled = false;
     submitBtn.textContent = 'Spróbuj ponownie';
   };
@@ -847,7 +881,7 @@ function renderResult(r) {
   if (heroH1) heroH1.innerHTML = `Wyniki audytu AI SEO dla <em>${esc(domainLabel)}</em>`;
   if (heroLede) heroLede.style.display = 'none';
   document.getElementById('ctaScoreWrapper').innerHTML = `
-    <div style="display:flex; align-items:baseline; color:${overall >= 70 ? '#4ade80' : overall >= 40 ? '#edd971' : '#ff6b6b'}; font-family:var(--sans); letter-spacing:-0.04em;">
+    <div style="display:flex; align-items:baseline; color:${scoreColor(overall)}; font-family:var(--sans); letter-spacing:-0.04em;">
       <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
       <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
     </div>`;
@@ -883,6 +917,8 @@ function drawHeroRadar(groups) {
       return g.label;
     });
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
+    // Każda kropka w kolorze zależnym od wyniku swojej kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
+    const pointColors = chartGroups.map(g => scoreColor(g.score));
     heroRadarChart = new Chart(canvas.getContext('2d'), {
       type: 'radar',
       data: {
@@ -891,10 +927,11 @@ function drawHeroRadar(groups) {
           data,
           backgroundColor: 'rgba(237, 217, 113, 0.18)',
           borderColor: '#edd971',
-          pointBackgroundColor: '#edd971',
+          pointBackgroundColor: pointColors,
           pointBorderColor: '#1e3351',
-          pointRadius: 5,
-          pointHoverRadius: 7,
+          pointRadius: 6,
+          pointHoverRadius: 8,
+          pointBorderWidth: 2,
           borderWidth: 2.5,
         }]
       },
@@ -926,11 +963,20 @@ function refreshAuditView() {
   results.innerHTML = renderAuditShell(currentResult);
 }
 
+// Progi kolorów dużego scoringu: zielony dopiero 90+, żółty 75-89, czerwony <75.
 function scoreToneClass(score) {
   if (score === null || score === undefined) return '';
-  if (score >= 70) return 'good';
-  if (score >= 40) return 'warn';
+  if (score >= 90) return 'good';
+  if (score >= 75) return 'warn';
   return 'bad';
+}
+
+// Kolor (hex) wg tych samych progów — używany na wykresie radarowym i przy dużej liczbie wyniku.
+function scoreColor(score) {
+  if (score === null || score === undefined) return 'rgba(255,255,255,0.35)';
+  if (score >= 90) return '#4ade80';
+  if (score >= 75) return '#edd971';
+  return '#ff6b6b';
 }
 
 function renderAuditShell(r) {
