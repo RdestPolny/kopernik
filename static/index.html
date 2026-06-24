@@ -297,6 +297,14 @@ button{font:inherit;cursor:pointer}
 .ok-fold-item{font-size:0.85rem;color:var(--ink-2);padding:7px 12px;background:var(--paper-2);border-radius:3px}
 .ok-fold-item::before{content:'✓ ';color:var(--green);font-weight:700;margin-right:4px}
 
+/* "Pokaż pozostałe problemy" fold */
+.more-fold{margin-top:4px}
+.more-fold summary{cursor:pointer;font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);padding:12px 0;list-style:none}
+.more-fold summary::-webkit-details-marker{display:none}
+.more-fold summary:hover{color:var(--ink)}
+.more-fold[open] summary::after{content:' ↑'}
+.more-fold:not([open]) summary::after{content:' ↓'}
+
 /* Extras (gaps, fan-out, domain, pages) */
 .extras{margin-top:96px;padding-top:48px;border-top:1px solid var(--rule)}
 .extra{margin-bottom:64px}
@@ -592,7 +600,7 @@ function renderDomainTech(r, domainMeta) {
   const mode = currentMode;
   return Object.entries(scores).map(([k, v]) => {
     const dm = domainMeta[k] || {};
-    const label = dm.label || k;
+    const label = (v === 0 && dm.label_fail) ? dm.label_fail : (dm.label || k);
     const cls = v === 2 ? 'good' : v === 1 ? 'warn' : 'bad';
     const scTxt = v === 2 ? 'OK' : v === 1 ? 'CZĘŚC.' : 'BRAK';
     const clientExp = r.client_mode?.client_factor_explanations?.[k] || '';
@@ -687,6 +695,14 @@ function statusSymbol(status) {
 
 function statusLabel(status) {
   return {ok: 'OK', partial: 'Częściowo', missing: 'Brak'}[status] || status;
+}
+
+// Nazwa czynnika zależna od wyniku: jeśli audyt nie zaliczony (missing) — pokaż wariant z błędem
+// wskazanym w nazwie (np. "Brak pliku llms.txt"); w przeciwnym razie nazwa "zaliczona".
+function factorDisplayLabel(factor, status) {
+  if (!factor) return '';
+  if (status === 'missing' && factor.label_fail) return factor.label_fail;
+  return factor.label || '';
 }
 
 function scopedObservations(factor, scope) {
@@ -920,10 +936,23 @@ function scoreToneClass(score) {
 function renderAuditShell(r) {
   const state = computeScopeState(r, currentScope);
   const groups = groupOrder(r);
-  const visibleGroups = currentCategory === 'all' ? groups : groups.filter(g => g === currentCategory);
   const gated = currentMode === 'lead' && !leadUnlocked;
-  const categoriesHtml = visibleGroups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('');
-  const extrasHtml = currentCategory === 'all' ? renderExtras(r) : '';
+
+  // Widok pojedynczej kategorii: tylko ta kategoria (top 5 problemów, reszta zwinięta).
+  // Bez globalnej listy "Najpilniejsze akcje" i bez bramki — dzięki temu każda zakładka
+  // pokazuje WŁASNE, różne błędy, a nie powtórzony ten sam zestaw.
+  if (currentCategory !== 'all') {
+    return `
+      <div class="report" id="auditRoot">
+        ${renderCategorySwitcher(r, state)}
+        ${renderCategory(r, currentCategory, groups.indexOf(currentCategory) + 1, state)}
+      </div>
+    `;
+  }
+
+  // Widok "Wszystkie"
+  const categoriesHtml = groups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('');
+  const extrasHtml = renderExtras(r);
   const lockedBlock = gated
     ? `
       ${renderLeadGate(r, state)}
@@ -938,8 +967,8 @@ function renderAuditShell(r) {
   return `
     <div class="report" id="auditRoot">
       ${renderCategorySwitcher(r, state)}
-      ${currentCategory === 'all' ? renderOverview(r) : ''}
-      ${(currentCategory === 'all' || gated) ? renderPriority(r) : ''}
+      ${renderOverview(r)}
+      ${renderPriority(r)}
       ${lockedBlock}
     </div>
   `;
@@ -991,13 +1020,21 @@ function renderCategorySwitcher(r, state) {
 function renderOverview(r) {
   const ov = r.overview;
   if (!ov || (!ov.headline && !ov.summary && !(ov.priorities && ov.priorities.length))) return '';
-  const priorities = (ov.priorities || []).slice(0, 5);
+  const biz = isBizMode(currentMode);
+  // W trybie biznesowym/sprzedażowym używamy prostszych wariantów sprzedażowych (fallback do diagnostycznych).
+  const headline = biz ? (ov.headline_sales || ov.headline) : (ov.headline || '');
+  const summary = biz ? (ov.summary_sales || ov.summary) : (ov.summary || '');
+  const priorities = (ov.priorities || []).slice(0, 5).map(p => ({
+    title: biz ? (p.title_sales || p.title || '') : (p.title || ''),
+    rationale: biz ? (p.rationale_sales || p.rationale || '') : (p.rationale || ''),
+    outcome: biz ? (p.outcome_sales || p.outcome || '') : (p.outcome || ''),
+  }));
   return `
     <section class="overview">
       <div class="overview-left">
         <div class="overview-eyebrow">Diagnoza</div>
-        ${ov.headline ? `<h2 class="overview-headline">${esc(ov.headline)}</h2>` : ''}
-        ${ov.summary ? `<p class="overview-summary">${esc(ov.summary)}</p>` : ''}
+        ${headline ? `<h2 class="overview-headline">${esc(headline)}</h2>` : ''}
+        ${summary ? `<p class="overview-summary">${esc(summary)}</p>` : ''}
       </div>
       ${priorities.length ? `
         <div class="overview-right">
@@ -1005,7 +1042,7 @@ function renderOverview(r) {
           <ol class="overview-prio-list">
             ${priorities.map(p => `
               <li class="overview-prio-item">
-                <div class="overview-prio-title">${esc(p.title || '')}</div>
+                <div class="overview-prio-title">${esc(p.title)}</div>
                 ${p.rationale ? `<div class="overview-prio-rationale">${esc(p.rationale)}</div>` : ''}
                 ${p.outcome ? `<div class="overview-prio-outcome">→ ${esc(p.outcome)}</div>` : ''}
               </li>
@@ -1046,7 +1083,7 @@ function renderPriorityItem(r, view) {
       <summary>
         <span class="priority-mark ${view.status}">${statusSymbol(view.status)}</span>
         <div>
-          <div class="priority-name">${esc(f.label)}</div>
+          <div class="priority-name">${esc(factorDisplayLabel(f, view.status))}</div>
           <div class="factor-sub">
             <span class="ui-chip">${esc(f.group_label)}</span>
             <span class="meta-stat">Wpływ ${signalBars(f.impact)}</span>
@@ -1084,12 +1121,26 @@ function renderCategory(r, groupId, num, state) {
   const blurb = CAT_BLURBS[groupId] || '';
   const numStr = String(num).padStart(2, '0');
 
+  // Pokazujemy maks. 5 najważniejszych problemów w kategorii (posortowanych po priorytecie),
+  // resztę chowamy w zwijanej liście.
+  const VISIBLE_LIMIT = 5;
+  const activeTop = active.slice(0, VISIBLE_LIMIT);
+  const activeRest = active.slice(VISIBLE_LIMIT);
+
   let body;
   if (!views.length) {
     body = `<div class="cat-empty">Brak aplikowalnych czynników dla wybranego URL-a.</div>`;
   } else {
     body = `
-      ${active.length ? active.map(view => renderFactorItem(r, view)).join('') : '<div class="cat-empty">Wszystko OK w tej kategorii — zero problemów.</div>'}
+      ${active.length ? activeTop.map(view => renderFactorItem(r, view)).join('') : '<div class="cat-empty">Wszystko OK w tej kategorii — zero problemów.</div>'}
+      ${activeRest.length ? `
+        <details class="more-fold">
+          <summary>Pokaż pozostałe problemy (${activeRest.length})</summary>
+          <div class="more-fold-body">
+            ${activeRest.map(view => renderFactorItem(r, view)).join('')}
+          </div>
+        </details>
+      ` : ''}
       ${ok.length ? `
         <details class="ok-fold">
           <summary>${ok.length} czynników OK · pokaż listę</summary>
@@ -1154,7 +1205,7 @@ function renderFactorItem(r, view) {
       <summary class="factor-summary">
         <span class="factor-status ${view.status}">${statusSymbol(view.status)}</span>
         <div>
-          <div class="factor-label">${esc(factor.label)}</div>
+          <div class="factor-label">${esc(factorDisplayLabel(factor, view.status))}</div>
           <div class="factor-sub">
             ${summaryPageTypeChip(view)}
             <span class="meta-stat">Wpływ ${signalBars(factor.impact)}</span>

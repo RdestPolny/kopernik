@@ -781,6 +781,147 @@ PERFORMANCE_FACTOR_META = {
     "fcp_mobile_ok": {"label": "FCP – First Contentful Paint (mobile)", "category": "performance"},
 }
 
+# --- FAIL LABELS: alternatywna nazwa czynnika gdy audyt NIE jest zaliczony (status "missing") ---
+# Każdy klucz to factor_id. `label` (w meta wyżej) = nazwa gdy PASS (brzmi jak zaliczone);
+# FAIL_LABELS[key] = nazwa gdy FAIL (problem wskazany wprost w nazwie, np. "Brak pliku llms.txt").
+FAIL_LABELS = {
+    # HOMEPAGE
+    "clear_value_proposition_above_fold": "Brak jasnej propozycji wartości w pierwszym ekranie",
+    "primary_cta_visible": "Brak widocznego wezwania do działania",
+    "navigation_to_key_sections_clear": "Nieczytelna nawigacja do kluczowych sekcji",
+    "trust_signals_logos_reviews_numbers": "Brak sygnałów zaufania (logotypy, opinie, liczby)",
+    "organization_entity_clearly_stated": "Niejasna tożsamość firmy",
+    "contact_info_accessible_from_home": "Brak dostępu do kontaktu ze strony głównej",
+    "brand_identity_consistent_and_unique": "Niespójna lub generyczna tożsamość marki",
+    "no_generic_marketing_fluff": "Ogólnikowa marketingowa wata w treści",
+    "internal_links_to_services_or_products": "Brak linków wewnętrznych do usług/produktów",
+    "external_proof_social_press_awards": "Brak dowodów zewnętrznych (social media, prasa, nagrody)",
+    # SERVICE
+    "clear_offer_or_service_definition": "Niejasna definicja oferty/usługi",
+    "benefits_stated_explicitly_not_just_features": "Brak wyrażonych wprost korzyści (tylko cechy)",
+    "pricing_or_price_range_indication": "Brak ceny lub przedziału cenowego",
+    "use_cases_or_target_customer_defined": "Brak scenariuszy użycia / profilu klienta",
+    "social_proof_testimonials_clients_case_studies": "Brak dowodów społecznych (opinie, klienci, case study)",
+    "faq_section_addressing_objections": "Brak sekcji FAQ odpowiadającej na obiekcje",
+    "clear_primary_cta_to_contact_or_buy": "Brak wyraźnego CTA do kontaktu/zakupu",
+    "differentiation_vs_competition": "Brak wyróżnienia się od konkurencji",
+    "content_substance_over_fluff": "Treść bez konkretów (wata zamiast wartości)",
+    "risk_reversal_guarantee_trial_or_process_clarity": "Brak ograniczenia ryzyka (gwarancja/test/przejrzysty proces)",
+    # ARTICLE
+    "author_bio_with_name_and_credentials": "Brak bio autora z imieniem i kwalifikacjami",
+    "publication_date_visible_inline": "Brak widocznej daty publikacji",
+    "last_updated_date_visible": "Brak widocznej daty ostatniej aktualizacji",
+    "external_authoritative_citations_with_links": "Brak cytowań autorytatywnych źródeł z linkami",
+    "firsthand_experience_or_original_data": "Brak doświadczenia z pierwszej ręki / własnych danych",
+    "direct_answer_near_content_start": "Brak bezpośredniej odpowiedzi na początku treści",
+    "scannable_structure_headings_lists_tables": "Słabo skanowalna struktura (brak nagłówków/list/tabel)",
+    "unique_pov_not_generic_rehash": "Brak unikalnego punktu widzenia (powielanie cudzego)",
+    "depth_comprehensive_treatment_of_topic": "Powierzchowne ujęcie tematu (brak głębi)",
+    "internal_links_to_related_content": "Brak linków wewnętrznych do powiązanych treści",
+    # ABOUT
+    "founder_or_team_profiles_with_names": "Brak profili założycieli/zespołu z imionami",
+    "credentials_certifications_or_qualifications": "Brak certyfikatów i kwalifikacji",
+    "company_history_mission_or_founding_story": "Brak historii firmy / misji",
+    "external_validation_awards_partners_media": "Brak walidacji zewnętrznej (nagrody, partnerzy, media)",
+    "office_location_or_physical_presence": "Brak lokalizacji biura / fizycznej obecności",
+    "values_or_real_differentiators": "Brak wartości i realnych wyróżników",
+    "links_to_linkedin_or_professional_profiles": "Brak linków do LinkedIn / profili zawodowych",
+    "real_photos_not_stock_implied": "Brak prawdziwych zdjęć (zdjęcia stockowe)",
+    "clients_or_projects_showcased": "Brak prezentacji klientów / projektów",
+    "contact_pathway_from_about": "Brak ścieżki do kontaktu z 'O nas'",
+    # CONTACT
+    "nap_name_address_phone_complete_and_visible": "Niepełne lub ukryte dane NAP (nazwa/adres/telefon)",
+    "contact_form_present_and_clear": "Brak czytelnego formularza kontaktowego",
+    "opening_hours_visible": "Brak widocznych godzin otwarcia",
+    "phone_clickable_tel_link": "Numer telefonu nie jest klikalny",
+    "email_clickable_mailto": "E-mail nie jest klikalny",
+    "map_or_embedded_location": "Brak mapy / osadzonej lokalizacji",
+    "multiple_contact_channels": "Brak wielu kanałów kontaktu",
+    "department_or_role_specific_contacts": "Brak kontaktów per dział / rola",
+    "response_time_expectation": "Brak informacji o czasie odpowiedzi",
+    "physical_office_photo_or_proof": "Brak zdjęcia biura / dowodu fizycznej obecności",
+    # CATEGORY
+    "meaningful_category_intro_copy_not_thin": "Brak sensownego wstępu kategorii (thin content)",
+    "unique_category_h1_and_title": "Brak unikalnego H1 i title kategorii",
+    "category_specific_meta_description": "Brak meta description dedykowanej kategorii",
+    "internal_links_to_items_with_context": "Brak linków wewnętrznych do elementów z kontekstem",
+    "filters_or_facets_if_applicable": "Brak filtrów / fasetów (gdy zasadne)",
+    "pagination_or_load_more_sensible": "Brak sensownej paginacji / 'załaduj więcej'",
+    "subcategory_links_exposed": "Brak widocznych linków do podkategorii",
+    "no_boilerplate_content_duplicated": "Powielany szablonowy content (boilerplate)",
+    "visual_hierarchy_for_scannability": "Brak wizualnej hierarchii ułatwiającej skanowanie",
+    "related_categories_linked": "Brak powiązanych kategorii z linkami",
+    # OTHER
+    "clear_page_purpose_stated": "Niejasny cel strony",
+    "value_for_user_evident": "Brak widocznej wartości dla użytkownika",
+    "heading_hierarchy_correct": "Błędna hierarchia nagłówków",
+    "meta_description_descriptive_and_unique": "Brak opisowej i unikalnej meta description",
+    "scannable_structure_lists_or_subheadings": "Słabo skanowalna struktura (brak list/podtytułów)",
+    "appropriate_schema_for_content_type": "Brak odpowiedniego schema dla typu treści",
+    "internal_links_to_contextual_content": "Brak linków wewnętrznych do kontekstowych treści",
+    "no_generic_ai_generated_content": "Generyczny AI-content (niska jakość)",
+    "external_sources_or_proof_where_relevant": "Brak zewnętrznych źródeł / dowodów",
+    "clear_next_step_or_cta": "Brak jasnego następnego kroku / CTA",
+    # TECH (per-page HTML)
+    "meta_title_present": "Brak tagu <title>",
+    "meta_description": "Brak meta description",
+    "canonical_tag": "Brak tagu canonical",
+    "h1_single": "Brak pojedynczego H1 (zero lub wiele)",
+    "heading_hierarchy": "Błędna hierarchia nagłówków",
+    "og_tags": "Brak tagów Open Graph",
+    "viewport_meta": "Brak meta viewport (mobile)",
+    "lang_attribute": "Brak atrybutu lang w <html>",
+    "image_alt_coverage": "Braki w atrybutach alt obrazów",
+    "semantic_html5_tags": "Brak semantycznych tagów HTML5",
+    "response_size_ok": "Rozmiar HTML poza normą",
+    "organization_schema": "Brak schema Organization",
+    "website_schema": "Brak schema WebSite",
+    "any_schema": "Brak jakiegokolwiek schema.org",
+    "product_or_service_schema": "Brak schema Product/Service",
+    "faq_schema_bonus": "Brak schema FAQPage",
+    "breadcrumb_schema": "Brak schema BreadcrumbList",
+    "article_schema": "Brak schema Article/BlogPosting",
+    "schema_author_field": "Brak pola 'author' w schema",
+    "schema_dates": "Brak dat w schema (published/modified)",
+    "person_schema_team": "Brak schema Person (zespół)",
+    "localbusiness_or_organization_schema": "Brak schema LocalBusiness/Organization",
+    "tel_link_present": "Brak klikalnego numeru telefonu (tel:)",
+    "mailto_link_present": "Brak klikalnego e-maila (mailto:)",
+    "contact_form_present": "Brak formularza kontaktowego (<form>)",
+    "itemlist_schema": "Brak schema ItemList",
+    # DOMAIN TECH
+    "robots_txt_accessible": "Brak dostępnego pliku robots.txt",
+    "gptbot_not_blocked": "GPTBot (OpenAI) zablokowany",
+    "perplexitybot_not_blocked": "PerplexityBot zablokowany",
+    "claudebot_not_blocked": "ClaudeBot (Anthropic) zablokowany",
+    "google_extended_not_blocked": "Google-Extended zablokowany (AI Overviews)",
+    "crawl_delay_ok": "Zbyt wysoki crawl-delay dla botów",
+    "sitemap_present": "Brak sitemap XML",
+    "sitemap_in_robots": "Brak linku do sitemap w robots.txt",
+    "llms_txt_present": "Brak pliku llms.txt",
+    "https_enabled": "Brak HTTPS",
+    "hreflang_used": "Brak tagów hreflang",
+    "hsts_enabled": "Brak HSTS (Strict-Transport-Security)",
+    "compression_enabled": "Brak kompresji odpowiedzi (gzip/brotli)",
+    # PERFORMANCE
+    "performance_score_mobile": "Niski wynik Lighthouse Performance (mobile)",
+    "lcp_mobile_ok": "LCP zbyt wolne (mobile)",
+    "cls_mobile_ok": "Zbyt wysoki CLS (mobile)",
+    "tbt_mobile_ok": "Zbyt wysoki TBT (mobile)",
+    "fcp_mobile_ok": "FCP zbyt wolne (mobile)",
+}
+
+
+def _inject_fail_labels() -> None:
+    """Wstrzykuje `label_fail` do wszystkich słowników meta (single source of truth: FAIL_LABELS)."""
+    for meta_dict in (FACTOR_META, TECH_FACTOR_META, DOMAIN_TECH_META, PERFORMANCE_FACTOR_META):
+        for key, meta in meta_dict.items():
+            if key in FAIL_LABELS:
+                meta["label_fail"] = FAIL_LABELS[key]
+
+
+_inject_fail_labels()
+
 # Stable per-factor descriptions (PRO/tech tone). Used by _generic_detail() before falling back to group templates.
 FACTOR_DETAILS = {
     # --- FACTOR_META: HOMEPAGE ---
@@ -1937,6 +2078,7 @@ def _ensure_factor_record(index: dict[str, dict], key: str, meta: dict, *, is_te
             "uid": uid,
             "id": key,
             "label": meta.get("label", key),
+            "label_fail": meta.get("label_fail", meta.get("label", key)),
             "group": group,
             "group_label": UI_GROUP_LABELS.get(group, group),
             "applies_to": meta.get("applies_to", []),
@@ -3489,23 +3631,29 @@ Brakujące pytania klientów w AI:
 </kontekst>
 
 <zadanie>
-Napisz NEUTRALNE, DIAGNOSTYCZNE streszczenie stanu domeny po audycie + 5 priorytetów do naprawy.
-ZAKAZ sprzedażowego tonu. NIE mów "co stracicie", "co zyskacie", "klienci trafią do konkurencji", "więcej leadów", "wzrost przychodów".
-NIE przekonuj do dalszych działań SEO. NIE buduj urgency. Po prostu OPISZ stan i wskaż największe problemy.
-Język rzeczowy, biznesowy, dla CEO — ale bez żargonu SEO (no schema/E-E-A-T/canonical/crawler/RAG).
-Priorytety = obszary do naprawy w kolejności od najpilniejszego ("Brak otwartego dostępu dla botów AI", "Niekompletne dane kontaktowe", "Brak treści odpowiadającej na pytania klientów"). Każdy priorytet = obserwacja + krótki opis problemu, BEZ obietnic rezultatu.
+Przygotuj streszczenie stanu domeny po audycie + 5 priorytetów do naprawy — w DWÓCH wersjach językowych tego samego przekazu:
+
+WERSJA A — DIAGNOSTYCZNA (pola: headline, summary, priorities[].title/rationale/outcome)
+NEUTRALNA, rzeczowa, dla CEO. ZAKAZ sprzedażowego tonu. NIE mów "co stracicie", "co zyskacie", "klienci trafią do konkurencji", "więcej leadów", "wzrost przychodów". NIE buduj urgency. Po prostu OPISZ stan i wskaż największe problemy. Bez żargonu SEO (no schema/E-E-A-T/canonical/crawler/RAG).
+
+WERSJA B — SPRZEDAŻOWA (pola: headline_sales, summary_sales, priorities[].title_sales/rationale_sales/outcome_sales)
+Prosty język dla właściciela firmy BEZ wiedzy technicznej. Mów językiem korzyści i konsekwencji biznesowych: "klienci pytający ChatGPT/Perplexity Cię nie znajdą", "AI nie poleci Twojej firmy", "zyskasz widoczność w odpowiedziach AI". ZERO żargonu (zamiast "schema/E-E-A-T/crawler/RAG/llms.txt" → proste opisy: "AI takie jak ChatGPT i Perplexity", "oznaki, że jesteś ekspertem", "otwarcie strony dla botów AI"). Krótko, konkretnie, motywująco — ale BEZ przesady i fałszywych obietnic liczbowych.
+
+Priorytety w obu wersjach to TE SAME 5 obszarów, w tej samej kolejności (od najpilniejszego) — różni się tylko ton.
 </zadanie>
 
 Zwróć TYLKO JSON:
 {{
-  "headline": "1 zdanie — rzeczowa diagnoza stanu domeny (np. 'Domena ma solidne fundamenty techniczne, ale brakuje sygnałów eksperckości i otwartego dostępu dla AI')",
-  "summary": "3-4 zdania opisujące obecny stan: co działa dobrze, gdzie są największe luki, jaki jest największy pojedynczy problem po audycie. Neutralnie, bez ocen typu 'źle/dobrze', bez sprzedaży.",
+  "headline": "WERSJA A: 1 zdanie — rzeczowa diagnoza stanu domeny (np. 'Domena ma solidne fundamenty techniczne, ale brakuje sygnałów eksperckości i otwartego dostępu dla AI')",
+  "summary": "WERSJA A: 3-4 zdania opisujące obecny stan: co działa dobrze, gdzie są największe luki, jaki jest największy pojedynczy problem. Neutralnie, bez sprzedaży.",
+  "headline_sales": "WERSJA B: 1 zdanie prostym językiem korzyści dla właściciela firmy — co ten audyt oznacza dla jego biznesu w świecie AI.",
+  "summary_sales": "WERSJA B: 3-4 zdania prostym językiem sprzedażowym: gdzie firma traci szansę w AI, co jest największym problemem i co realnie zmieni jego naprawa. Bez żargonu.",
   "priorities": [
-    {{"title": "Obszar problemu (2-5 słów)", "rationale": "Co konkretnie nie działa lub czego brakuje (1 zdanie, opis stanu)", "outcome": "Co zostanie rozwiązane po naprawie (1 zdanie, opisowo, BEZ obietnic biznesowych)"}},
+    {{"title": "WERSJA A: obszar problemu (2-5 słów)", "rationale": "WERSJA A: co konkretnie nie działa lub czego brakuje (1 zdanie, opis stanu)", "outcome": "WERSJA A: co zostanie rozwiązane po naprawie (1 zdanie, opisowo, BEZ obietnic biznesowych)", "title_sales": "WERSJA B: ten sam obszar prostym językiem (2-6 słów)", "rationale_sales": "WERSJA B: dlaczego to ważne dla biznesu w świecie AI (1 zdanie, język korzyści)", "outcome_sales": "WERSJA B: co firma zyska po naprawie (1 zdanie, prosto i konkretnie)"}},
     ... (DOKŁADNIE 5 pozycji, posortowane od największego problemu)
   ]
 }}"""
-    return _extract_json(_gemini_call(prompt, temperature=0.35, max_tokens=1800))
+    return _extract_json(_gemini_call(prompt, temperature=0.35, max_tokens=2600))
 
 
 # --- SCORING ---
