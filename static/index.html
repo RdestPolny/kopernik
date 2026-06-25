@@ -60,7 +60,10 @@ button{font:inherit;cursor:pointer}
 .hero .inner{max-width:1120px;margin:0 auto;padding:0 28px}
 .hero h1{color:#fff;max-width:18ch}
 .hero h1 em{font-style:italic;color:var(--gold-2)}
-.hero .meta-line{display:flex;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-family:var(--mono);font-size:0.72rem;color:var(--gold-2);text-transform:uppercase;letter-spacing:0.12em}
+.hero .meta-line{display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin-bottom:16px;font-family:var(--mono);font-size:0.72rem;color:var(--gold-2);text-transform:uppercase;letter-spacing:0.12em}
+.llm-logos{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.llm-logos .llm-chip{display:inline-flex;align-items:center;justify-content:center;height:30px;padding:0 10px;background:#fff;border-radius:6px;box-shadow:0 1px 3px rgba(0,0,0,0.25)}
+.llm-logos .llm-chip img{height:18px;width:auto;display:block}
 .hero .lede{color:#D8D8D5;max-width:64ch;margin:22px 0 36px}
 .hero .lede strong{color:#fff}
 .form{display:flex;gap:12px;max-width:680px;flex-wrap:wrap;padding:20px;background:rgba(0,0,0,0.2);border:1px solid rgba(255,255,255,0.1);border-radius:4px}
@@ -172,6 +175,11 @@ button{font:inherit;cursor:pointer}
 /* URL switcher — horizontal sticky pills */
 .url-switcher{display:flex;flex-wrap:wrap;gap:8px;padding:14px 0;border-bottom:1px solid var(--rule);margin-bottom:32px;position:sticky;top:64px;background:var(--paper);z-index:10}
 .url-switcher-label{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.12em;color:var(--muted);align-self:center;margin-right:6px}
+/* Eksport raportu (tylko tryb SEO) */
+.export-bar{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin:0 0 22px;padding:12px 16px;background:var(--paper-2);border:1px solid var(--rule);border-radius:6px}
+.export-label{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-right:2px}
+.export-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;padding:8px 14px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:4px;cursor:pointer;transition:all .15s}
+.export-btn:hover{background:transparent;color:var(--ink)}
 .url-pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border:1px solid var(--rule);background:var(--paper);border-radius:4px;font-size:0.85rem;color:var(--ink-2);cursor:pointer;font:inherit;transition:all .15s;max-width:280px}
 .url-pill:hover{border-color:var(--ink);color:var(--ink)}
 .url-pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -363,7 +371,11 @@ button{font:inherit;cursor:pointer}
   <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:stretch; flex-wrap:wrap;">
     <div class="hero-left" style="flex:1; min-width:300px; max-width:560px;">
       <div class="meta-line">
-        <span>Perplexity · ChatGPT · Gemini</span>
+        <div class="llm-logos">
+          <span class="llm-chip"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSBcX_MBA4OOwSaXiYcpmzKmy79qat_2xgT_qaemk4Mw&s" alt="ChatGPT" referrerpolicy="no-referrer"></span>
+          <span class="llm-chip"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/960px-Google_Gemini_icon_2025.svg.png" alt="Gemini" referrerpolicy="no-referrer"></span>
+          <span class="llm-chip"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Perplexity_AI_Turquoise_on_White.png" alt="Perplexity" referrerpolicy="no-referrer"></span>
+        </div>
       </div>
       <h1>Czy Twoja strona istnieje dla <em>AI</em>?</h1>
       <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań oraz sprawdzalne sygnały z bazy patentów Google — per podstrona, z dopasowaniem factor setu do typu strony.</p>
@@ -440,7 +452,6 @@ function showAuditLoader(firstStep) {
         <div class="audit-ring-track"></div>
         <div class="audit-ring-prog" id="auditRingProg"></div>
         <div class="audit-ring-comet"></div>
-        <div class="audit-ring-pct"><span id="auditPct">0</span><i>%</i></div>
       </div>
       <div class="audit-steps" id="auditSteps"></div>
     </div>`;
@@ -912,7 +923,7 @@ function renderResult(r) {
       <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
     </div>`;
   document.getElementById('ctaContainer').style.display = 'block';
-  drawHeroRadar(initialState.groups);
+  drawHeroRadar(initialState.groups, initialState.overall);
 
   refreshAuditView();
   results.classList.remove('hidden');
@@ -927,7 +938,7 @@ function renderHeroRadarShell() {
   `;
 }
 
-function drawHeroRadar(groups) {
+function drawHeroRadar(groups, overall) {
   setTimeout(() => {
     const canvas = document.getElementById('heroRadarChart');
     if (!canvas || typeof Chart === 'undefined') return;
@@ -945,14 +956,17 @@ function drawHeroRadar(groups) {
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
     // Każda kropka w kolorze zależnym od wyniku swojej kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
     const pointColors = chartGroups.map(g => scoreColor(g.score));
+    // Kolor całego wykresu zależny od wyniku ogólnego (słabo → czerwony, dobrze → zielony).
+    const lineColor = scoreColor(overall);
+    const fillColor = lineColor.charAt(0) === '#' ? hexToRgba(lineColor, 0.18) : 'rgba(237, 217, 113, 0.18)';
     heroRadarChart = new Chart(canvas.getContext('2d'), {
       type: 'radar',
       data: {
         labels,
         datasets: [{
           data,
-          backgroundColor: 'rgba(237, 217, 113, 0.18)',
-          borderColor: '#edd971',
+          backgroundColor: fillColor,
+          borderColor: lineColor,
           pointBackgroundColor: pointColors,
           pointBorderColor: '#1e3351',
           pointRadius: 6,
@@ -1005,6 +1019,25 @@ function scoreColor(score) {
   return '#ff6b6b';
 }
 
+// Hex → rgba (do półprzezroczystego wypełnienia wykresu w kolorze wyniku).
+function hexToRgba(hex, alpha) {
+  const m = (hex || '').replace('#', '').match(/.{2}/g);
+  if (!m || m.length < 3) return `rgba(237,217,113,${alpha})`;
+  const [r, g, b] = m.map(x => parseInt(x, 16));
+  return `rgba(${r},${g},${b},${alpha})`;
+}
+
+function exportBarHtml() {
+  // Eksport raportu dostępny wyłącznie w trybie SEO.
+  if (currentMode !== 'seo') return '';
+  return `
+    <div class="export-bar no-print">
+      <span class="export-label">Eksport raportu:</span>
+      <button type="button" class="export-btn" data-export="md">↓ Markdown (.md)</button>
+      <button type="button" class="export-btn" data-export="pdf">↓ PDF</button>
+    </div>`;
+}
+
 function renderAuditShell(r) {
   const state = computeScopeState(r, currentScope);
   const groups = groupOrder(r);
@@ -1020,6 +1053,7 @@ function renderAuditShell(r) {
       : renderCategory(r, currentCategory, num, state);
     return `
       <div class="report" id="auditRoot">
+        ${exportBarHtml()}
         ${renderCategorySwitcher(r, state)}
         ${catHtml}
       </div>
@@ -1042,6 +1076,7 @@ function renderAuditShell(r) {
     : `${categoriesHtml}${extrasHtml}`;
   return `
     <div class="report" id="auditRoot">
+      ${exportBarHtml()}
       ${renderCategorySwitcher(r, state)}
       ${renderOverview(r)}
       ${renderPriority(r)}
@@ -1072,12 +1107,14 @@ function renderCategorySwitcher(r, state) {
   const groups = groupOrder(r);
   const stateGroups = state.groups || [];
   const allScore = state.overall;
-  const items = [{cat:'all', label:'Wszystkie', score: allScore}].concat(
-    groups.map(g => {
+  // Sortujemy kafelki kategorii wg wyniku malejąco (zielone → żółte → czerwone),
+  // brak danych na końcu. "Wszystkie" zawsze pierwsze.
+  const sv = s => (s === null || s === undefined) ? -1 : s;
+  const catItems = groups.map(g => {
       const sg = stateGroups.find(x => x.id === g);
       return {cat: g, label: groupLabel(r, g), score: sg ? sg.score : null};
-    })
-  );
+    }).sort((a, b) => sv(b.score) - sv(a.score));
+  const items = [{cat:'all', label:'Wszystkie', score: allScore}].concat(catItems);
   return `
     <div class="url-switcher">
       <span class="url-switcher-label">Kategoria:</span>
@@ -1388,6 +1425,12 @@ function renderExtras(r) {
 }
 
 function handleAuditClick(e) {
+  const exportBtn = e.target.closest('button[data-export]');
+  if (exportBtn) {
+    if (exportBtn.dataset.export === 'md') exportReportMd();
+    else exportReportPdf();
+    return;
+  }
   const catBtn = e.target.closest('button[data-cat]');
   if (catBtn) {
     currentCategory = catBtn.dataset.cat;
@@ -1398,7 +1441,7 @@ function handleAuditClick(e) {
   if (urlBtn) {
     currentScope = urlBtn.dataset.scope;
     const state = computeScopeState(currentResult, currentScope);
-    drawHeroRadar(state.groups);
+    drawHeroRadar(state.groups, state.overall);
     refreshAuditView();
     return;
   }
@@ -1437,6 +1480,167 @@ results.addEventListener('submit', async (e) => {
     btn.textContent = originalLabel;
   }
 });
+
+// ---- Eksport raportu (MD / PDF) — dostępny tylko w trybie SEO ----
+function buildReportModel(r) {
+  const state = computeScopeState(r, 'all');
+  let domain = '';
+  try { domain = new URL(r.url).hostname.replace(/^www\./, ''); } catch (e) { domain = r.url || ''; }
+  const byScoreDesc = (a, b) => ((b.score == null ? -1 : b.score) - (a.score == null ? -1 : a.score));
+  const catScores = (state.groups || []).map(sg => ({ label: sg.label, score: sg.score })).slice().sort(byScoreDesc);
+  const categories = groupOrder(r).map(g => {
+    const sg = (state.groups || []).find(x => x.id === g) || { score: null };
+    const views = getGroupFactorViews(r, g, 'all');
+    return {
+      label: groupLabel(r, g),
+      score: sg.score,
+      factors: views.map(v => ({
+        label: factorDisplayLabel(v.factor, v.status) || v.factor.label,
+        status: v.status,
+        statusLabel: statusLabel(v.status),
+        symbol: statusSymbol(v.status),
+        note: firstUsefulNote(v)
+      }))
+    };
+  }).sort(byScoreDesc);
+  const priorities = getTopActionsForScope(r, 'all', 5).map(v => ({
+    label: factorDisplayLabel(v.factor, v.status) || v.factor.label,
+    statusLabel: statusLabel(v.status),
+    note: firstUsefulNote(v)
+  }));
+  const gaps = (r.synthesis && r.synthesis.content_gaps) || [];
+  return { domain, date: new Date().toLocaleString('pl-PL'), overall: state.overall, catScores, priorities, categories, gaps };
+}
+
+function reportToMarkdown(m) {
+  const L = [];
+  L.push(`# Audyt AI SEO — ${m.domain}`);
+  L.push('');
+  L.push(`*Wygenerowano: ${m.date}*`);
+  L.push('');
+  L.push(`**Wynik ogólny: ${m.overall}/100**`);
+  L.push('');
+  L.push('## Wyniki wg kategorii');
+  L.push('');
+  L.push('| Kategoria | Wynik |');
+  L.push('| --- | --- |');
+  m.catScores.forEach(c => L.push(`| ${c.label} | ${c.score == null ? '—' : c.score + '/100'} |`));
+  L.push('');
+  if (m.priorities.length) {
+    L.push('## Priorytety (Top 5)');
+    L.push('');
+    m.priorities.forEach((p, i) => {
+      L.push(`${i + 1}. **${p.label}** — _${p.statusLabel}_`);
+      if (p.note) L.push(`   - ${p.note}`);
+    });
+    L.push('');
+  }
+  L.push('## Szczegóły kategorii');
+  L.push('');
+  m.categories.forEach(cat => {
+    L.push(`### ${cat.label} — ${cat.score == null ? '—' : cat.score + '/100'}`);
+    L.push('');
+    if (!cat.factors.length) { L.push('_Brak aplikowalnych czynników._'); L.push(''); return; }
+    cat.factors.forEach(f => {
+      L.push(`- ${f.symbol} **${f.label}** (${f.statusLabel})${f.note ? ' — ' + f.note : ''}`);
+    });
+    L.push('');
+  });
+  if (m.gaps.length) {
+    L.push('## Luki treści');
+    L.push('');
+    m.gaps.forEach(g => L.push(`- ${g}`));
+    L.push('');
+  }
+  L.push('---');
+  L.push('Strategiczni · AI SEO Audit · strategiczni.pl');
+  return L.join('\n');
+}
+
+function reportToPrintHtml(m, chartImg) {
+  const esc2 = esc;
+  const toneHex = s => (s == null ? '#9a9a96' : (s >= 90 ? '#16a34a' : s >= 75 ? '#ca9a13' : '#dc2626'));
+  const catRows = m.catScores.map(c =>
+    `<tr><td>${esc2(c.label)}</td><td style="text-align:right;font-weight:700;color:${toneHex(c.score)}">${c.score == null ? '—' : c.score + '/100'}</td></tr>`
+  ).join('');
+  const priHtml = m.priorities.map((p, i) =>
+    `<li><strong>${esc2(p.label)}</strong> <span class="tag">${esc2(p.statusLabel)}</span>${p.note ? `<div class="note">${esc2(p.note)}</div>` : ''}</li>`
+  ).join('');
+  const catHtml = m.categories.map(cat => `
+    <section class="cat">
+      <h3>${esc2(cat.label)} <span style="color:${toneHex(cat.score)}">${cat.score == null ? '—' : cat.score + '/100'}</span></h3>
+      ${cat.factors.length ? `<ul class="factors">${cat.factors.map(f =>
+        `<li><span class="sym">${esc2(f.symbol)}</span> <strong>${esc2(f.label)}</strong> <span class="tag">${esc2(f.statusLabel)}</span>${f.note ? `<div class="note">${esc2(f.note)}</div>` : ''}</li>`
+      ).join('')}</ul>` : '<p class="muted">Brak aplikowalnych czynników.</p>'}
+    </section>`).join('');
+  const gapsHtml = m.gaps.length ? `<section class="cat"><h3>Luki treści</h3><ul class="factors">${m.gaps.map(g => `<li>${esc2(g)}</li>`).join('')}</ul></section>` : '';
+  return `<!doctype html><html lang="pl"><head><meta charset="utf-8"><title>Audyt AI SEO — ${esc2(m.domain)}</title>
+<style>
+  *{box-sizing:border-box}
+  body{font-family:Georgia,'Times New Roman',serif;color:#1a1a1a;max-width:820px;margin:0 auto;padding:40px 32px;line-height:1.5}
+  h1{font-size:1.9rem;margin:0 0 4px}
+  .sub{font-family:Menlo,monospace;font-size:0.8rem;color:#6b6b68;margin-bottom:24px}
+  .overall{display:flex;align-items:baseline;gap:8px;background:#1e3351;color:#fff;border-radius:8px;padding:20px 28px;margin:0 0 24px}
+  .overall .num{font-family:Arial,sans-serif;font-size:3.2rem;font-weight:700;line-height:1;color:${toneHex(m.overall)}}
+  .chartbox{background:#1e3351;border-radius:8px;padding:20px;text-align:center;margin:0 0 28px}
+  .chartbox img{max-width:420px;width:100%;height:auto}
+  table{width:100%;border-collapse:collapse;margin:0 0 28px}
+  td{border-bottom:1px solid #e6e4dc;padding:8px 6px;font-family:Arial,sans-serif;font-size:0.92rem}
+  h2{font-size:1.2rem;border-bottom:2px solid #1e3351;padding-bottom:6px;margin:28px 0 14px}
+  h3{font-size:1.02rem;font-family:Arial,sans-serif;margin:18px 0 8px}
+  ul{margin:0 0 8px;padding-left:0;list-style:none}
+  .factors li,ol li{padding:7px 0;border-bottom:1px solid #f0eee6;font-family:Arial,sans-serif;font-size:0.9rem}
+  ol{padding-left:20px}
+  .sym{display:inline-block;width:16px;color:#1e3351;font-weight:700}
+  .tag{font-family:Menlo,monospace;font-size:0.66rem;text-transform:uppercase;letter-spacing:0.06em;color:#6b6b68;border:1px solid #d8d6cc;border-radius:3px;padding:1px 6px;margin-left:6px}
+  .note{color:#555;font-size:0.84rem;margin-top:3px}
+  .muted{color:#9a9a96;font-style:italic}
+  footer{margin-top:32px;padding-top:14px;border-top:1px solid #e6e4dc;font-family:Menlo,monospace;font-size:0.72rem;color:#6b6b68}
+  @media print{body{padding:0}.cat,ol li,.factors li{page-break-inside:avoid}}
+</style></head><body onload="setTimeout(function(){window.print();},350)">
+  <h1>Audyt AI SEO — ${esc2(m.domain)}</h1>
+  <div class="sub">Wygenerowano: ${esc2(m.date)} · Strategiczni</div>
+  <div class="overall"><span class="num">${m.overall}</span><span>/100 — wynik ogólny</span></div>
+  ${chartImg ? `<div class="chartbox"><img src="${chartImg}" alt="Wykres radarowy"></div>` : ''}
+  <h2>Wyniki wg kategorii</h2>
+  <table><tbody>${catRows}</tbody></table>
+  ${priHtml ? `<h2>Priorytety (Top 5)</h2><ol>${priHtml}</ol>` : ''}
+  <h2>Szczegóły kategorii</h2>
+  ${catHtml}
+  ${gapsHtml}
+  <footer>Strategiczni · AI SEO Audit · strategiczni.pl</footer>
+</body></html>`;
+}
+
+function downloadBlob(filename, mime, content) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1500);
+}
+
+function safeName(s) { return (s || 'raport').replace(/[^a-z0-9.-]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase(); }
+
+function exportReportMd() {
+  if (!currentResult) return;
+  const m = buildReportModel(currentResult);
+  downloadBlob(`ai-seo-audit-${safeName(m.domain)}.md`, 'text/markdown;charset=utf-8', reportToMarkdown(m));
+}
+
+function exportReportPdf() {
+  if (!currentResult) return;
+  const m = buildReportModel(currentResult);
+  let chartImg = '';
+  try { if (heroRadarChart) chartImg = heroRadarChart.toBase64Image(); } catch (e) {}
+  const w = window.open('', '_blank');
+  if (!w) { alert('Zezwól na otwieranie wyskakujących okien, aby wyeksportować PDF.'); return; }
+  w.document.open();
+  w.document.write(reportToPrintHtml(m, chartImg));
+  w.document.close();
+  w.focus();
+}
 
 function applyMode() {
   if (!currentResult) return;
