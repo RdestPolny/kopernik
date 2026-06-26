@@ -158,6 +158,22 @@ button{font:inherit;cursor:pointer}
 .aio-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;font-size:0.78rem;color:var(--ink-2)}
 .aio-legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:6px;vertical-align:middle}
 .aio-note{padding:12px 20px;border-top:1px solid var(--rule);font-size:0.8rem;color:var(--muted)}
+/* Porównanie AIO w sekcji diagnozy (ciemne tło overview) */
+.aio-diag{margin-top:26px;padding-top:22px;border-top:1px solid rgba(255,255,255,0.14)}
+.aio-diag-head{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold-2);font-weight:600;margin-bottom:10px}
+.aio-diag-lead{font-size:0.9rem;line-height:1.55;color:rgba(255,255,255,0.86);margin:0 0 16px}
+.aio-diag-lead b{color:#fff;font-weight:600}
+.aio-cmp{display:flex;flex-direction:column;gap:11px}
+.aio-cmp-row{display:flex;flex-direction:column;gap:4px}
+.aio-cmp-top{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.aio-cmp-dom{font-size:0.84rem;color:rgba(255,255,255,0.82);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aio-cmp-val{font-family:var(--mono);font-size:0.8rem;color:#fff;white-space:nowrap}
+.aio-track{height:8px;border-radius:4px;background:rgba(255,255,255,0.12);overflow:hidden}
+.aio-fill{height:100%;border-radius:4px;background:rgba(255,255,255,0.4)}
+.aio-cmp-row.is-me .aio-cmp-dom{color:var(--gold-2);font-weight:700}
+.aio-cmp-row.is-me .aio-cmp-val{color:var(--gold-2)}
+.aio-cmp-row.is-me .aio-fill{background:var(--gold)}
+.aio-diag-cap{margin-top:14px;font-size:0.72rem;color:rgba(255,255,255,0.5)}
 
 /* --- FOOTER --- */
 .footer{background:var(--brand-bg);color:#B5B5B0;padding:48px 28px 32px;margin-top:80px;border-top:3px solid var(--gold)}
@@ -1098,7 +1114,6 @@ function renderAuditShell(r) {
       ${exportBarHtml()}
       ${renderCategorySwitcher(r, state)}
       ${renderOverview(r)}
-      ${renderSenutoAio(r)}
       ${renderPriority(r)}
       ${lockedBlock}
     </div>
@@ -1168,6 +1183,7 @@ function renderOverview(r) {
         <div class="overview-eyebrow">Diagnoza</div>
         ${headline ? `<h2 class="overview-headline">${esc(headline)}</h2>` : ''}
         ${summary ? `<p class="overview-summary">${esc(summary)}</p>` : ''}
+        ${renderAioDiagnosis(r)}
       </div>
       ${priorities.length ? `
         <div class="overview-right">
@@ -1250,6 +1266,54 @@ function renderSenutoAio(r) {
       ${tot > 0 ? `<div class="aio-dist"><div class="dist-title">Rozkład pozycji na zapytaniach z AIO</div>${bar}</div>` : ''}
       ${avgNote}
     </section>
+  `;
+}
+
+// Porównanie widoczności w AI Overviews (dane Senuto) — renderowane w lewej kolumnie
+// sekcji diagnozy. Pokazuje, dla ilu fraz domena jest cytowana w AIO na tle konkurentów.
+function renderAioDiagnosis(r) {
+  const a = r.senuto_aio;
+  if (!a) return '';
+  const fmt = n => (n == null ? '—' : Number(n).toLocaleString('pl-PL'));
+  let meDom = a.domain || '';
+  if (!meDom) { try { meDom = new URL(r.url).hostname.replace(/^www\./, ''); } catch (e) { meDom = r.url || 'Twoja strona'; } }
+  const me = { domain: meDom, aio_visible_keywords: a.aio_visible_keywords, _me: true };
+  const comps = Array.isArray(a.competitors)
+    ? a.competitors.map(c => ({ domain: c.domain, aio_visible_keywords: c.aio_visible_keywords }))
+    : [];
+  const rows = [me, ...comps].filter(x => x.aio_visible_keywords != null);
+
+  let lead = `Twoja strona jest cytowana w AI Overviews dla <b>${fmt(a.aio_visible_keywords)}</b> z <b>${fmt(a.aio_keywords)}</b> fraz, na których pojawia się AI Overview.`;
+  if (comps.length) {
+    const meVis = Number(a.aio_visible_keywords) || 0;
+    const beat = comps.filter(c => (Number(c.aio_visible_keywords) || 0) > meVis).length;
+    lead += beat
+      ? ` ${beat} z ${comps.length} porównywanych konkurentów jest cytowanych częściej — to przestrzeń do nadrobienia:`
+      : ` Na tle porównywanych konkurentów wypadasz korzystnie:`;
+  }
+
+  const max = Math.max(...rows.map(x => Number(x.aio_visible_keywords) || 0), 1);
+  const bars = rows.map(x => {
+    const v = Number(x.aio_visible_keywords) || 0;
+    const w = Math.max(v / max * 100, 2);
+    return `
+      <div class="aio-cmp-row ${x._me ? 'is-me' : ''}">
+        <div class="aio-cmp-top">
+          <span class="aio-cmp-dom">${esc(x.domain)}${x._me ? ' (Ty)' : ''}</span>
+          <span class="aio-cmp-val">${fmt(v)}</span>
+        </div>
+        <div class="aio-track"><div class="aio-fill" style="width:${w.toFixed(1)}%"></div></div>
+      </div>`;
+  }).join('');
+
+  const cap = `Źródło: Senuto${a.fetched_at ? ' · ' + esc(a.fetched_at) : ''} · metryka: frazy cytowane w AI Overview`;
+  return `
+    <div class="aio-diag">
+      <div class="aio-diag-head">Widoczność w AI Overviews</div>
+      <p class="aio-diag-lead">${lead}</p>
+      ${rows.length ? `<div class="aio-cmp">${bars}</div>` : ''}
+      <div class="aio-diag-cap">${cap}</div>
+    </div>
   `;
 }
 

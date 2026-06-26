@@ -58,6 +58,7 @@ SENUTO_EMAIL = os.getenv("SENUTO_EMAIL", "")
 SENUTO_PASSWORD = os.getenv("SENUTO_PASSWORD", "")
 SENUTO_COUNTRY_ID = os.getenv("SENUTO_COUNTRY_ID", "200")  # 200 = PL (Base 2.0)
 SENUTO_LANG = os.getenv("SENUTO_LANG", "pl-PL")
+SENUTO_COMPETITORS = int(os.getenv("SENUTO_COMPETITORS", "3"))  # ile konkurentów porównać w AIO (0 = wyłącz)
 _SENUTO_TOKEN_CACHE: dict = {"token": None, "exp": 0.0}
 _senuto_session = requests.Session()
 
@@ -148,11 +149,8 @@ def _senuto_token() -> str | None:
     return None
 
 
-def _senuto_fetch_aio(host: str) -> dict | None:
-    """Live AIO metrics for a domain via Senuto getDomainStatistics. None on failure."""
-    token = _senuto_token()
-    if not token:
-        return None
+def _senuto_domain_stats(host: str, token: str) -> dict | None:
+    """GET getDomainStatistics → {domain, aio_keywords, aio_visible_keywords, visibility} or None."""
     try:
         r = _senuto_session.get(
             f"{SENUTO_API_BASE}/visibility_analysis/reports/dashboard/getDomainStatistics",
@@ -172,15 +170,71 @@ def _senuto_fetch_aio(host: str) -> dict | None:
         if aio_kw is None and aio_vis is None:
             return None
         return {
-            "source": "senuto-api",
-            "country": f"country_id={SENUTO_COUNTRY_ID}",
-            "fetched_at": datetime.now().strftime("%Y-%m-%d"),
+            "domain": host,
             "aio_keywords": aio_kw,
             "aio_visible_keywords": aio_vis,
+            "visibility": _val("visibility"),
         }
     except Exception as e:
         logger.warning("Senuto getDomainStatistics failed for %s: %s", host, e)
         return None
+
+
+def _senuto_competitor_domains(host: str, token: str, limit: int) -> list:
+    """POST competitors/getData → up to `limit` competitor domains (excl. main), by common_keywords."""
+    if limit <= 0:
+        return []
+    try:
+        r = _senuto_session.post(
+            f"{SENUTO_API_BASE}/visibility_analysis/reports/competitors/getData",
+            headers={"Authorization": f"Bearer {token}", "Lang": SENUTO_LANG},
+            data={"domain": host, "fetch_mode": "topLevelDomain", "country_id": SENUTO_COUNTRY_ID, "limit": 20},
+            timeout=30,
+        )
+        r.raise_for_status()
+        rows = (r.json() or {}).get("data") or []
+        comps = []
+        for row in rows:
+            if not isinstance(row, dict) or row.get("is_main_domain"):
+                continue
+            dom = row.get("domain")
+            if dom:
+                comps.append((dom, row.get("common_keywords") or 0))
+        comps.sort(key=lambda x: x[1], reverse=True)
+        return [dom for dom, _ in comps[:limit]]
+    except Exception as e:
+        logger.warning("Senuto competitors failed for %s: %s", host, e)
+        return []
+
+
+def _senuto_fetch_aio(host: str) -> dict | None:
+    """Live AIO metrics for a domain (Senuto), enriched with top competitors' AIO."""
+    token = _senuto_token()
+    if not token:
+        return None
+    main = _senuto_domain_stats(host, token)
+    if not main:
+        return None
+    block = {
+        "source": "senuto-api",
+        "country": f"country_id={SENUTO_COUNTRY_ID}",
+        "fetched_at": datetime.now().strftime("%Y-%m-%d"),
+        "domain": host,
+        "aio_keywords": main["aio_keywords"],
+        "aio_visible_keywords": main["aio_visible_keywords"],
+        "visibility": main.get("visibility"),
+    }
+    try:
+        comp_domains = _senuto_competitor_domains(host, token, SENUTO_COMPETITORS)
+        if comp_domains:
+            with ThreadPoolExecutor(max_workers=min(len(comp_domains), 4)) as ex:
+                stats = list(ex.map(lambda d: _senuto_domain_stats(d, token), comp_domains))
+            comps = [s for s in stats if s]
+            if comps:
+                block["competitors"] = comps
+    except Exception as e:
+        logger.warning("Senuto competitor AIO enrich failed for %s: %s", host, e)
+    return block
 
 
 def load_senuto_aio(url: str) -> dict | None:

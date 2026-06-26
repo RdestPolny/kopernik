@@ -130,10 +130,16 @@ Są dwa źródła danych, łączone automatycznie:
    ewentualną średnią pozycję.
 
 **Mechanizm:** przy audycie backend wywołuje `load_senuto_aio(url)` (`main.py`):
-pobiera dane live z API, wczytuje plik cache i **scala** je (świeże liczby z API mają
-priorytet, rozkład z cache zostaje), po czym dołącza wynik do `result.senuto_aio`.
-Gdy API nie jest skonfigurowane — używany jest sam cache; gdy brak obu źródeł —
-sekcja się nie renderuje. Frontend: `renderSenutoAio` w `static/index.html`.
+pobiera dane live z API (liczby AIO domeny **oraz 2–3 konkurentów** — przez
+`competitors/getData` + `getDomainStatistics` per konkurent), wczytuje plik cache
+i **scala** je (świeże liczby z API mają priorytet, rozkład z cache zostaje), po czym
+dołącza wynik do `result.senuto_aio` (z polem `competitors[]`). Gdy API nie jest
+skonfigurowane — używany jest sam cache; gdy brak obu źródeł — sekcja się nie renderuje.
+
+**Gdzie się wyświetla:** porównanie cytowań w AI Overviews (domena vs konkurenci)
+renderuje się w **lewej kolumnie sekcji diagnozy**, pod opisem (`renderAioDiagnosis`
+w `static/index.html`). Liczba porównywanych konkurentów: `SENUTO_COMPETITORS` (domyślnie 3,
+`0` = wyłącz). Konkurenci wybierani są wg `common_keywords` z Senuto.
 
 ### Konfiguracja API (zmienne środowiskowe)
 
@@ -149,6 +155,7 @@ SENUTO_PASSWORD=••••••
 
 # Opcjonalne:
 SENUTO_COUNTRY_ID=200                 # 200 = PL (Base 2.0); domyślne
+SENUTO_COMPETITORS=3                  # ilu konkurentów porównać w AIO (0 = wyłącz)
 SENUTO_API_BASE=https://api.senuto.com/api
 ```
 
@@ -171,6 +178,11 @@ odświeżać token. Endpointy danych używają nagłówka `Authorization: Bearer
 Endpoint live wykorzystywany przez aplikację:
 `GET /api/visibility_analysis/reports/dashboard/getDomainStatistics?domain=&fetch_mode=topLevelDomain&country_id=200`
 → `data.statistics.aio_keywords`, `data.statistics.aio_visible_keywords`.
+
+Konkurenci (live): `POST /api/visibility_analysis/reports/competitors/getData`
+(body form: `domain`, `fetch_mode=topLevelDomain`, `country_id=200`) → `data[]`
+(`domain`, `is_main_domain`, `common_keywords`); dla top N wg `common_keywords`
+aplikacja dociąga ich AIO przez `getDomainStatistics`.
 
 **Format pliku** `senuto_aio/<domena>.json`:
 
