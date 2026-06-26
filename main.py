@@ -2,8 +2,10 @@
 """AI SEO Audit — page-type-aware per-URL factor sets."""
 
 import json
+import logging
 import os
 import re
+import time
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -15,6 +17,15 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
+
+# Load a local .env if present (keeps secrets out of the codebase). Optional dependency:
+# the app still works when python-dotenv isn't installed and env vars are set directly.
+try:
+    from dotenv import load_dotenv
+
+    load_dotenv()
+except Exception:
+    pass
 
 FIRECRAWL_KEY = os.environ["FIRECRAWL_KEY"]
 GEMINI_KEY = os.environ["GEMINI_KEY"]
@@ -34,6 +45,24 @@ MAX_CONTENT_CHARS = 7000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PATENT_FACTORS_PATH = os.path.join(BASE_DIR, "google-patent-seo-skill", "references", "factors.jsonl")
 PATENT_SCORING_CONFIDENCE = {"high", "medium"}
+# Opcjonalny cache danych "Widoczność w AI Overviews" (Senuto). Aplikacja nie woła
+# konektora Senuto (MCP); operator zasila SENUTO_AIO_DIR/<domena>.json danymi z MCP,
+# a audyt dołącza je do wyniku jako blok `senuto_aio` (jeśli plik istnieje).
+SENUTO_AIO_DIR = os.getenv("SENUTO_AIO_DIR", os.path.join(BASE_DIR, "senuto_aio"))
+# Senuto REST API (live AIO metrics). Credentials are supplied by the operator via
+# environment variables — never hardcoded. Prefer a ready SENUTO_BEARER_TOKEN; otherwise
+# the app logs in with SENUTO_EMAIL + SENUTO_PASSWORD and caches the 30-day token.
+SENUTO_API_BASE = os.getenv("SENUTO_API_BASE", "https://api.senuto.com/api")
+SENUTO_BEARER_TOKEN = os.getenv("SENUTO_BEARER_TOKEN", "")
+SENUTO_EMAIL = os.getenv("SENUTO_EMAIL", "")
+SENUTO_PASSWORD = os.getenv("SENUTO_PASSWORD", "")
+SENUTO_COUNTRY_ID = os.getenv("SENUTO_COUNTRY_ID", "200")  # 200 = PL (Base 2.0)
+SENUTO_LANG = os.getenv("SENUTO_LANG", "pl-PL")
+_SENUTO_TOKEN_CACHE: dict = {"token": None, "exp": 0.0}
+_senuto_session = requests.Session()
+
+logging.basicConfig(level=os.getenv("LOG_LEVEL", "INFO"))
+logger = logging.getLogger("kopernik")
 
 
 def _load_patent_factors() -> dict[str, dict]:
@@ -56,6 +85,123 @@ def _load_patent_factors() -> dict[str, dict]:
 
 
 PATENT_FACTORS = _load_patent_factors()
+
+
+def _senuto_host(url: str) -> str:
+    """Normalize an audit URL to a bare hostname (no scheme, no www)."""
+    try:
+        host = urlparse(url if "//" in url else "https://" + url).hostname or ""
+    except Exception:
+        return ""
+    return re.sub(r"^www\.", "", host.lower())
+
+
+def load_senuto_aio_cache(url: str) -> dict | None:
+    """Read an optional per-domain AIO cache file populated from MCP data.
+
+    Operator writes SENUTO_AIO_DIR/<domain>.json (e.g. with TOP3/10/50 distribution).
+    Returns None when the file is absent or invalid.
+    """
+    host = _senuto_host(url)
+    if not host:
+        return None
+    path = os.path.join(SENUTO_AIO_DIR, host + ".json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        return data if isinstance(data, dict) else None
+    except Exception:
+        return None
+
+
+def _senuto_token() -> str | None:
+    """Return a valid Senuto bearer token.
+
+    Prefers SENUTO_BEARER_TOKEN. Otherwise logs in with SENUTO_EMAIL + SENUTO_PASSWORD
+    via POST /users/token and caches the token (~30 days). Returns None if no
+    credentials are configured or login fails.
+    """
+    if SENUTO_BEARER_TOKEN:
+        return SENUTO_BEARER_TOKEN
+    now = time.time()
+    if _SENUTO_TOKEN_CACHE["token"] and _SENUTO_TOKEN_CACHE["exp"] > now:
+        return _SENUTO_TOKEN_CACHE["token"]
+    if not (SENUTO_EMAIL and SENUTO_PASSWORD):
+        return None
+    try:
+        r = _senuto_session.post(
+            f"{SENUTO_API_BASE}/users/token",
+            headers={"Content-Type": "application/json", "Lang": SENUTO_LANG},
+            json={"email": SENUTO_EMAIL, "password": SENUTO_PASSWORD},
+            timeout=20,
+        )
+        r.raise_for_status()
+        token = ((r.json() or {}).get("data") or {}).get("token")
+        if token:
+            _SENUTO_TOKEN_CACHE.update({"token": token, "exp": now + 29 * 86400})
+            return token
+        logger.warning("Senuto login: no token in response")
+    except Exception as e:
+        logger.warning("Senuto login failed: %s", e)
+    return None
+
+
+def _senuto_fetch_aio(host: str) -> dict | None:
+    """Live AIO metrics for a domain via Senuto getDomainStatistics. None on failure."""
+    token = _senuto_token()
+    if not token:
+        return None
+    try:
+        r = _senuto_session.get(
+            f"{SENUTO_API_BASE}/visibility_analysis/reports/dashboard/getDomainStatistics",
+            headers={"Authorization": f"Bearer {token}", "Lang": SENUTO_LANG},
+            params={"domain": host, "fetch_mode": "topLevelDomain", "country_id": SENUTO_COUNTRY_ID},
+            timeout=30,
+        )
+        r.raise_for_status()
+        stats = ((r.json() or {}).get("data") or {}).get("statistics") or {}
+
+        def _val(key):
+            v = stats.get(key)
+            return v.get("recent_value") if isinstance(v, dict) else v
+
+        aio_kw = _val("aio_keywords")
+        aio_vis = _val("aio_visible_keywords")
+        if aio_kw is None and aio_vis is None:
+            return None
+        return {
+            "source": "senuto-api",
+            "country": f"country_id={SENUTO_COUNTRY_ID}",
+            "fetched_at": datetime.now().strftime("%Y-%m-%d"),
+            "aio_keywords": aio_kw,
+            "aio_visible_keywords": aio_vis,
+        }
+    except Exception as e:
+        logger.warning("Senuto getDomainStatistics failed for %s: %s", host, e)
+        return None
+
+
+def load_senuto_aio(url: str) -> dict | None:
+    """Resolve the 'AI Overviews visibility' block for the audited domain.
+
+    Uses the live Senuto REST API when credentials are configured (fresh counts),
+    and merges in any cached file (e.g. TOP3/10/50 distribution, avg_position).
+    Falls back to the cache file alone if the API is unavailable. Returns None
+    when neither source yields data — the audit then omits the section.
+    """
+    host = _senuto_host(url)
+    if not host:
+        return None
+    live = _senuto_fetch_aio(host)
+    cached = load_senuto_aio_cache(url)
+    if live and cached:
+        merged = dict(cached)
+        merged.update({k: v for k, v in live.items() if v is not None})
+        return merged
+    return live or cached
+
 
 app = FastAPI(title="AI SEO Audit")
 app.mount("/static", StaticFiles(directory="static"), name="static")
@@ -4010,6 +4156,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             "ai_snippet_preview": ai_snippet,
             "client_mode": client_mode,
             "overview": overview,
+            "senuto_aio": load_senuto_aio(url),
             "meta": {
                 "factor_meta": FACTOR_META,
                 "tech_factor_meta": TECH_FACTOR_META,
