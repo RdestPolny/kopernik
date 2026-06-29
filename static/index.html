@@ -2,6 +2,7 @@
 <html lang="pl">
 <head>
 <meta charset="UTF-8">
+<base href="/llms-audit/">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>AI SEO Audit — Strategiczni</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -384,8 +385,8 @@ button{font:inherit;cursor:pointer}
 <!-- TOP NAV -->
 <nav class="topnav">
   <div class="topnav-inner">
-    <a href="/" class="brand">
-      <img src="/static/assets/logo.png" alt="Strategiczni">
+    <a href="." class="brand">
+      <img src="static/assets/logo.png" alt="Strategiczni">
     </a>
     <div class="topnav-right">
       <div class="mode-toggle hidden" id="modeToggleNav">
@@ -544,7 +545,7 @@ async function fetchCandidatesAndPick(url) {
   showAuditLoader('Pobieram sitemapę i klasyfikuję podstrony...');
   setAuditPct(5);
   try {
-    const r = await fetch(`/audit/candidates?url=${encodeURIComponent(url)}`);
+    const r = await fetch(`audit/candidates?url=${encodeURIComponent(url)}`);
     if (!r.ok) throw new Error('Błąd pobierania kandydatów');
     const data = await r.json();
     const box = heroBox();
@@ -638,7 +639,7 @@ function startAudit(url, picks) {
 
   let qs = `url=${encodeURIComponent(url)}`;
   if (picks && picks.length) qs += `&picks=${encodeURIComponent(JSON.stringify(picks))}`;
-  const es = new EventSource(`/audit/stream?${qs}`);
+  const es = new EventSource(`audit/stream?${qs}`);
   es.onmessage = (e) => {
     const data = JSON.parse(e.data);
     if (data.step === 'progress') {
@@ -1616,7 +1617,7 @@ results.addEventListener('submit', async (e) => {
   btn.textContent = 'Wysyłam...';
   try {
     const score = currentResult ? computeScopeState(currentResult, 'all').overall : null;
-    const r = await fetch('/lead', {
+    const r = await fetch('lead', {
       method: 'POST',
       headers: {'Content-Type': 'application/json'},
       body: JSON.stringify({email, url: currentResult?.url || '', score}),

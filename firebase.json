@@ -1,0 +1,13 @@
+{
+  "hosting": {
+    "rewrites": [
+      {
+        "source": "/llms-audit/**",
+        "run": {
+          "serviceId": "kopernik",
+          "region": "europe-west1"
+        }
+      }
+    ]
+  }
+}

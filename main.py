@@ -5,7 +5,9 @@ import json
 import logging
 import os
 import re
+import threading
 import time
+import uuid
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
@@ -14,7 +16,7 @@ from urllib.parse import urlparse, urljoin
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
@@ -4282,6 +4284,122 @@ async def audit_endpoint(url: str, picks: str = ""):
     )
 
 
+# --- Async job API (do pobierania pełnego audytu przez narzędzia z limitem czasu,
+#     np. web_fetch w Cowork). Klient: GET /audit/start -> {job_id},
+#     potem polling GET /audit/result?job_id=... aż status == "done"/"error". ---
+_AUDIT_JOBS: dict[str, dict] = {}
+_AUDIT_JOBS_LOCK = threading.Lock()
+_AUDIT_JOBS_MAX = 100
+_AUDIT_JOB_TTL = 3600  # sekundy — po tym czasie zakończony job może zostać usunięty
+
+
+def _prune_audit_jobs():
+    """Usuwa stare/zakończone joby, żeby słownik nie rósł w nieskończoność."""
+    now = time.time()
+    with _AUDIT_JOBS_LOCK:
+        stale = [
+            jid for jid, j in _AUDIT_JOBS.items()
+            if j["status"] in ("done", "error") and now - j.get("finished_at", now) > _AUDIT_JOB_TTL
+        ]
+        for jid in stale:
+            _AUDIT_JOBS.pop(jid, None)
+        if len(_AUDIT_JOBS) > _AUDIT_JOBS_MAX:
+            oldest = sorted(_AUDIT_JOBS.items(), key=lambda kv: kv[1].get("created_at", 0))
+            for jid, _ in oldest[: len(_AUDIT_JOBS) - _AUDIT_JOBS_MAX]:
+                _AUDIT_JOBS.pop(jid, None)
+
+
+def _consume_audit_job(job_id: str, url: str, picks: list[dict] | None):
+    """Konsumuje generator audit_stream w wątku i aktualizuje stan joba."""
+    job = _AUDIT_JOBS[job_id]
+    try:
+        for chunk in audit_stream(url, picks):
+            line = chunk.strip()
+            if not line.startswith("data:"):
+                continue
+            try:
+                payload = json.loads(line[len("data:"):].strip())
+            except Exception:
+                continue
+            step = payload.get("step")
+            if step == "progress":
+                job["pct"] = payload.get("pct")
+                job["message"] = payload.get("message", "")
+            elif step == "done":
+                job["result"] = payload.get("result")
+                job["pct"] = 100
+            elif step == "error":
+                job["error"] = payload.get("message", "Błąd audytu")
+        if not job.get("error") and job.get("result") is None:
+            job["error"] = "Audyt zakończony bez wyniku."
+        job["status"] = "error" if job.get("error") else "done"
+    except Exception as e:  # noqa: BLE001
+        job["error"] = str(e)
+        job["status"] = "error"
+    finally:
+        job["finished_at"] = time.time()
+
+
+@app.get("/audit/start")
+async def audit_start(url: str, picks: str = ""):
+    """Startuje audyt w tle. Zwraca {job_id} natychmiast (bez czekania)."""
+    url = normalize_input_url(url)
+    if not url:
+        raise HTTPException(status_code=400, detail="Invalid URL or domain")
+    parsed_picks: list[dict] | None = None
+    if picks:
+        try:
+            parsed_picks = json.loads(picks)
+            if not isinstance(parsed_picks, list):
+                parsed_picks = None
+        except Exception:
+            parsed_picks = None
+    _prune_audit_jobs()
+    job_id = uuid.uuid4().hex
+    _AUDIT_JOBS[job_id] = {
+        "status": "running",
+        "pct": 0,
+        "message": "Start audytu...",
+        "result": None,
+        "error": None,
+        "url": url,
+        "created_at": time.time(),
+    }
+    threading.Thread(
+        target=_consume_audit_job, args=(job_id, url, parsed_picks), daemon=True
+    ).start()
+    return {"job_id": job_id, "status": "running", "url": url}
+
+
+@app.get("/audit/result")
+async def audit_result(job_id: str, fields: str = ""):
+    """Status/wynik joba. Gdy status == 'done', zawiera pełny 'result'.
+
+    Opcjonalny `fields` (klucze top-level po przecinku, np. 'scores,synthesis')
+    ogranicza zwracany 'result' do wybranych sekcji — przydatne, gdy klient
+    ma limit rozmiaru odpowiedzi.
+    """
+    job = _AUDIT_JOBS.get(job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Unknown job_id")
+    resp = {
+        "job_id": job_id,
+        "status": job["status"],
+        "pct": job.get("pct"),
+        "message": job.get("message"),
+        "url": job.get("url"),
+    }
+    if job["status"] == "done":
+        result = job["result"]
+        if fields and isinstance(result, dict):
+            keys = [k.strip() for k in fields.split(",") if k.strip()]
+            result = {k: result.get(k) for k in keys}
+        resp["result"] = result
+    elif job["status"] == "error":
+        resp["error"] = job["error"]
+    return resp
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -4311,3 +4429,15 @@ async def capture_lead(lead: LeadRequest):
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Could not store lead: {e}")
     return {"status": "ok"}
+
+
+# --- Serwowanie pod prefiksem /llms-audit (za Firebase Hosting) ---
+# Cała dotychczasowa appka (trasy, /static) zostaje zamontowana pod /llms-audit,
+# żeby działała pod adresem strategiczni.ai/llms-audit. Uruchamiamy "main:root".
+root = FastAPI()
+root.mount("/llms-audit", app)
+
+
+@root.get("/")
+def _root_redirect():
+    return RedirectResponse("/llms-audit/")
