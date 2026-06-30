@@ -1148,17 +1148,26 @@ function drawHeroRadar(groups, overall) {
     let chartGroups = groupOrder(currentResult).map(id => groups.find(g => g.id === id) || {id, label: groupLabel(currentResult, id), score: 0});
     // Sortuj od najlepszego do najgorszego wyniku (null traktujemy jako najgorszy).
     chartGroups = chartGroups.slice().sort((a, b) => (b.score === null ? -1 : b.score) - (a.score === null ? -1 : a.score));
-    const labels = chartGroups.map(g => {
-      if (g.id === 'ai_aeo') return ['AI', 'AEO'];
-      if (g.id === 'patents') return ['Patenty', 'Google'];
-      if (g.id === 'technical') return ['Techniczne', 'SEO'];
-      return [g.label];
+    const legendLabels = chartGroups.map(g => {
+      if (g.id === 'ai_aeo') return 'AI AEO';
+      if (g.id === 'patents') return 'Patenty Google';
+      if (g.id === 'technical') return 'Techniczne SEO';
+      return g.label;
     });
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
-    // Kolor słupka zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
-    const barColors = chartGroups.map(g => scoreColor(g.score));
+    // Kolor pierścienia zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
+    const ringColors = chartGroups.map(g => scoreColor(g.score));
+    const overallColor = scoreColor(overall);
 
-    function render3DBars() {
+    // Pierścienie aktywności (styl Apple Watch): każda kategoria = jeden łuk,
+    // długość łuku = wynik, w środku wynik ogólny, na dole legenda.
+    let rafId = null;
+    const animStart = performance.now();
+    const animMs = 1100;
+    const easeOut = t => 1 - Math.pow(1 - t, 3);
+    const TAU = Math.PI * 2;
+
+    function drawRings(progress) {
       const wrap = canvas.parentElement;
       const cssW = (wrap && wrap.clientWidth) || 480;
       const cssH = (wrap && wrap.clientHeight) || 480;
@@ -1172,89 +1181,101 @@ function drawHeroRadar(groups, overall) {
       ctx.clearRect(0, 0, cssW, cssH);
 
       const n = data.length;
-      const padLeft = 30, padRight = 30, padTop = 44, padBottom = 54;
-      const availW = cssW - padLeft - padRight;
-      const availH = cssH - padTop - padBottom;
-      // Głębia bryły słupka (kierunek "w głąb": w prawo i w górę).
-      const depth = Math.min(20, cssW * 0.045);
-      const dx = depth, dy = -depth * 0.55;
-      // Skos całego rzędu: kolejne słupki przesuwają się w prawo i w górę
-      // (od lewy-dół do prawy-góra), dając wrażenie cofania się w głąb po przekątnej.
-      const barW = Math.min(46, availW / (n + 1.5));
-      const stepX = (availW - barW - dx) / Math.max(1, n - 1);
-      const stepY = (availH * 0.42) / Math.max(1, n - 1);
-      const hMax = availH * 0.46;
-      const baseX0 = padLeft;
-      const baseY0 = cssH - padBottom;
+      const legendCols = 2;
+      const legendRows = Math.ceil(n / legendCols);
+      const legendRowH = 22;
+      const legendH = legendRows * legendRowH + 12;
+      const padTop = 14;
+      const ringsAreaH = cssH - padTop - legendH;
+      const cx = cssW / 2;
+      const cy = padTop + ringsAreaH / 2;
+      const outerR = Math.min(cssW, ringsAreaH) / 2 - 10;
+      const centerR = outerR * 0.32;            // wolne pole na wynik ogólny
+      const band = (outerR - centerR) / n;
+      const lineW = Math.max(6, band * 0.60);
+      const start = -Math.PI / 2;               // start od góry
 
-      // Delikatna "podłoga" biegnąca po skosie przez podstawy słupków.
-      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      ctx.moveTo(baseX0, baseY0);
-      ctx.lineTo(baseX0 + (n - 1) * stepX + barW + dx, baseY0 - (n - 1) * stepY + dy);
-      ctx.stroke();
+      // Pierścienie: zewnętrzny = najlepszy wynik (sortowanie malejące).
+      data.forEach((val, i) => {
+        const r = outerR - band * (i + 0.5);
+        const sweep = (val / 100) * TAU * progress;
+        const color = ringColors[i];
 
-      // Rysujemy od najdalszego (prawy-góra) do najbliższego (lewy-dół) — porządek malarza.
-      for (let i = n - 1; i >= 0; i--) {
-        const val = data[i];
-        const baseFX = baseX0 + i * stepX;
-        const baseFY = baseY0 - i * stepY;
-        const h = (val / 100) * hMax;
-        const topY = baseFY - h;
-        const front = barColors[i];
-        const side = shadeColor(front, -0.24);
-        const top = shadeColor(front, 0.16);
-
-        // ściana boczna (prawa)
-        ctx.fillStyle = side;
+        // tor (tło pierścienia)
         ctx.beginPath();
-        ctx.moveTo(baseFX + barW, topY);
-        ctx.lineTo(baseFX + barW + dx, topY + dy);
-        ctx.lineTo(baseFX + barW + dx, baseFY + dy);
-        ctx.lineTo(baseFX + barW, baseFY);
-        ctx.closePath();
-        ctx.fill();
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+        ctx.lineWidth = lineW;
+        ctx.lineCap = 'round';
+        ctx.arc(cx, cy, r, 0, TAU);
+        ctx.stroke();
 
-        // ściana górna
-        ctx.fillStyle = top;
+        // wynik z delikatną poświatą
+        if (sweep > 0.001) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = lineW;
+          ctx.lineCap = 'round';
+          ctx.shadowColor = color;
+          ctx.shadowBlur = 14;
+          ctx.arc(cx, cy, r, start, start + sweep);
+          ctx.stroke();
+          ctx.restore();
+        }
+      });
+
+      // Środek: wynik ogólny.
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = overallColor;
+      ctx.font = `700 ${Math.round(centerR * 0.92)}px 'Inter', sans-serif`;
+      ctx.fillText(String(Math.round((overall || 0) * progress)), cx, cy - centerR * 0.08);
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.font = "600 10px 'Inter', sans-serif";
+      ctx.fillText('WYNIK OGÓLNY', cx, cy + centerR * 0.52);
+
+      // Legenda na dole: kropka koloru + nazwa + wynik.
+      const legendTop = padTop + ringsAreaH + 6;
+      const colW = cssW / legendCols;
+      legendLabels.forEach((lbl, i) => {
+        const col = i % legendCols;
+        const row = Math.floor(i / legendCols);
+        const lx = col * colW + 16;
+        const ly = legendTop + row * legendRowH + legendRowH / 2;
         ctx.beginPath();
-        ctx.moveTo(baseFX, topY);
-        ctx.lineTo(baseFX + dx, topY + dy);
-        ctx.lineTo(baseFX + barW + dx, topY + dy);
-        ctx.lineTo(baseFX + barW, topY);
-        ctx.closePath();
+        ctx.fillStyle = ringColors[i];
+        ctx.arc(lx, ly, 5, 0, TAU);
         ctx.fill();
-
-        // ściana czołowa
-        ctx.fillStyle = front;
-        ctx.fillRect(baseFX, topY, barW, h);
-
-        // Wartość nad słupkiem.
-        ctx.fillStyle = 'rgba(255,255,255,0.96)';
-        ctx.font = "700 14px 'Inter', sans-serif";
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(String(val), baseFX + barW / 2 + dx / 2, topY + dy - 5);
-
-        // Etykieta kategorii pod słupkiem.
-        ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.font = "700 11px 'Inter', sans-serif";
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'top';
-        const lines = Array.isArray(labels[i]) ? labels[i] : [labels[i]];
-        lines.forEach((ln, li) => ctx.fillText(ln, baseFX + barW / 2, baseFY + 8 + li * 13));
-      }
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = "600 12px 'Inter', sans-serif";
+        ctx.fillText(lbl, lx + 12, ly);
+        ctx.textAlign = 'right';
+        ctx.fillStyle = ringColors[i];
+        ctx.font = "700 12px 'Inter', sans-serif";
+        ctx.fillText(String(data[i]), col * colW + colW - 14, ly);
+      });
     }
 
-    render3DBars();
+    function animate(now) {
+      const t = Math.min(1, (now - animStart) / animMs);
+      drawRings(easeOut(t));
+      if (t < 1) rafId = requestAnimationFrame(animate);
+      else rafId = null;
+    }
+    rafId = requestAnimationFrame(animate);
+
     if (drawHeroRadar._onResize) window.removeEventListener('resize', drawHeroRadar._onResize);
-    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart') === canvas) render3DBars(); };
+    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart') === canvas) drawRings(1); };
     window.addEventListener('resize', drawHeroRadar._onResize);
 
     heroRadarChart = {
-      toBase64Image: () => { try { return canvas.toDataURL('image/png'); } catch (e) { return ''; } },
-      destroy: () => { if (drawHeroRadar._onResize) { window.removeEventListener('resize', drawHeroRadar._onResize); drawHeroRadar._onResize = null; } }
+      toBase64Image: () => { try { drawRings(1); return canvas.toDataURL('image/png'); } catch (e) { return ''; } },
+      destroy: () => {
+        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+        if (drawHeroRadar._onResize) { window.removeEventListener('resize', drawHeroRadar._onResize); drawHeroRadar._onResize = null; }
+      }
     };
   }, 50);
 }
