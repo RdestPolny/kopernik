@@ -378,6 +378,42 @@ button{font:inherit;cursor:pointer}
 .extra-num{font-family:var(--mono);font-size:0.74rem;color:var(--gold);font-weight:600;letter-spacing:0.1em}
 .extra-head h2{font-size:1.4rem;margin:0}
 .extra-blurb{color:var(--muted);font-size:0.9rem;margin:0 0 18px;max-width:62ch}
+
+/* === Brand Perception === */
+.bp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
+@media(max-width:860px){.bp-grid{grid-template-columns:1fr}}
+.bp-card{border:1px solid var(--rule);border-radius:6px;padding:20px 22px;position:relative;background:#fff}
+.bp-card-header{display:flex;align-items:center;gap:10px;margin-bottom:14px}
+.bp-logo{height:22px;width:auto;display:block}
+.bp-model-name{font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted)}
+.bp-source-badge{font-family:var(--mono);font-size:0.66rem;padding:2px 7px;border-radius:2px;margin-left:auto}
+.bp-source-badge.web{background:#e8f4ec;color:#0f7b36}
+.bp-source-badge.train{background:#f0f2ff;color:#3a57b5}
+.bp-text{font-size:0.88rem;line-height:1.6;color:var(--ink)}
+.bp-text.unknown{color:var(--muted);font-style:italic}
+.bp-citations{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule)}
+.bp-citations-label{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:5px}
+.bp-citations a{display:block;font-size:0.76rem;color:#3a57b5;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;text-decoration:none;line-height:1.4}
+.bp-citations a:hover{text-decoration:underline}
+.bp-unavail{color:var(--muted);font-size:0.85rem;font-style:italic}
+.bp-analysis{border:1px solid var(--rule);border-radius:6px;padding:20px 24px;background:#fafafa}
+.bp-analysis-head{display:flex;align-items:center;gap:12px;margin-bottom:16px}
+.bp-score-ring{width:54px;height:54px;flex-shrink:0}
+.bp-score-ring circle{fill:none;stroke-width:5}
+.bp-score-ring .track{stroke:#e8e8e0}
+.bp-score-ring .fill{stroke:#c9a84c;stroke-linecap:round;transition:stroke-dashoffset .4s}
+.bp-score-val{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:var(--mono);font-size:0.78rem;font-weight:700}
+.bp-score-wrap{position:relative;width:54px;height:54px}
+.bp-rationale{font-size:0.85rem;color:var(--muted);margin:0}
+.bp-sections{display:grid;grid-template-columns:1fr 1fr;gap:16px 28px}
+@media(max-width:640px){.bp-sections{grid-template-columns:1fr}}
+.bp-section-title{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--gold);margin:0 0 8px;font-weight:600}
+.bp-list{margin:0;padding:0;list-style:none}
+.bp-list li{font-size:0.85rem;line-height:1.55;color:var(--ink);padding-left:14px;position:relative;margin-bottom:4px}
+.bp-list li::before{content:"·";position:absolute;left:0;color:var(--gold)}
+.bp-list.gaps li::before{color:#c94040}
+.bp-rec{font-size:0.85rem;line-height:1.55;color:var(--ink);margin-top:16px;padding-top:14px;border-top:1px solid var(--rule)}
+.bp-rec strong{color:var(--ink)}
 </style>
 </head>
 <body>
@@ -1571,8 +1607,99 @@ function renderExtras(r) {
         <div class="extra-head"><span class="extra-num">10</span><h2>Analizowane podstrony</h2></div>
         ${renderPagesList(r.page_audits || [])}
       </section>
+      <section class="extra">
+        <div class="extra-head"><span class="extra-num">11</span><h2>Jak Twoją firmę postrzega AI?</h2></div>
+        <p class="extra-blurb">Co Gemini, Perplexity i ChatGPT odpowiadają na pytanie o Twoją firmę — bez podpowiadania im treści ze strony.</p>
+        ${renderBrandPerception(r)}
+      </section>
     </div>
   `;
+}
+
+function renderBrandPerception(r) {
+  const bp = r.brand_perception || {};
+  const gaps = r.brand_gaps || {};
+
+  const MODEL_META = {
+    gemini:     { name: 'Gemini',     color: '#4285f4', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8a/Google_Gemini_logo.svg/120px-Google_Gemini_logo.svg.png', sourceLabel: 'dane treningowe', sourceClass: 'train' },
+    perplexity: { name: 'Perplexity', color: '#20b2aa', logo: 'https://upload.wikimedia.org/wikipedia/commons/b/b5/Perplexity_AI_Turquoise_on_White.png', sourceLabel: 'web search', sourceClass: 'web' },
+    chatgpt:    { name: 'ChatGPT',    color: '#10a37f', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/120px-ChatGPT_logo.svg.png', sourceLabel: 'dane treningowe', sourceClass: 'train' },
+  };
+
+  const cards = Object.entries(MODEL_META).map(([key, meta]) => {
+    const d = bp[key] || {};
+    if (!d.available) {
+      const err = d.error && d.error.includes('not set') ? 'Klucz API niedostępny.' : (d.error ? esc(d.error.slice(0, 120)) : 'Niedostępny');
+      return `<div class="bp-card">
+        <div class="bp-card-header">
+          <img class="bp-logo" src="${meta.logo}" alt="${meta.name}" referrerpolicy="no-referrer">
+          <span class="bp-model-name">${meta.name}</span>
+        </div>
+        <div class="bp-unavail">${err}</div>
+      </div>`;
+    }
+    const text = d.text || '';
+    const isUnknown = /nie mam informacji|nie wiem|nie znam|brak informacji|nie posiadam/i.test(text);
+    const citationsHtml = (d.citations && d.citations.length)
+      ? `<div class="bp-citations"><div class="bp-citations-label">Źródła</div>${d.citations.slice(0,4).map(c => `<a href="${esc(c)}" target="_blank" rel="noopener">${esc(c.replace(/^https?:\/\//, '').slice(0,60))}</a>`).join('')}</div>`
+      : '';
+    return `<div class="bp-card">
+      <div class="bp-card-header">
+        <img class="bp-logo" src="${meta.logo}" alt="${meta.name}" referrerpolicy="no-referrer">
+        <span class="bp-model-name">${meta.name}</span>
+        <span class="bp-source-badge ${meta.sourceClass}">${meta.sourceLabel}</span>
+      </div>
+      <div class="bp-text ${isUnknown ? 'unknown' : ''}">${esc(text)}</div>
+      ${citationsHtml}
+    </div>`;
+  }).join('');
+
+  // Analysis panel
+  let analysisHtml = '';
+  if (gaps.available) {
+    const score = typeof gaps.ai_brand_score === 'number' ? gaps.ai_brand_score : 0;
+    const circ = 2 * Math.PI * 22;
+    const offset = circ * (1 - score / 100);
+    const knownBy = Array.isArray(gaps.brand_known_by) ? gaps.brand_known_by : [];
+    const discreps = Array.isArray(gaps.discrepancies) ? gaps.discrepancies : [];
+    const gapList = Array.isArray(gaps.gaps) ? gaps.gaps : [];
+    const rec = gaps.recommendation || '';
+    const rationale = gaps.score_rationale || '';
+
+    const knownChips = knownBy.length
+      ? knownBy.map(m => `<span class="bp-source-badge ${m === 'perplexity' ? 'web' : 'train'}" style="margin-right:4px">${esc(m)}</span>`).join('')
+      : '<span style="color:var(--muted);font-size:0.82rem">żaden model</span>';
+
+    analysisHtml = `<div class="bp-analysis">
+      <div class="bp-analysis-head">
+        <div class="bp-score-wrap">
+          <svg class="bp-score-ring" viewBox="0 0 54 54">
+            <circle class="track" cx="27" cy="27" r="22"/>
+            <circle class="fill" cx="27" cy="27" r="22" stroke-dasharray="${circ.toFixed(1)}" stroke-dashoffset="${offset.toFixed(1)}" transform="rotate(-90 27 27)"/>
+          </svg>
+          <div class="bp-score-val">${score}</div>
+        </div>
+        <div>
+          <div style="font-size:0.9rem;font-weight:600;margin-bottom:2px">AI Brand Score</div>
+          <p class="bp-rationale">${esc(rationale)}</p>
+        </div>
+      </div>
+      <div style="margin-bottom:12px;font-size:0.82rem;color:var(--muted)">Firma rozpoznana przez: ${knownChips}</div>
+      <div class="bp-sections">
+        ${discreps.length ? `<div>
+          <div class="bp-section-title">Rozbieżności między modelami</div>
+          <ul class="bp-list">${discreps.map(d => `<li>${esc(d)}</li>`).join('')}</ul>
+        </div>` : ''}
+        ${gapList.length ? `<div>
+          <div class="bp-section-title">Luki — czego AI nie wie</div>
+          <ul class="bp-list gaps">${gapList.map(g => `<li>${esc(g)}</li>`).join('')}</ul>
+        </div>` : ''}
+      </div>
+      ${rec ? `<div class="bp-rec"><strong>Rekomendacja:</strong> ${esc(rec)}</div>` : ''}
+    </div>`;
+  }
+
+  return `<div class="bp-grid">${cards}</div>${analysisHtml}`;
 }
 
 function handleAuditClick(e) {

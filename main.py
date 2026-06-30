@@ -5,12 +5,14 @@ import json
 import logging
 import os
 import re
+import smtplib
 import threading
 import time
 import uuid
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
+from email.mime.text import MIMEText
 from urllib.parse import urlparse, urljoin
 
 import requests
@@ -37,8 +39,20 @@ FIRECRAWL_SCRAPE = "https://api.firecrawl.dev/v1/scrape"
 FIRECRAWL_MAP = "https://api.firecrawl.dev/v1/map"
 PAGESPEED_KEY = os.getenv("PAGESPEED_KEY", "")
 PERPLEXITY_KEY = os.getenv("PERPLEXITY_KEY", "")
+GPT_KEY = os.getenv("GPT_KEY", "")
+LEADS_TOKEN = os.getenv("LEADS_TOKEN", "")
+FIRESTORE_PROJECT = os.getenv("FIRESTORE_PROJECT", "")
+LEADS_EMAIL = os.getenv("LEADS_EMAIL", "")      # odbiorca powiadomień, np. marcin@...
+SMTP_USER   = os.getenv("SMTP_USER", "")        # adres nadawcy / login SMTP
+SMTP_PASS   = os.getenv("SMTP_PASS", "")        # hasło lub App Password
+SMTP_HOST   = os.getenv("SMTP_HOST", "smtp.gmail.com")
+SMTP_PORT   = int(os.getenv("SMTP_PORT", "587"))
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 _PSI_TOKEN_CACHE: dict = {"token": None, "exp": 0}
+
+# In-memory lead storage (resets on restart; backed by Firestore/stdout for persistence)
+_LEADS_MEMORY: list[dict] = []
+_LEADS_LOCK = threading.Lock()
 
 AI_BOTS = ["GPTBot", "PerplexityBot", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "Google-Extended"]
 MAX_AUDIT_PAGES = 5
@@ -3478,6 +3492,174 @@ def _gemini_call(prompt: str, temperature: float = 0.1, max_tokens: int = 4096) 
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
+def _openai_call(prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 500) -> str:
+    r = requests.post(
+        "https://api.openai.com/v1/chat/completions",
+        headers={"Authorization": f"Bearer {GPT_KEY}", "Content-Type": "application/json"},
+        json={"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
+        timeout=30,
+    )
+    r.raise_for_status()
+    return r.json()["choices"][0]["message"]["content"]
+
+
+def _perplexity_brand_call(prompt: str, max_tokens: int = 600) -> dict:
+    r = requests.post(
+        "https://api.perplexity.ai/chat/completions",
+        headers={"Authorization": f"Bearer {PERPLEXITY_KEY}", "Content-Type": "application/json"},
+        json={
+            "model": "sonar-pro",
+            "messages": [{"role": "user", "content": prompt}],
+            "max_tokens": max_tokens,
+        },
+        timeout=30,
+    )
+    r.raise_for_status()
+    data = r.json()
+    return {
+        "text": data["choices"][0]["message"]["content"],
+        "citations": data.get("citations", []),
+    }
+
+
+def generate_brand_perception(domain: str, title: str) -> dict:
+    """Ask Gemini, Perplexity and GPT what they know about this brand.
+
+    Deliberately does NOT pass page content — we want to see what each model
+    independently knows (from training data or live web search), not what we tell it.
+    """
+    prompt = (
+        f"Czym zajmuje się firma działająca pod adresem {domain}? "
+        f"Co oferuje i dla kogo? Czy masz o niej jakiekolwiek informacje? "
+        f"Odpowiedz szczerze — jeśli nie masz informacji o tej konkretnej firmie, napisz to wprost. "
+        f"Odpowiedź powinna mieć 3–5 zdań."
+    )
+    results: dict = {}
+
+    def _ask_gemini() -> None:
+        try:
+            text = _gemini_call(prompt, temperature=0.1, max_tokens=400)
+            results["gemini"] = {"text": text, "available": True, "source": "training_data"}
+        except Exception as e:
+            results["gemini"] = {"available": False, "error": str(e)}
+
+    def _ask_perplexity() -> None:
+        if not PERPLEXITY_KEY:
+            results["perplexity"] = {"available": False, "error": "PERPLEXITY_KEY not set"}
+            return
+        try:
+            data = _perplexity_brand_call(prompt)
+            results["perplexity"] = {
+                "text": data["text"],
+                "citations": data["citations"],
+                "available": True,
+                "source": "web_search",
+            }
+        except Exception as e:
+            results["perplexity"] = {"available": False, "error": str(e)}
+
+    def _ask_gpt() -> None:
+        if not GPT_KEY:
+            results["chatgpt"] = {"available": False, "error": "GPT_KEY not set"}
+            return
+        try:
+            text = _openai_call(prompt)
+            results["chatgpt"] = {"text": text, "available": True, "source": "training_data"}
+        except Exception as e:
+            results["chatgpt"] = {"available": False, "error": str(e)}
+
+    with ThreadPoolExecutor(max_workers=3) as executor:
+        futs = [executor.submit(_ask_gemini), executor.submit(_ask_perplexity), executor.submit(_ask_gpt)]
+        for f in as_completed(futs):
+            _ = f.result()  # surface exceptions to log
+
+    return results
+
+
+def analyze_brand_gaps(perception: dict, domain: str) -> dict:
+    """Use Gemini to compare the three model responses and surface discrepancies."""
+    texts = []
+    for model_name in ["gemini", "perplexity", "chatgpt"]:
+        d = perception.get(model_name, {})
+        if d.get("available") and d.get("text"):
+            texts.append(f"{model_name.upper()}: {d['text']}")
+    if not texts:
+        return {"available": False, "error": "no model responses available"}
+
+    models_str = "\n\n".join(texts)
+    prompt = f"""Poniżej masz odpowiedzi różnych modeli AI na pytanie o firmę pod adresem {domain}:
+
+{models_str}
+
+Przeanalizuj i zwróć JSON (bez markdown, bez komentarzy):
+{{
+  "brand_known_by": ["nazwy modeli które naprawdę coś wiedziały, np. gemini, perplexity, chatgpt"],
+  "discrepancies": ["max 3 rozbieżności między modelami — co inaczej opisują lub czemu jeden wie a drugi nie"],
+  "gaps": ["max 3 informacje których żaden nie wspomniał, a powinien dla typowej firmy"],
+  "ai_brand_score": 0,
+  "score_rationale": "jedno zdanie wyjaśniające wynik",
+  "recommendation": "jedna konkretna rekomendacja poprawy rozpoznawalności marki w AI"
+}}
+
+ai_brand_score: 0=nieznana przez żaden model, 100=doskonale i spójnie opisana przez wszystkie.
+Jeśli wszystkie modele nie mają informacji — score=0."""
+    try:
+        result = _extract_json(_gemini_call(prompt, temperature=0.2, max_tokens=900))
+        result["available"] = True
+        return result
+    except Exception as e:
+        return {"available": False, "error": str(e)}
+
+
+def _send_lead_email(record: dict) -> None:
+    """Best-effort e-mail notification for new lead. Requires LEADS_EMAIL + SMTP_USER + SMTP_PASS."""
+    if not (LEADS_EMAIL and SMTP_USER and SMTP_PASS):
+        return
+    try:
+        score_str = f"  Wynik audytu: {record['score']}\n" if record.get("score") is not None else ""
+        body = (
+            f"Nowy lead z audytu AI SEO\n"
+            f"{'─' * 36}\n"
+            f"  E-mail:  {record['email']}\n"
+            f"  Domena:  {record.get('url', '—')}\n"
+            f"{score_str}"
+            f"  Czas:    {record['ts']}\n"
+        )
+        msg = MIMEText(body, "plain", "utf-8")
+        msg["Subject"] = f"[Kopernik] Lead: {record['email']}"
+        msg["From"] = SMTP_USER
+        msg["To"] = LEADS_EMAIL
+        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+            s.starttls()
+            s.login(SMTP_USER, SMTP_PASS)
+            s.sendmail(SMTP_USER, [LEADS_EMAIL], msg.as_bytes())
+    except Exception as e:
+        print(f"LEAD_EMAIL_ERR: {e}", flush=True)
+
+
+def _save_lead_to_firestore(record: dict) -> None:
+    """Best-effort Firestore write via REST (no client library required)."""
+    project = FIRESTORE_PROJECT
+    if not project:
+        return
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        fields = {k: {"stringValue": str(v) if v is not None else ""} for k, v in record.items()}
+        requests.post(
+            f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/leads",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"fields": fields},
+            timeout=10,
+        )
+    except Exception:
+        pass  # stdout already persists the lead
+
+
 def _extract_json(text: str) -> dict:
     text = text.strip()
     text = re.sub(r"^```(?:json)?\s*", "", text)
@@ -4175,6 +4357,15 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         except Exception as e:
             ai_snippet = {"available": False, "error": str(e)}
 
+        yield event("progress", {"message": "Jak Twoją firmę postrzega AI? (Gemini / Perplexity / ChatGPT)...", "pct": 94})
+        try:
+            _domain = urlparse(url).netloc or url
+            brand_perception = generate_brand_perception(_domain, homepage_title)
+            brand_gaps = analyze_brand_gaps(brand_perception, _domain)
+        except Exception as e:
+            brand_perception = {}
+            brand_gaps = {"available": False, "error": str(e)}
+
         yield event("progress", {"message": "Tryb Klient: tłumaczenie wyników na prosty język (osobne zapytanie)...", "pct": 95})
         try:
             client_mode = translate_for_client_mode(page_audits, synth, scores_obj, fan_out, homepage_title)
@@ -4210,6 +4401,8 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             "fan_out": fan_out,
             "synthesis": synth,
             "ai_snippet_preview": ai_snippet,
+            "brand_perception": brand_perception,
+            "brand_gaps": brand_gaps,
             "client_mode": client_mode,
             "overview": overview,
             "senuto_aio": load_senuto_aio(url),
@@ -4422,13 +4615,34 @@ async def capture_lead(lead: LeadRequest):
         "url": (lead.url or "").strip()[:500],
         "score": lead.score,
     }
-    path = os.getenv("LEADS_FILE", "leads.jsonl")
-    try:
-        with open(path, "a", encoding="utf-8") as f:
-            f.write(json.dumps(record, ensure_ascii=False) + "\n")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Could not store lead: {e}")
+    # 1. stdout → Cloud Logging (persists across restarts)
+    print(f"LEAD: {json.dumps(record, ensure_ascii=False)}", flush=True)
+    # 2. In-memory (survives within the same instance, readable via GET /leads)
+    with _LEADS_LOCK:
+        _LEADS_MEMORY.append(record)
+    # 3. File (only if LEADS_FILE env var explicitly set to a persistent path)
+    path = os.getenv("LEADS_FILE", "")
+    if path:
+        try:
+            with open(path, "a", encoding="utf-8") as f:
+                f.write(json.dumps(record, ensure_ascii=False) + "\n")
+        except Exception:
+            pass
+    # 4. Firestore (best-effort, if FIRESTORE_PROJECT is set)
+    threading.Thread(target=_save_lead_to_firestore, args=(record,), daemon=True).start()
+    # 5. E-mail notification (best-effort, if LEADS_EMAIL + SMTP_USER + SMTP_PASS set)
+    threading.Thread(target=_send_lead_email, args=(record,), daemon=True).start()
     return {"status": "ok"}
+
+
+@app.get("/leads")
+async def list_leads(token: str = ""):
+    """Return in-memory leads for this instance. Protect with LEADS_TOKEN env var."""
+    tok = LEADS_TOKEN
+    if not tok or token != tok:
+        raise HTTPException(status_code=403, detail="Forbidden — set LEADS_TOKEN and pass ?token=...")
+    with _LEADS_LOCK:
+        return {"leads": list(_LEADS_MEMORY), "count": len(_LEADS_MEMORY)}
 
 
 # --- Serwowanie pod prefiksem /llms-audit (za Firebase Hosting) ---
