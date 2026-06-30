@@ -455,13 +455,6 @@ button{font:inherit;cursor:pointer}
 <header class="hero" id="hero">
   <div class="inner" style="display:flex; justify-content:space-between; gap:40px; align-items:stretch; flex-wrap:wrap;">
     <div class="hero-left" style="flex:1; min-width:300px; max-width:560px;">
-      <div class="meta-line">
-        <div class="llm-logos">
-          <span class="llm-chip"><img src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQSBcX_MBA4OOwSaXiYcpmzKmy79qat_2xgT_qaemk4Mw&s" alt="ChatGPT" referrerpolicy="no-referrer"></span>
-          <span class="llm-chip"><img src="https://upload.wikimedia.org/wikipedia/commons/thumb/1/1d/Google_Gemini_icon_2025.svg/960px-Google_Gemini_icon_2025.svg.png" alt="Gemini" referrerpolicy="no-referrer"></span>
-          <span class="llm-chip"><img src="https://upload.wikimedia.org/wikipedia/commons/b/b5/Perplexity_AI_Turquoise_on_White.png" alt="Perplexity" referrerpolicy="no-referrer"></span>
-        </div>
-      </div>
       <h1>Czy Twoja strona istnieje dla <em>AI</em>?</h1>
       <p class="lede">Kompleksowy audyt widoczności w ekosystemie LLM. Sprawdzamy <strong>E-E-A-T</strong>, topical authority, ekstraktywność treści dla RAG, schema, fan-out zapytań oraz sprawdzalne sygnały z bazy patentów Google — per podstrona, z dopasowaniem factor setu do typu strony.</p>
       <form class="form" id="auditForm">
@@ -1074,11 +1067,23 @@ function renderHeroRadarShell() {
   `;
 }
 
+// Rozjaśnia/przyciemnia kolor hex o zadany procent (-1..1). Dla wartości nie-hex zwraca bez zmian.
+function shadeColor(color, pct) {
+  if (typeof color !== 'string' || color.charAt(0) !== '#') return color;
+  let h = color.slice(1);
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  const adj = c => Math.max(0, Math.min(255, Math.round(c + 255 * pct)));
+  return `rgb(${adj(r)},${adj(g)},${adj(b)})`;
+}
+
 function drawHeroRadar(groups, overall) {
   setTimeout(() => {
     const canvas = document.getElementById('heroRadarChart');
-    if (!canvas || typeof Chart === 'undefined') return;
-    if (heroRadarChart) {
+    if (!canvas) return;
+    if (heroRadarChart && typeof heroRadarChart.destroy === 'function') {
       heroRadarChart.destroy();
       heroRadarChart = null;
     }
@@ -1086,51 +1091,114 @@ function drawHeroRadar(groups, overall) {
     const labels = chartGroups.map(g => {
       if (g.id === 'ai_aeo') return ['AI', 'AEO'];
       if (g.id === 'patents') return ['Patenty', 'Google'];
-      if (g.id === 'technical') return 'Techniczne SEO';
-      return g.label;
+      if (g.id === 'technical') return ['Techniczne', 'SEO'];
+      return [g.label];
     });
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
-    // Każda kropka w kolorze zależnym od wyniku swojej kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
-    const pointColors = chartGroups.map(g => scoreColor(g.score));
-    // Kolor całego wykresu zależny od wyniku ogólnego (słabo → czerwony, dobrze → zielony).
-    const lineColor = scoreColor(overall);
-    const fillColor = lineColor.charAt(0) === '#' ? hexToRgba(lineColor, 0.18) : 'rgba(237, 217, 113, 0.18)';
-    heroRadarChart = new Chart(canvas.getContext('2d'), {
-      type: 'radar',
-      data: {
-        labels,
-        datasets: [{
-          data,
-          backgroundColor: fillColor,
-          borderColor: lineColor,
-          pointBackgroundColor: pointColors,
-          pointBorderColor: '#1e3351',
-          pointRadius: 6,
-          pointHoverRadius: 8,
-          pointBorderWidth: 2,
-          borderWidth: 2.5,
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        plugins: { legend: { display: false }, tooltip: { callbacks: { label: ctx => `${ctx.raw}/100` } } },
-        scales: {
-          r: {
-            min: 0,
-            max: 100,
-            ticks: { display: false },
-            grid: { color: 'rgba(255, 255, 255, 0.18)' },
-            angleLines: { color: 'rgba(255, 255, 255, 0.18)' },
-            pointLabels: {
-              font: { family: "'Inter', sans-serif", size: 13, weight: '700' },
-              color: 'rgba(255, 255, 255, 0.9)',
-              padding: 12
-            }
-          }
-        }
+    // Kolor słupka zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
+    const barColors = chartGroups.map(g => scoreColor(g.score));
+
+    function render3DBars() {
+      const wrap = canvas.parentElement;
+      const cssW = (wrap && wrap.clientWidth) || 480;
+      const cssH = (wrap && wrap.clientHeight) || 480;
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      canvas.style.width = cssW + 'px';
+      canvas.style.height = cssH + 'px';
+      const ctx = canvas.getContext('2d');
+      ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      ctx.clearRect(0, 0, cssW, cssH);
+
+      const padTop = 36, padBottom = 64, padLeft = 36, padRight = 24;
+      const depth = Math.min(24, cssW * 0.055);
+      const dx = depth, dy = -depth * 0.6;
+      const plotW = cssW - padLeft - padRight - dx;
+      const plotH = cssH - padTop - padBottom + dy;
+      const baseY = cssH - padBottom;
+      const baseX = padLeft;
+      const maxVal = 100;
+      const n = data.length;
+      const slot = plotW / n;
+      const barW = Math.min(slot * 0.5, 64);
+
+      // Linie siatki i etykiety osi 0/25/50/75/100 (z efektem głębi).
+      for (let v = 0; v <= 100; v += 25) {
+        const y = baseY - (v / maxVal) * plotH;
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.moveTo(baseX + dx, y + dy);
+        ctx.lineTo(baseX + dx + plotW, y + dy);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(baseX, y);
+        ctx.lineTo(baseX + dx, y + dy);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = "600 11px 'Inter', sans-serif";
+        ctx.textAlign = 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(v), baseX - 8, y);
       }
-    });
+
+      // Słupki 3D: ściana boczna, górna i czołowa.
+      data.forEach((val, i) => {
+        const cx = baseX + slot * i + (slot - barW) / 2;
+        const h = (val / maxVal) * plotH;
+        const topY = baseY - h;
+        const front = barColors[i];
+        const side = shadeColor(front, -0.22);
+        const top = shadeColor(front, 0.16);
+
+        ctx.fillStyle = side;
+        ctx.beginPath();
+        ctx.moveTo(cx + barW, topY);
+        ctx.lineTo(cx + barW + dx, topY + dy);
+        ctx.lineTo(cx + barW + dx, baseY + dy);
+        ctx.lineTo(cx + barW, baseY);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = top;
+        ctx.beginPath();
+        ctx.moveTo(cx, topY);
+        ctx.lineTo(cx + dx, topY + dy);
+        ctx.lineTo(cx + barW + dx, topY + dy);
+        ctx.lineTo(cx + barW, topY);
+        ctx.closePath();
+        ctx.fill();
+
+        ctx.fillStyle = front;
+        ctx.fillRect(cx, topY, barW, h);
+
+        // Wartość nad słupkiem.
+        ctx.fillStyle = 'rgba(255,255,255,0.96)';
+        ctx.font = "700 14px 'Inter', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(String(val), cx + barW / 2 + dx / 2, topY + dy - 5);
+
+        // Etykieta kategorii pod słupkiem.
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = "700 12px 'Inter', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const lines = Array.isArray(labels[i]) ? labels[i] : [labels[i]];
+        lines.forEach((ln, li) => ctx.fillText(ln, cx + barW / 2, baseY + 10 + li * 14));
+      });
+    }
+
+    render3DBars();
+    if (drawHeroRadar._onResize) window.removeEventListener('resize', drawHeroRadar._onResize);
+    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart') === canvas) render3DBars(); };
+    window.addEventListener('resize', drawHeroRadar._onResize);
+
+    heroRadarChart = {
+      toBase64Image: () => { try { return canvas.toDataURL('image/png'); } catch (e) { return ''; } },
+      destroy: () => { if (drawHeroRadar._onResize) { window.removeEventListener('resize', drawHeroRadar._onResize); drawHeroRadar._onResize = null; } }
+    };
   }, 50);
 }
 
@@ -1984,7 +2052,7 @@ function reportToPrintHtml(m, chartImg) {
   <h1>Audyt AI SEO — ${esc2(m.domain)}</h1>
   <div class="sub">Wygenerowano: ${esc2(m.date)} · Strategiczni</div>
   <div class="overall"><span class="num">${m.overall}</span><span>/100 — wynik ogólny</span></div>
-  ${chartImg ? `<div class="chartbox"><img src="${chartImg}" alt="Wykres radarowy"></div>` : ''}
+  ${chartImg ? `<div class="chartbox"><img src="${chartImg}" alt="Wykres wyników kategorii"></div>` : ''}
   <h2>Wyniki wg kategorii</h2>
   <table><tbody>${catRows}</tbody></table>
   ${priHtml ? `<h2>Priorytety (Top 5)</h2><ol>${priHtml}</ol>` : ''}
