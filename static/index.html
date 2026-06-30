@@ -671,37 +671,56 @@ function startAudit(url, picks) {
   submitBtn.textContent = 'Audytuję...';
   results.classList.add('hidden');
   results.innerHTML = '';
-  showAuditLoader('Łączę ze streamem audytu...');
+  showAuditLoader('Startuję audyt...');
 
   let qs = `url=${encodeURIComponent(url)}`;
   if (picks && picks.length) qs += `&picks=${encodeURIComponent(JSON.stringify(picks))}`;
-  const es = new EventSource(`audit/stream?${qs}`);
-  es.onmessage = (e) => {
-    const data = JSON.parse(e.data);
-    if (data.step === 'progress') {
-      setAuditStep(data.message || '');
-      setAuditPct(data.pct);
-    } else if (data.step === 'done') {
-      setAuditPct(100);
-      setAuditStep('Audyt zakończony.');
-      es.close();
-      currentResult = data.result;
-      renderResult(data.result); // zastępuje loader wykresem radarowym
-      submitBtn.disabled = false;
-      submitBtn.textContent = 'Audytuj kolejną';
-    } else if (data.step === 'error') {
-      es.close();
-      auditLoaderError('Błąd: ' + (data.message || 'nieznany'));
+
+  // Używamy async job API zamiast EventSource — Firebase Hosting buforuje SSE
+  // i ma 60s timeout na rewrite. Polling krótkich zapytań omija oba ograniczenia.
+  fetch(`audit/start?${qs}`)
+    .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+    .then(({ job_id }) => _pollAuditJob(job_id))
+    .catch(err => {
+      auditLoaderError('Błąd startu audytu: ' + (err.message || err));
       submitBtn.disabled = false;
       submitBtn.textContent = 'Spróbuj ponownie';
+    });
+}
+
+function _pollAuditJob(job_id) {
+  let failures = 0;
+  const timer = setInterval(async () => {
+    try {
+      const r = await fetch(`audit/result?job_id=${encodeURIComponent(job_id)}`);
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const data = await r.json();
+      if (data.pct != null) setAuditPct(data.pct);
+      if (data.message) setAuditStep(data.message);
+      failures = 0;
+      if (data.status === 'done') {
+        clearInterval(timer);
+        setAuditPct(100);
+        setAuditStep('Audyt zakończony.');
+        currentResult = data.result;
+        renderResult(data.result);
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Audytuj kolejną';
+      } else if (data.status === 'error') {
+        clearInterval(timer);
+        auditLoaderError('Błąd: ' + (data.error || 'nieznany'));
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Spróbuj ponownie';
+      }
+    } catch (err) {
+      if (++failures >= 4) {
+        clearInterval(timer);
+        auditLoaderError('Brak odpowiedzi serwera.');
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Spróbuj ponownie';
+      }
     }
-  };
-  es.onerror = () => {
-    es.close();
-    auditLoaderError('Połączenie przerwane.');
-    submitBtn.disabled = false;
-    submitBtn.textContent = 'Spróbuj ponownie';
-  };
+  }, 2500);
 }
 
 function esc(s) { return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
