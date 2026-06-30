@@ -624,38 +624,95 @@ function showPagePicker(data) {
   const cand = data.candidates || {};
   const homepage = data.homepage;
   const groups = [
-    {key: 'service', label: 'Strona sprzedażowa (oferta / usługa / produkt)', required: true},
-    {key: 'article', label: 'Artykuł / wpis blogowy / poradnik', required: true},
-    {key: 'about', label: 'O firmie / zespół (jeśli istnieje)', required: false},
+    {key: 'service', label: 'Strona sprzedażowa (oferta / usługa / produkt)', hint: 'Podstrona, na której sprzedajesz usługę lub produkt.', required: true},
+    {key: 'article', label: 'Artykuł / wpis blogowy / poradnik', hint: 'Treść ekspercka — blog, poradnik lub baza wiedzy.', required: true},
+    {key: 'about', label: 'O firmie / zespół', hint: 'Strona budująca zaufanie (E-E-A-T). Możesz pominąć ten krok.', required: false},
   ];
+  const total = groups.length;
+  const dots = groups.map((g, i) => `<span class="pp-dot${i === 0 ? ' active' : ''}" data-dot="${i}"></span>`).join('');
+  const stepsHtml = groups.map((g, i) => `
+    <div class="pp-step" data-step="${i}" style="${i === 0 ? '' : 'display:none;'}">
+      ${renderPickerGroup(g, cand[g.key] || [])}
+    </div>`).join('');
   const html = `
     <div id="pagePickerOverlay" style="position:fixed;inset:0;background:rgba(10,10,10,0.7);z-index:10000;display:flex;align-items:center;justify-content:center;padding:24px;">
-      <div style="background:#fff;max-width:780px;width:100%;max-height:90vh;overflow-y:auto;border-radius:6px;padding:32px;">
-        <h2 style="margin:0 0 8px;font-size:1.4rem;">Potwierdź podstrony do audytu</h2>
-        <p style="color:#6B6B68;margin:0 0 24px;font-size:0.92rem;">Strona główna (${esc(homepage)}) jest wybrana automatycznie. Wybierz po jednym kandydacie dla pozostałych typów — Gemini zasugerował najbardziej prawdopodobnych. Możesz też wpisać własny URL.</p>
+      <style>
+        #pagePickerOverlay .pp-dot{flex:1;height:4px;border-radius:2px;background:#e8e8e8;transition:background .2s;}
+        #pagePickerOverlay .pp-dot.active{background:#edd971;}
+      </style>
+      <div style="background:#fff;max-width:600px;width:100%;max-height:90vh;overflow-y:auto;border-radius:6px;padding:32px;">
+        <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;">
+          <h2 style="margin:0;font-size:1.4rem;">Potwierdź podstrony do audytu</h2>
+          <span id="ppStepLabel" style="font-size:0.82rem;color:#6B6B68;white-space:nowrap;">Krok 1 z ${total}</span>
+        </div>
+        <div style="display:flex;gap:6px;margin-bottom:18px;">${dots}</div>
+        <p style="color:#6B6B68;margin:0 0 22px;font-size:0.92rem;">Strona główna (${esc(homepage)}) jest wybrana automatycznie. Dla każdego typu wskaż jednego kandydata — Gemini zasugerował najbardziej prawdopodobnych. Możesz też wpisać własny URL.</p>
         <form id="pagePickerForm">
-          ${groups.map(g => renderPickerGroup(g, cand[g.key] || [])).join('')}
-          <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;">
-            <button type="submit" class="btn" style="background:#edd971;color:#0A0A0A;border:none;padding:12px 24px;font-weight:600;cursor:pointer;border-radius:3px;">Audytuj wybrane</button>
-            <button type="button" id="pickerCancel" style="background:transparent;border:1px solid #ccc;padding:12px 24px;cursor:pointer;border-radius:3px;">Anuluj</button>
+          ${stepsHtml}
+          <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center;">
+            <button type="button" id="ppBack" style="background:transparent;border:1px solid #ccc;padding:12px 24px;cursor:pointer;border-radius:3px;display:none;">← Wstecz</button>
+            <button type="button" id="ppNext" class="btn" style="background:#edd971;color:#0A0A0A;border:none;padding:12px 24px;font-weight:600;cursor:pointer;border-radius:3px;">Dalej →</button>
+            <button type="submit" id="ppSubmit" class="btn" style="background:#edd971;color:#0A0A0A;border:none;padding:12px 24px;font-weight:600;cursor:pointer;border-radius:3px;display:none;">Audytuj wybrane</button>
+            <button type="button" id="pickerCancel" style="background:transparent;border:none;color:#6B6B68;padding:12px 8px;cursor:pointer;margin-left:auto;">Anuluj</button>
           </div>
         </form>
       </div>
     </div>`;
   document.body.insertAdjacentHTML('beforeend', html);
+
+  const overlay = document.getElementById('pagePickerOverlay');
+  const stepLabel = document.getElementById('ppStepLabel');
+  const backBtn = document.getElementById('ppBack');
+  const nextBtn = document.getElementById('ppNext');
+  const submitStepBtn = document.getElementById('ppSubmit');
+  let step = 0;
+
+  function pickedUrl(key) {
+    const radio = overlay.querySelector(`input[name="pick_${key}"]:checked`);
+    if (!radio || radio.value === '__skip__') return '';
+    if (radio.value === '__custom__') {
+      const cf = document.getElementById(`custom_${key}`);
+      return cf ? cf.value.trim() : '';
+    }
+    return radio.value;
+  }
+
+  function showStep(i) {
+    step = i;
+    overlay.querySelectorAll('.pp-step').forEach(el => {
+      el.style.display = (Number(el.dataset.step) === i) ? '' : 'none';
+    });
+    overlay.querySelectorAll('.pp-dot').forEach(d => {
+      d.classList.toggle('active', Number(d.dataset.dot) <= i);
+    });
+    stepLabel.textContent = `Krok ${i + 1} z ${total}`;
+    backBtn.style.display = i === 0 ? 'none' : '';
+    const last = i === total - 1;
+    nextBtn.style.display = last ? 'none' : '';
+    submitStepBtn.style.display = last ? '' : 'none';
+  }
+
+  function validateStep(i) {
+    const g = groups[i];
+    if (!g.required) return true;
+    if (!pickedUrl(g.key)) {
+      alert('Wskaż podstronę dla tego kroku lub wpisz własny URL.');
+      return false;
+    }
+    return true;
+  }
+
+  backBtn.addEventListener('click', () => { if (step > 0) showStep(step - 1); });
+  nextBtn.addEventListener('click', () => { if (validateStep(step)) showStep(step + 1); });
   document.getElementById('pickerCancel').addEventListener('click', closePagePicker);
+  showStep(0);
+
   document.getElementById('pagePickerForm').addEventListener('submit', (e) => {
     e.preventDefault();
+    if (!validateStep(step)) return;
     const picks = [];
     groups.forEach(g => {
-      const radio = document.querySelector(`input[name="pick_${g.key}"]:checked`);
-      const customField = document.getElementById(`custom_${g.key}`);
-      let url = '';
-      if (radio && radio.value === '__custom__') {
-        url = customField.value.trim();
-      } else if (radio && radio.value !== '__skip__') {
-        url = radio.value;
-      }
+      const url = pickedUrl(g.key);
       if (url) picks.push({url, page_type: g.key});
     });
     closePagePicker();
@@ -674,7 +731,8 @@ function renderPickerGroup(group, items) {
     </label>`).join('');
   return `
     <div style="margin-bottom:20px;">
-      <div style="font-weight:600;font-size:0.95rem;margin-bottom:8px;">${esc(group.label)}${group.required ? '' : ' <span style="color:#6B6B68;font-weight:400;">— opcjonalna</span>'}</div>
+      <div style="font-weight:600;font-size:0.95rem;margin-bottom:4px;">${esc(group.label)}${group.required ? '' : ' <span style="color:#6B6B68;font-weight:400;">— opcjonalna</span>'}</div>
+      ${group.hint ? `<div style="color:#6B6B68;font-size:0.82rem;margin-bottom:10px;">${esc(group.hint)}</div>` : ''}
       ${items.length ? opts : '<div style="color:#6B6B68;font-size:0.85rem;font-style:italic;margin-bottom:8px;">Brak automatycznych sugestii — wpisz własny URL.</div>'}
       <label style="display:flex;align-items:center;gap:8px;padding:8px;border:1px dashed #ccc;border-radius:3px;cursor:pointer;">
         <input type="radio" name="pick_${group.key}" value="__custom__" ${items.length ? '' : 'checked'}>
@@ -1087,7 +1145,9 @@ function drawHeroRadar(groups, overall) {
       heroRadarChart.destroy();
       heroRadarChart = null;
     }
-    const chartGroups = groupOrder(currentResult).map(id => groups.find(g => g.id === id) || {id, label: groupLabel(currentResult, id), score: 0});
+    let chartGroups = groupOrder(currentResult).map(id => groups.find(g => g.id === id) || {id, label: groupLabel(currentResult, id), score: 0});
+    // Sortuj od najlepszego do najgorszego wyniku (null traktujemy jako najgorszy).
+    chartGroups = chartGroups.slice().sort((a, b) => (b.score === null ? -1 : b.score) - (a.score === null ? -1 : a.score));
     const labels = chartGroups.map(g => {
       if (g.id === 'ai_aeo') return ['AI', 'AEO'];
       if (g.id === 'patents') return ['Patenty', 'Google'];
@@ -1111,83 +1171,80 @@ function drawHeroRadar(groups, overall) {
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       ctx.clearRect(0, 0, cssW, cssH);
 
-      const padTop = 36, padBottom = 64, padLeft = 36, padRight = 24;
-      const depth = Math.min(24, cssW * 0.055);
-      const dx = depth, dy = -depth * 0.6;
-      const plotW = cssW - padLeft - padRight - dx;
-      const plotH = cssH - padTop - padBottom + dy;
-      const baseY = cssH - padBottom;
-      const baseX = padLeft;
-      const maxVal = 100;
       const n = data.length;
-      const slot = plotW / n;
-      const barW = Math.min(slot * 0.5, 64);
+      const padLeft = 30, padRight = 30, padTop = 44, padBottom = 54;
+      const availW = cssW - padLeft - padRight;
+      const availH = cssH - padTop - padBottom;
+      // Głębia bryły słupka (kierunek "w głąb": w prawo i w górę).
+      const depth = Math.min(20, cssW * 0.045);
+      const dx = depth, dy = -depth * 0.55;
+      // Skos całego rzędu: kolejne słupki przesuwają się w prawo i w górę
+      // (od lewy-dół do prawy-góra), dając wrażenie cofania się w głąb po przekątnej.
+      const barW = Math.min(46, availW / (n + 1.5));
+      const stepX = (availW - barW - dx) / Math.max(1, n - 1);
+      const stepY = (availH * 0.42) / Math.max(1, n - 1);
+      const hMax = availH * 0.46;
+      const baseX0 = padLeft;
+      const baseY0 = cssH - padBottom;
 
-      // Linie siatki i etykiety osi 0/25/50/75/100 (z efektem głębi).
-      for (let v = 0; v <= 100; v += 25) {
-        const y = baseY - (v / maxVal) * plotH;
-        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-        ctx.lineWidth = 1;
-        ctx.beginPath();
-        ctx.moveTo(baseX + dx, y + dy);
-        ctx.lineTo(baseX + dx + plotW, y + dy);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(baseX, y);
-        ctx.lineTo(baseX + dx, y + dy);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = "600 11px 'Inter', sans-serif";
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(v), baseX - 8, y);
-      }
+      // Delikatna "podłoga" biegnąca po skosie przez podstawy słupków.
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(baseX0, baseY0);
+      ctx.lineTo(baseX0 + (n - 1) * stepX + barW + dx, baseY0 - (n - 1) * stepY + dy);
+      ctx.stroke();
 
-      // Słupki 3D: ściana boczna, górna i czołowa.
-      data.forEach((val, i) => {
-        const cx = baseX + slot * i + (slot - barW) / 2;
-        const h = (val / maxVal) * plotH;
-        const topY = baseY - h;
+      // Rysujemy od najdalszego (prawy-góra) do najbliższego (lewy-dół) — porządek malarza.
+      for (let i = n - 1; i >= 0; i--) {
+        const val = data[i];
+        const baseFX = baseX0 + i * stepX;
+        const baseFY = baseY0 - i * stepY;
+        const h = (val / 100) * hMax;
+        const topY = baseFY - h;
         const front = barColors[i];
-        const side = shadeColor(front, -0.22);
+        const side = shadeColor(front, -0.24);
         const top = shadeColor(front, 0.16);
 
+        // ściana boczna (prawa)
         ctx.fillStyle = side;
         ctx.beginPath();
-        ctx.moveTo(cx + barW, topY);
-        ctx.lineTo(cx + barW + dx, topY + dy);
-        ctx.lineTo(cx + barW + dx, baseY + dy);
-        ctx.lineTo(cx + barW, baseY);
+        ctx.moveTo(baseFX + barW, topY);
+        ctx.lineTo(baseFX + barW + dx, topY + dy);
+        ctx.lineTo(baseFX + barW + dx, baseFY + dy);
+        ctx.lineTo(baseFX + barW, baseFY);
         ctx.closePath();
         ctx.fill();
 
+        // ściana górna
         ctx.fillStyle = top;
         ctx.beginPath();
-        ctx.moveTo(cx, topY);
-        ctx.lineTo(cx + dx, topY + dy);
-        ctx.lineTo(cx + barW + dx, topY + dy);
-        ctx.lineTo(cx + barW, topY);
+        ctx.moveTo(baseFX, topY);
+        ctx.lineTo(baseFX + dx, topY + dy);
+        ctx.lineTo(baseFX + barW + dx, topY + dy);
+        ctx.lineTo(baseFX + barW, topY);
         ctx.closePath();
         ctx.fill();
 
+        // ściana czołowa
         ctx.fillStyle = front;
-        ctx.fillRect(cx, topY, barW, h);
+        ctx.fillRect(baseFX, topY, barW, h);
 
         // Wartość nad słupkiem.
         ctx.fillStyle = 'rgba(255,255,255,0.96)';
         ctx.font = "700 14px 'Inter', sans-serif";
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(String(val), cx + barW / 2 + dx / 2, topY + dy - 5);
+        ctx.fillText(String(val), baseFX + barW / 2 + dx / 2, topY + dy - 5);
 
         // Etykieta kategorii pod słupkiem.
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.font = "700 12px 'Inter', sans-serif";
+        ctx.font = "700 11px 'Inter', sans-serif";
         ctx.textAlign = 'center';
         ctx.textBaseline = 'top';
         const lines = Array.isArray(labels[i]) ? labels[i] : [labels[i]];
-        lines.forEach((ln, li) => ctx.fillText(ln, cx + barW / 2, baseY + 10 + li * 14));
-      });
+        lines.forEach((ln, li) => ctx.fillText(ln, baseFX + barW / 2, baseFY + 8 + li * 13));
+      }
     }
 
     render3DBars();
