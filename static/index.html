@@ -215,6 +215,11 @@ button{font:inherit;cursor:pointer}
 .export-label{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.1em;color:var(--muted);margin-right:2px}
 .export-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;padding:8px 14px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);border-radius:4px;cursor:pointer;transition:all .15s}
 .export-btn:hover{background:transparent;color:var(--ink)}
+.share-bar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin:0 0 16px;padding:10px 16px;background:var(--paper-2);border:1px solid var(--rule);border-radius:6px}
+.share-label{font-size:0.85rem;color:var(--ink-2)}
+.share-label b{color:var(--ink);font-weight:600}
+.share-btn{display:inline-flex;align-items:center;gap:6px;font-family:var(--mono);font-size:0.7rem;text-transform:uppercase;letter-spacing:0.08em;font-weight:600;padding:8px 14px;border:1px solid var(--ink);background:transparent;color:var(--ink);border-radius:4px;cursor:pointer;transition:all .15s}
+.share-btn:hover{background:var(--ink);color:var(--paper)}
 .url-pill{display:inline-flex;align-items:center;gap:10px;padding:7px 14px;border:1px solid var(--rule);background:var(--paper);border-radius:4px;font-size:0.85rem;color:var(--ink-2);cursor:pointer;font:inherit;transition:all .15s;max-width:280px}
 .url-pill:hover{border-color:var(--ink);color:var(--ink)}
 .url-pill.active{background:var(--ink);color:var(--paper);border-color:var(--ink)}
@@ -566,7 +571,26 @@ const PRO_UNLOCKED = new URLSearchParams(location.search).has('pro');
 const isBizMode = (m) => m === 'lead' || m === 'sales';
 let currentMode = PRO_UNLOCKED ? 'sales' : 'lead';
 let currentResult = null;
-let leadUnlocked = (() => { try { return localStorage.getItem('aiseo_lead_unlocked') === '1'; } catch(e){ return false; } })();
+// Odblokowanie raportu jest per-domena: podanie maila odblokowuje TYLKO raport tej domeny.
+// Wpisanie później innej domeny ponownie poprosi o e-mail.
+function domainKey(r) {
+  let d = '';
+  try { d = new URL((r && r.url) || '').hostname.replace(/^www\./, '').toLowerCase(); }
+  catch (e) { d = ((r && r.url) || '').toLowerCase(); }
+  return d;
+}
+function getUnlockedDomains() {
+  try { const a = JSON.parse(localStorage.getItem('aiseo_unlocked_domains') || '[]'); return Array.isArray(a) ? a : []; }
+  catch (e) { return []; }
+}
+function isDomainUnlocked(d) { return !!d && getUnlockedDomains().indexOf(d) !== -1; }
+function unlockDomain(d) {
+  if (!d) return;
+  try {
+    const arr = getUnlockedDomains();
+    if (arr.indexOf(d) === -1) { arr.push(d); localStorage.setItem('aiseo_unlocked_domains', JSON.stringify(arr)); }
+  } catch (e) {}
+}
 
 document.getElementById('modeToggleNav').addEventListener('click', (e) => {
   const btn = e.target.closest('button[data-mode]');
@@ -1151,14 +1175,31 @@ function exportBarHtml() {
     </div>`;
 }
 
+// Link do udostępnienia raportu — przywołuje zapisany raport tej domeny (?d=domena).
+function shareUrlFor(r) {
+  const d = domainKey(r);
+  if (!d) return location.href;
+  return location.origin + location.pathname + '?d=' + encodeURIComponent(d);
+}
+
+function shareBarHtml(r) {
+  const d = domainKey(r);
+  if (!d) return '';
+  return `
+    <div class="share-bar no-print">
+      <span class="share-label">Raport dla <b>${esc(d)}</b></span>
+      <button type="button" class="share-btn" data-share="copy" data-url="${esc(shareUrlFor(r))}">🔗 Kopiuj link do raportu</button>
+    </div>`;
+}
+
 function renderAuditShell(r) {
   const state = computeScopeState(r, currentScope);
   const groups = groupOrder(r);
-  const gated = currentMode === 'lead' && !leadUnlocked;
+  const gated = currentMode === 'lead' && !isDomainUnlocked(domainKey(r));
 
-  // Widok pojedynczej kategorii: tylko ta kategoria (top 5 problemów). Każda zakładka pokazuje
-  // WŁASNE błędy. W trybie lead reszta problemów jest rozmyta za bramką mailową (po 5 widocznych),
-  // żeby nie dało się obejść blokady przełączając zakładki.
+  // Widok pojedynczej kategorii błędów: TYLKO ta kategoria. Bez diagnozy, percepcji marki
+  // i priorytetów — te elementy żyją wyłącznie na zakładce "Podsumowanie".
+  // W trybie lead reszta problemów jest rozmyta za bramką mailową.
   if (currentCategory !== 'all') {
     const num = groups.indexOf(currentCategory) + 1;
     const catHtml = gated
@@ -1166,6 +1207,7 @@ function renderAuditShell(r) {
       : renderCategory(r, currentCategory, num, state);
     return `
       <div class="report" id="auditRoot">
+        ${shareBarHtml(r)}
         ${exportBarHtml()}
         ${renderCategorySwitcher(r, state)}
         ${catHtml}
@@ -1173,28 +1215,28 @@ function renderAuditShell(r) {
     `;
   }
 
-  // Widok "Wszystkie"
-  const categoriesHtml = groups.map((g) => renderCategory(r, g, groups.indexOf(g) + 1, state)).join('');
+  // Widok "Podsumowanie" (pierwsza strona): u góry diagnoza + "jak Cię widzą LLM-y",
+  // poniżej pasek kategorii błędów do wyboru, a dalej priorytety i dodatki.
   const extrasHtml = renderExtras(r);
-  const lockedBlock = gated
+  const belowBar = gated
     ? `
       ${renderLeadGate(r, state)}
       <div class="locked-wrap">
         <div class="locked-content" aria-hidden="true">
-          ${categoriesHtml}
+          ${renderPriority(r)}
           ${extrasHtml}
         </div>
       </div>
     `
-    : `${categoriesHtml}${extrasHtml}`;
+    : `${renderPriority(r)}${extrasHtml}`;
   return `
     <div class="report" id="auditRoot">
+      ${shareBarHtml(r)}
       ${exportBarHtml()}
-      ${renderCategorySwitcher(r, state)}
       ${renderOverview(r)}
       ${renderBrandPerception(r)}
-      ${renderPriority(r)}
-      ${lockedBlock}
+      ${renderCategorySwitcher(r, state)}
+      ${belowBar}
     </div>
   `;
 }
@@ -1228,7 +1270,7 @@ function renderCategorySwitcher(r, state) {
       const sg = stateGroups.find(x => x.id === g);
       return {cat: g, label: groupLabel(r, g), score: sg ? sg.score : null};
     }).sort((a, b) => sv(b.score) - sv(a.score));
-  const items = [{cat:'all', label:'Wszystkie', score: allScore}].concat(catItems);
+  const items = [{cat:'all', label:'Podsumowanie', score: allScore}].concat(catItems);
   return `
     <div class="url-switcher">
       <span class="url-switcher-label">Kategoria:</span>
@@ -1751,6 +1793,17 @@ function renderBrandPerception(r) {
 }
 
 function handleAuditClick(e) {
+  const shareBtn = e.target.closest('button[data-share]');
+  if (shareBtn) {
+    const url = shareBtn.dataset.url || shareUrlFor(currentResult);
+    const done = () => { const o = shareBtn.textContent; shareBtn.textContent = '✓ Skopiowano link'; setTimeout(() => { shareBtn.textContent = o; }, 2000); };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(() => { prompt('Skopiuj link do raportu:', url); });
+    } else {
+      prompt('Skopiuj link do raportu:', url);
+    }
+    return;
+  }
   const exportBtn = e.target.closest('button[data-export]');
   if (exportBtn) {
     if (exportBtn.dataset.export === 'md') exportReportMd();
@@ -1798,8 +1851,7 @@ results.addEventListener('submit', async (e) => {
       body: JSON.stringify({email, url: currentResult?.url || '', score}),
     });
     if (!r.ok) throw new Error('Nie udało się zapisać.');
-    leadUnlocked = true;
-    try { localStorage.setItem('aiseo_lead_unlocked', '1'); } catch(_) {}
+    unlockDomain(domainKey(currentResult));
     refreshAuditView();
   } catch (err) {
     errEl.textContent = err.message || 'Błąd zapisu — spróbuj ponownie.';
@@ -2036,6 +2088,26 @@ function applyMode() {
   if (!currentResult) return;
   refreshAuditView();
 }
+
+// Otwarcie udostępnionego linku (?d=domena) — przywołuje zapisany raport bezpośrednio.
+(function loadSharedReport() {
+  const params = new URLSearchParams(location.search);
+  const dom = params.get('d') || params.get('report');
+  if (!dom) return;
+  showAuditLoader('Wczytuję udostępniony raport…');
+  setAuditPct(30);
+  fetch('report?domain=' + encodeURIComponent(dom))
+    .then(r => r.ok ? r.json() : Promise.reject(new Error('HTTP ' + r.status)))
+    .then(data => {
+      if (data && data.found && data.result) {
+        setAuditPct(100);
+        renderResult(data.result);
+      } else {
+        auditLoaderError('Nie znaleziono zapisanego raportu dla: ' + dom + '. Uruchom audyt, aby go wygenerować.');
+      }
+    })
+    .catch(err => auditLoaderError('Nie udało się wczytać raportu: ' + (err.message || err)));
+})();
 </script>
 </body>
 </html>

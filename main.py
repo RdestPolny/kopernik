@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 """AI SEO Audit — page-type-aware per-URL factor sets."""
 
+import base64
+import gzip
 import json
 import logging
 import os
@@ -3492,15 +3494,63 @@ def _gemini_call(prompt: str, temperature: float = 0.1, max_tokens: int = 4096) 
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
-def _openai_call(prompt: str, model: str = "gpt-4o-mini", max_tokens: int = 500) -> str:
-    r = requests.post(
-        "https://api.openai.com/v1/chat/completions",
-        headers={"Authorization": f"Bearer {GPT_KEY}", "Content-Type": "application/json"},
-        json={"model": model, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
-        timeout=30,
-    )
-    r.raise_for_status()
-    return r.json()["choices"][0]["message"]["content"]
+GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4o-mini")
+# Lista modeli do wypróbowania po kolei — jeśli pierwszy zwróci 404 (brak dostępu)
+# albo 429 z powodu braku limitu na tym modelu, próbujemy kolejnego.
+GPT_FALLBACK_MODELS = [m.strip() for m in os.getenv("GPT_FALLBACK_MODELS", "gpt-4o-mini,gpt-3.5-turbo").split(",") if m.strip()]
+
+
+def _openai_call(prompt: str, model: str = "", max_tokens: int = 500) -> str:
+    """Wywołanie OpenAI z retry/backoff na 429 (rate limit) i 5xx oraz fallbackiem modeli.
+
+    OpenAI zwraca 429 zarówno przy chwilowym rate-limicie (warto ponowić), jak i przy
+    wyczerpanym limicie konta `insufficient_quota` (ponawianie nie pomoże). Rozróżniamy
+    te przypadki: quota → szybki, czytelny błąd; rate-limit/5xx → backoff i ponowienie.
+    """
+    models = [model] if model else list(dict.fromkeys([GPT_MODEL, *GPT_FALLBACK_MODELS]))
+    last_err: Exception | None = None
+    for mdl in models:
+        for attempt in range(4):  # do 4 prób na model
+            try:
+                r = requests.post(
+                    "https://api.openai.com/v1/chat/completions",
+                    headers={"Authorization": f"Bearer {GPT_KEY}", "Content-Type": "application/json"},
+                    json={"model": mdl, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
+                    timeout=30,
+                )
+                if r.status_code == 200:
+                    return r.json()["choices"][0]["message"]["content"]
+                # Spróbuj wyłuskać kod błędu OpenAI z treści odpowiedzi.
+                err_code = ""
+                try:
+                    err_code = (r.json().get("error") or {}).get("code", "") or ""
+                except Exception:
+                    pass
+                if r.status_code == 429 and err_code == "insufficient_quota":
+                    raise RuntimeError("OpenAI: wyczerpany limit konta (insufficient_quota) — doładuj kredyty/billing.")
+                if r.status_code == 404:
+                    last_err = RuntimeError(f"OpenAI: model '{mdl}' niedostępny dla tego klucza (404).")
+                    break  # próbujemy kolejny model, nie ponawiamy tego samego
+                if r.status_code in (429, 500, 502, 503, 504):
+                    last_err = RuntimeError(f"OpenAI {r.status_code} (model {mdl})")
+                    if attempt < 3:
+                        # Respektuj Retry-After jeśli jest, inaczej backoff wykładniczy.
+                        try:
+                            wait = float(r.headers.get("Retry-After", ""))
+                        except (TypeError, ValueError):
+                            wait = 0.0
+                        time.sleep(max(wait, 1.5 * (2 ** attempt)))
+                        continue
+                    break  # wyczerpane próby na tym modelu → następny model
+                r.raise_for_status()
+            except RuntimeError:
+                raise
+            except Exception as e:  # noqa: BLE001 — błąd sieci itp.
+                last_err = e
+                if attempt < 3:
+                    time.sleep(1.5 * (2 ** attempt))
+                    continue
+    raise last_err or RuntimeError("OpenAI: nieznany błąd wywołania.")
 
 
 def _perplexity_brand_call(prompt: str, max_tokens: int = 600) -> dict:
@@ -3658,6 +3708,114 @@ def _save_lead_to_firestore(record: dict) -> None:
         )
     except Exception:
         pass  # stdout already persists the lead
+
+
+# --- Zapis / odczyt raportów (do udostępniania linkiem i przywoływania ponownie) ---
+# Pamięć procesu (przeżywa w obrębie instancji) + best-effort Firestore (między instancjami).
+_REPORTS_MEMORY: dict[str, dict] = {}
+_REPORTS_LOCK = threading.Lock()
+_REPORTS_MAX = 200
+
+
+def _report_key(domain_or_url: str) -> str:
+    """Stabilny klucz dokumentu z domeny (bez www, bez schematu, znormalizowany)."""
+    s = (domain_or_url or "").strip().lower()
+    try:
+        if "://" in s:
+            s = urlparse(s).netloc or s
+    except Exception:
+        pass
+    s = s.split("/")[0].replace("www.", "")
+    return re.sub(r"[^a-z0-9.-]", "_", s)[:200]
+
+
+def _save_report_to_firestore(key: str, payload: dict) -> None:
+    project = FIRESTORE_PROJECT
+    if not project:
+        return
+    try:
+        gz = gzip.compress(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
+        data_b64 = base64.b64encode(gz).decode("ascii")
+        # Firestore: limit ~1 MiB na dokument — przy bardzo dużych raportach zapis się nie powiedzie
+        # (best-effort; pamięć procesu i tak działa).
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        fields = {
+            "data_gz_b64": {"stringValue": data_b64},
+            "url": {"stringValue": str(payload.get("url", ""))},
+            "ts": {"stringValue": datetime.utcnow().isoformat() + "Z"},
+        }
+        requests.patch(
+            f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/reports/{key}",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"fields": fields},
+            timeout=15,
+        )
+    except Exception as e:  # noqa: BLE001
+        logging.info("Firestore report save skipped: %s", e)
+
+
+def _load_report_from_firestore(key: str) -> dict | None:
+    project = FIRESTORE_PROJECT
+    if not project:
+        return None
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        r = requests.get(
+            f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/reports/{key}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=15,
+        )
+        if r.status_code != 200:
+            return None
+        b64 = (r.json().get("fields", {}).get("data_gz_b64", {}) or {}).get("stringValue", "")
+        if not b64:
+            return None
+        return json.loads(gzip.decompress(base64.b64decode(b64)).decode("utf-8"))
+    except Exception as e:  # noqa: BLE001
+        logging.info("Firestore report load failed: %s", e)
+        return None
+
+
+def save_report(result: dict) -> str:
+    """Zapisuje raport pod kluczem domeny. Zwraca klucz (do linku udostępniania)."""
+    key = _report_key(result.get("url", ""))
+    if not key:
+        return ""
+    with _REPORTS_LOCK:
+        _REPORTS_MEMORY[key] = result
+        if len(_REPORTS_MEMORY) > _REPORTS_MAX:
+            # usuń najstarszy wpis (FIFO)
+            try:
+                _REPORTS_MEMORY.pop(next(iter(_REPORTS_MEMORY)))
+            except StopIteration:
+                pass
+    threading.Thread(target=_save_report_to_firestore, args=(key, result), daemon=True).start()
+    return key
+
+
+def load_report(domain_or_url: str) -> dict | None:
+    key = _report_key(domain_or_url)
+    if not key:
+        return None
+    with _REPORTS_LOCK:
+        cached = _REPORTS_MEMORY.get(key)
+    if cached is not None:
+        return cached
+    fetched = _load_report_from_firestore(key)
+    if fetched is not None:
+        with _REPORTS_LOCK:
+            _REPORTS_MEMORY[key] = fetched
+    return fetched
 
 
 def _extract_json(text: str) -> dict:
@@ -4420,6 +4578,11 @@ def audit_stream(url: str, picks: list[dict] | None = None):
                 "patent_scored_factor_count": len(scored_patent_factor_ids()),
             },
         }
+        # Zapis raportu (do udostępniania linkiem i przywoływania domeny ponownie).
+        try:
+            save_report(result)
+        except Exception as e:  # noqa: BLE001
+            logging.info("save_report skipped: %s", e)
         yield event("done", {"result": result, "pct": 100})
 
     except Exception as e:
@@ -4591,6 +4754,19 @@ async def audit_result(job_id: str, fields: str = ""):
     elif job["status"] == "error":
         resp["error"] = job["error"]
     return resp
+
+
+@app.get("/report")
+async def get_report(domain: str = "", url: str = ""):
+    """Zwraca wcześniej zapisany raport dla danej domeny (do udostępniania linkiem
+    i przywoływania ponownie). Zwraca {found: bool, result?: dict}."""
+    key_src = domain or url
+    if not key_src:
+        raise HTTPException(status_code=400, detail="Podaj parametr 'domain' lub 'url'")
+    result = load_report(key_src)
+    if result is None:
+        return {"found": False, "domain": _report_key(key_src)}
+    return {"found": True, "domain": _report_key(key_src), "result": result}
 
 
 @app.get("/health")
