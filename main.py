@@ -3494,14 +3494,25 @@ def _gemini_call(prompt: str, temperature: float = 0.1, max_tokens: int = 4096) 
     return r.json()["candidates"][0]["content"]["parts"][0]["text"]
 
 
-GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4o-mini")
-# Lista modeli do wypróbowania po kolei — jeśli pierwszy zwróci 404 (brak dostępu)
-# albo 429 z powodu braku limitu na tym modelu, próbujemy kolejnego.
-GPT_FALLBACK_MODELS = [m.strip() for m in os.getenv("GPT_FALLBACK_MODELS", "gpt-4o-mini,gpt-3.5-turbo").split(",") if m.strip()]
+# Domyślnie model z WYSZUKIWANIEM W SIECI (jak realny ChatGPT) — dzięki temu sekcja
+# "Jak Cię widzą LLM-y" zna nawet niszowe firmy, których nie ma w danych treningowych.
+# Fallback: lżejszy model z wyszukiwaniem, a na końcu zwykłe modele (gdyby search-preview
+# był niedostępny dla klucza).
+GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4o-search-preview")
+GPT_FALLBACK_MODELS = [m.strip() for m in os.getenv(
+    "GPT_FALLBACK_MODELS", "gpt-4o-mini-search-preview,gpt-4o,gpt-4o-mini"
+).split(",") if m.strip()]
 
 
-def _openai_call(prompt: str, model: str = "", max_tokens: int = 500) -> str:
+def _is_search_model(model: str) -> bool:
+    return "search" in (model or "").lower()
+
+
+def _openai_call(prompt: str, model: str = "", max_tokens: int = 500) -> tuple[str, str]:
     """Wywołanie OpenAI z retry/backoff na 429 (rate limit) i 5xx oraz fallbackiem modeli.
+
+    Zwraca (tekst, użyty_model). Modele *-search-preview wyszukują w internecie
+    (dodajemy `web_search_options`), więc rozpoznają firmy spoza danych treningowych.
 
     OpenAI zwraca 429 zarówno przy chwilowym rate-limicie (warto ponowić), jak i przy
     wyczerpanym limicie konta `insufficient_quota` (ponawianie nie pomoże). Rozróżniamy
@@ -3510,16 +3521,20 @@ def _openai_call(prompt: str, model: str = "", max_tokens: int = 500) -> str:
     models = [model] if model else list(dict.fromkeys([GPT_MODEL, *GPT_FALLBACK_MODELS]))
     last_err: Exception | None = None
     for mdl in models:
+        payload: dict = {"model": mdl, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens}
+        if _is_search_model(mdl):
+            # Wymuś korzystanie z wyszukiwarki przez model (jak ChatGPT z web search).
+            payload["web_search_options"] = {}
         for attempt in range(4):  # do 4 prób na model
             try:
                 r = requests.post(
                     "https://api.openai.com/v1/chat/completions",
                     headers={"Authorization": f"Bearer {GPT_KEY}", "Content-Type": "application/json"},
-                    json={"model": mdl, "messages": [{"role": "user", "content": prompt}], "max_tokens": max_tokens},
-                    timeout=30,
+                    json=payload,
+                    timeout=40,
                 )
                 if r.status_code == 200:
-                    return r.json()["choices"][0]["message"]["content"]
+                    return r.json()["choices"][0]["message"]["content"], mdl
                 # Spróbuj wyłuskać kod błędu OpenAI z treści odpowiedzi.
                 err_code = ""
                 try:
@@ -3528,9 +3543,11 @@ def _openai_call(prompt: str, model: str = "", max_tokens: int = 500) -> str:
                     pass
                 if r.status_code == 429 and err_code == "insufficient_quota":
                     raise RuntimeError("OpenAI: wyczerpany limit konta (insufficient_quota) — doładuj kredyty/billing.")
-                if r.status_code == 404:
-                    last_err = RuntimeError(f"OpenAI: model '{mdl}' niedostępny dla tego klucza (404).")
-                    break  # próbujemy kolejny model, nie ponawiamy tego samego
+                if r.status_code in (400, 404):
+                    # Błąd deterministyczny (model niedostępny / nieobsługiwany parametr) —
+                    # nie ma sensu ponawiać tego samego modelu, próbujemy kolejny.
+                    last_err = RuntimeError(f"OpenAI {r.status_code} (model {mdl}): {err_code or 'niedostępny'}")
+                    break
                 if r.status_code in (429, 500, 502, 503, 504):
                     last_err = RuntimeError(f"OpenAI {r.status_code} (model {mdl})")
                     if attempt < 3:
@@ -3613,8 +3630,13 @@ def generate_brand_perception(domain: str, title: str) -> dict:
             results["chatgpt"] = {"available": False, "error": "GPT_KEY not set"}
             return
         try:
-            text = _openai_call(prompt)
-            results["chatgpt"] = {"text": text, "available": True, "source": "training_data"}
+            text, used_model = _openai_call(prompt)
+            results["chatgpt"] = {
+                "text": text,
+                "available": True,
+                "source": "web_search" if _is_search_model(used_model) else "training_data",
+                "model": used_model,
+            }
         except Exception as e:
             results["chatgpt"] = {"available": False, "error": str(e)}
 

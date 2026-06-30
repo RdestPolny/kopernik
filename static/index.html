@@ -1720,6 +1720,10 @@ function renderBrandPerception(r) {
     }
     const text = d.text || '';
     const isUnknown = /nie mam informacji|nie wiem|nie znam|brak informacji|nie posiadam/i.test(text);
+    // Źródło dynamiczne — np. ChatGPT z modelem *-search-preview odpowiada z web search.
+    const srcWeb = d.source === 'web_search';
+    const srcClass = srcWeb ? 'web' : (meta.sourceClass || 'train');
+    const srcLabel = srcWeb ? 'web search' : (meta.sourceLabel || 'dane treningowe');
     const citationsHtml = (d.citations && d.citations.length)
       ? `<div class="bp-citations"><div class="bp-citations-label">Źródła</div>${d.citations.slice(0,4).map(c => `<a href="${esc(c)}" target="_blank" rel="noopener">${esc(c.replace(/^https?:\/\//, '').slice(0,60))}</a>`).join('')}</div>`
       : '';
@@ -1727,7 +1731,7 @@ function renderBrandPerception(r) {
       <div class="bp-card-header">
         <img class="bp-logo" src="${meta.logo}" alt="${meta.name}" referrerpolicy="no-referrer">
         <span class="bp-model-name">${meta.name}</span>
-        <span class="bp-source-badge ${meta.sourceClass}">${meta.sourceLabel}</span>
+        <span class="bp-source-badge ${srcClass}">${srcLabel}</span>
       </div>
       <div class="bp-text ${isUnknown ? 'unknown' : ''}">${renderMd(text)}</div>
       ${citationsHtml}
