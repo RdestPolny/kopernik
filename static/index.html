@@ -379,6 +379,13 @@ button{font:inherit;cursor:pointer}
 .extra-head h2{font-size:1.4rem;margin:0}
 .extra-blurb{color:var(--muted);font-size:0.9rem;margin:0 0 18px;max-width:62ch}
 
+/* === Brand Perception section wrapper === */
+.bp-section{margin:48px 0 40px;padding-top:48px;border-top:1px solid var(--rule)}
+.bp-section-header{margin-bottom:24px}
+.extra-eyebrow{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);font-weight:600;margin-bottom:6px}
+.bp-section-title-main{font-size:1.4rem;margin:0 0 6px}
+.bp-section-blurb{color:var(--muted);font-size:0.9rem;margin:0;max-width:62ch}
+
 /* === Brand Perception === */
 .bp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
 @media(max-width:860px){.bp-grid{grid-template-columns:1fr}}
@@ -390,6 +397,8 @@ button{font:inherit;cursor:pointer}
 .bp-source-badge.web{background:#e8f4ec;color:#0f7b36}
 .bp-source-badge.train{background:#f0f2ff;color:#3a57b5}
 .bp-text{font-size:0.88rem;line-height:1.6;color:var(--ink)}
+.bp-text p{margin:0 0 8px}
+.bp-text p:last-child{margin-bottom:0}
 .bp-text.unknown{color:var(--muted);font-style:italic}
 .bp-citations{margin-top:10px;padding-top:10px;border-top:1px solid var(--rule)}
 .bp-citations-label{font-family:var(--mono);font-size:0.66rem;text-transform:uppercase;letter-spacing:0.08em;color:var(--muted);margin-bottom:5px}
@@ -724,6 +733,19 @@ function _pollAuditJob(job_id) {
 }
 
 function esc(s) { return (s||'').toString().replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+// Prosta konwersja markdown → HTML (używana do odpowiedzi AI).
+// Kolejność: najpierw esc(), potem wzorce, żeby tagi nie zostały zescapowane.
+function renderMd(text) {
+  if (!text) return '';
+  return '<p>' + esc(text)
+    .replace(/\[\d+\]/g, '')                          // usuwa markery cytowań [1][2]
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>') // **bold**
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')             // *italic*
+    .replace(/\n\n+/g, '</p><p>')                     // akapity
+    .replace(/\n/g, '<br>')
+    + '</p>';
+}
 
 function normalizeUrl(raw) {
   let v = (raw || '').trim();
@@ -1170,6 +1192,7 @@ function renderAuditShell(r) {
       ${exportBarHtml()}
       ${renderCategorySwitcher(r, state)}
       ${renderOverview(r)}
+      ${renderBrandPerception(r)}
       ${renderPriority(r)}
       ${lockedBlock}
     </div>
@@ -1626,16 +1649,12 @@ function renderExtras(r) {
         <div class="extra-head"><span class="extra-num">10</span><h2>Analizowane podstrony</h2></div>
         ${renderPagesList(r.page_audits || [])}
       </section>
-      <section class="extra">
-        <div class="extra-head"><span class="extra-num">11</span><h2>Jak Twoją firmę postrzega AI?</h2></div>
-        <p class="extra-blurb">Co Gemini, Perplexity i ChatGPT odpowiadają na pytanie o Twoją firmę — bez podpowiadania im treści ze strony.</p>
-        ${renderBrandPerception(r)}
-      </section>
     </div>
   `;
 }
 
 function renderBrandPerception(r) {
+  if (!r.brand_perception && !r.brand_gaps) return '';
   const bp = r.brand_perception || {};
   const gaps = r.brand_gaps || {};
 
@@ -1668,7 +1687,7 @@ function renderBrandPerception(r) {
         <span class="bp-model-name">${meta.name}</span>
         <span class="bp-source-badge ${meta.sourceClass}">${meta.sourceLabel}</span>
       </div>
-      <div class="bp-text ${isUnknown ? 'unknown' : ''}">${esc(text)}</div>
+      <div class="bp-text ${isUnknown ? 'unknown' : ''}">${renderMd(text)}</div>
       ${citationsHtml}
     </div>`;
   }).join('');
@@ -1718,7 +1737,17 @@ function renderBrandPerception(r) {
     </div>`;
   }
 
-  return `<div class="bp-grid">${cards}</div>${analysisHtml}`;
+  return `
+    <section class="bp-section">
+      <div class="bp-section-header">
+        <div class="extra-eyebrow">Percepcja marki</div>
+        <h2 class="bp-section-title-main">Jak Twoją firmę postrzega AI?</h2>
+        <p class="bp-section-blurb">Każdy model odpowiadał bez podpowiadania mu treści strony — to co naprawdę wie z własnego indeksu.</p>
+      </div>
+      <div class="bp-grid">${cards}</div>
+      ${analysisHtml}
+    </section>
+  `;
 }
 
 function handleAuditClick(e) {
