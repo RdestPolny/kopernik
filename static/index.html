@@ -1158,14 +1158,15 @@ function drawHeroRadar(groups, overall) {
     // Kolor słupka zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
     const barColors = chartGroups.map(g => scoreColor(g.score));
 
-    // Pionowe słupki 3D obok siebie, posortowane od najlepszego do najgorszego.
-    let rafId = null;
-    const animStart = performance.now();
-    const animMs = 900;
-    const easeOut = t => 1 - Math.pow(1 - t, 3);
-
+    // Układ orbitalny: centralny wynik ogólny + pierścienie kategorii wokół,
+    // posortowane od najlepszego do najgorszego. Rysujemy deterministycznie
+    // (bez animacji rAF, która potrafiła zostawić wykres niedorysowany, gdy
+    // karta ładowała się w tle i requestAnimationFrame był wstrzymany).
     function drawBars(progress) {
+      const canvas = document.getElementById('heroRadarChart');
+      if (!canvas) return;
       const wrap = canvas.parentElement;
+      if (!wrap) return;
       // Wysokość wykresu = realna wysokość treści lewej kolumny (od H1 do końca bloku CTA).
       // Mierzymy rozpiętość treści, a nie samej kolumny (ta jest rozciągana przez flex).
       const h1El = document.querySelector('.hero h1');
@@ -1312,23 +1313,25 @@ function drawHeroRadar(groups, overall) {
       });
     }
 
-    function animate(now) {
-      const t = Math.min(1, (now - animStart) / animMs);
-      drawBars(easeOut(t));
-      if (t < 1) rafId = requestAnimationFrame(animate);
-      else rafId = null;
-    }
-    rafId = requestAnimationFrame(animate);
+    const render = () => drawBars(1);
+    render();
+    // Dorysowanie po pełnym ułożeniu layoutu i po powrocie na kartę
+    // (layout/fonty mogą nie być gotowe w pierwszym przebiegu).
+    requestAnimationFrame(render);
+    setTimeout(render, 200);
 
     if (drawHeroRadar._onResize) window.removeEventListener('resize', drawHeroRadar._onResize);
-    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart') === canvas) drawBars(1); };
+    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart')) render(); };
     window.addEventListener('resize', drawHeroRadar._onResize);
+    if (drawHeroRadar._onVis) document.removeEventListener('visibilitychange', drawHeroRadar._onVis);
+    drawHeroRadar._onVis = () => { if (!document.hidden && document.getElementById('heroRadarChart')) render(); };
+    document.addEventListener('visibilitychange', drawHeroRadar._onVis);
 
     heroRadarChart = {
-      toBase64Image: () => { try { drawBars(1); return canvas.toDataURL('image/png'); } catch (e) { return ''; } },
+      toBase64Image: () => { try { drawBars(1); const c = document.getElementById('heroRadarChart'); return c ? c.toDataURL('image/png') : ''; } catch (e) { return ''; } },
       destroy: () => {
-        if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
         if (drawHeroRadar._onResize) { window.removeEventListener('resize', drawHeroRadar._onResize); drawHeroRadar._onResize = null; }
+        if (drawHeroRadar._onVis) { document.removeEventListener('visibilitychange', drawHeroRadar._onVis); drawHeroRadar._onVis = null; }
       }
     };
   }, 50);
