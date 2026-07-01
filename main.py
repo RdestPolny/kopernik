@@ -2,6 +2,7 @@
 """AI SEO Audit — page-type-aware per-URL factor sets."""
 
 import base64
+import copy
 import gzip
 import json
 import logging
@@ -3738,6 +3739,34 @@ _REPORTS_MEMORY: dict[str, dict] = {}
 _REPORTS_LOCK = threading.Lock()
 _REPORTS_MAX = 200
 
+# Katalog ze stałymi, predefiniowanymi raportami dla wybranych domen.
+# Jeśli istnieje plik FIXED_REPORT_DIR/<klucz-domeny>.json, dana domena zwraca
+# zawsze ten sam, gotowy wynik — natychmiast, bez uruchamiania pełnego audytu.
+FIXED_REPORT_DIR = os.getenv("FIXED_REPORT_DIR", os.path.join(BASE_DIR, "fixed_reports"))
+_FIXED_REPORTS_CACHE: dict[str, dict] = {}
+
+
+def fixed_report_for(domain_or_url: str) -> dict | None:
+    """Zwraca predefiniowany raport dla domeny, jeśli plik istnieje; inaczej None."""
+    key = _report_key(domain_or_url)
+    if not key:
+        return None
+    cached = _FIXED_REPORTS_CACHE.get(key)
+    if cached is not None:
+        return copy.deepcopy(cached)
+    path = os.path.join(FIXED_REPORT_DIR, key + ".json")
+    if not os.path.exists(path):
+        return None
+    try:
+        with open(path, encoding="utf-8") as fh:
+            data = json.load(fh)
+        if isinstance(data, dict):
+            _FIXED_REPORTS_CACHE[key] = data
+            return copy.deepcopy(data)
+    except Exception as e:  # noqa: BLE001
+        logging.info("fixed_report load failed for %s: %s", key, e)
+    return None
+
 
 def _report_key(domain_or_url: str) -> str:
     """Stabilny klucz dokumentu z domeny (bez www, bez schematu, znormalizowany)."""
@@ -4264,6 +4293,13 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         return f"data: {json.dumps({'step': step, **data})}\n\n"
 
     try:
+        # Predefiniowany raport — natychmiastowy wynik, bez realnego audytu.
+        _fixed = fixed_report_for(url)
+        if _fixed is not None:
+            yield event("progress", {"message": "Audyt zakończony.", "pct": 100})
+            yield event("done", {"result": _fixed, "pct": 100})
+            return
+
         parsed = urlparse(url)
         base_url = f"{parsed.scheme}://{parsed.netloc}"
 
@@ -4626,6 +4662,24 @@ async def audit_candidates(url: str):
         raise HTTPException(status_code=400, detail="Invalid URL or domain")
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
+    # Predefiniowany raport — kandydatów budujemy z gotowego wyniku (natychmiast).
+    _fixed = fixed_report_for(url)
+    if _fixed is not None:
+        cands: dict[str, list] = {"service": [], "article": [], "about": [], "other": []}
+        for pa in _fixed.get("page_audits", []):
+            pt = pa.get("page_type")
+            if pt == "homepage":
+                continue
+            bucket = pt if pt in cands else "other"
+            cands[bucket].append({"url": pa.get("url", ""), "reason": pa.get("reason", "")})
+        return {
+            "homepage": url,
+            "base_url": base_url,
+            "discovery_source": "fixed",
+            "sitemap_count": len(_fixed.get("page_audits", [])),
+            "nav_link_count": 0,
+            "candidates": cands,
+        }
     sitemap_urls = fetch_sitemap_urls(base_url)
     source = "sitemap" if sitemap_urls else "firecrawl-map"
     if not sitemap_urls:
@@ -4734,6 +4788,21 @@ async def audit_start(url: str, picks: str = ""):
             parsed_picks = None
     _prune_audit_jobs()
     job_id = uuid.uuid4().hex
+    # Predefiniowany raport — zwracamy gotowy wynik natychmiast (job od razu 'done').
+    fixed = fixed_report_for(url)
+    if fixed is not None:
+        now = time.time()
+        _AUDIT_JOBS[job_id] = {
+            "status": "done",
+            "pct": 100,
+            "message": "Audyt zakończony.",
+            "result": fixed,
+            "error": None,
+            "url": url,
+            "created_at": now,
+            "finished_at": now,
+        }
+        return {"job_id": job_id, "status": "running", "url": url}
     _AUDIT_JOBS[job_id] = {
         "status": "running",
         "pct": 0,
@@ -4785,6 +4854,9 @@ async def get_report(domain: str = "", url: str = ""):
     key_src = domain or url
     if not key_src:
         raise HTTPException(status_code=400, detail="Podaj parametr 'domain' lub 'url'")
+    fixed = fixed_report_for(key_src)
+    if fixed is not None:
+        return {"found": True, "domain": _report_key(key_src), "result": fixed}
     result = load_report(key_src)
     if result is None:
         return {"found": False, "domain": _report_key(key_src)}

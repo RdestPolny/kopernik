@@ -592,11 +592,47 @@ document.getElementById('modeToggleNav').addEventListener('click', (e) => {
   applyMode();
 });
 
+// Domeny z gotowym, stałym raportem — renderujemy natychmiast, bez pobierania
+// podstron i bez uruchamiania audytu.
+const INSTANT_REPORT_DOMAINS = ['strategiczni.pl'];
+
+function instantReportHost(url) {
+  try {
+    const h = new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+    return INSTANT_REPORT_DOMAINS.includes(h) ? h : '';
+  } catch (_) { return ''; }
+}
+
+async function renderInstantReport(host) {
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Audytuję...';
+  results.classList.add('hidden');
+  results.innerHTML = '';
+  showAuditLoader('Ładuję raport…');
+  setAuditPct(60);
+  try {
+    const r = await fetch('report?domain=' + encodeURIComponent(host));
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    const data = await r.json();
+    if (!data || !data.found || !data.result) throw new Error('brak raportu');
+    setAuditPct(100);
+    currentResult = data.result;
+    renderResult(data.result);
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Audytuj kolejną';
+  } catch (err) {
+    // awaryjnie: normalny przepływ audytu
+    await fetchCandidatesAndPick('https://' + host);
+  }
+}
+
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
   const url = normalizeUrl(urlInput.value);
   if (!url) return;
   urlInput.value = url;
+  const host = instantReportHost(url);
+  if (host) { await renderInstantReport(host); return; }
   await fetchCandidatesAndPick(url);
 });
 

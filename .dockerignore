@@ -5,3 +5,5 @@ __pycache__/
 .env
 audit_report.html
 *.json
+!fixed_reports/
+!fixed_reports/*.json

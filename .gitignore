@@ -3,5 +3,7 @@ __pycache__/
 .env
 *.json
 !firebase.json
+!fixed_reports/
+!fixed_reports/*.json
 audit_report.html
 .DS_Store
