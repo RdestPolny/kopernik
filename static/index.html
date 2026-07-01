@@ -1155,8 +1155,9 @@ function drawHeroRadar(groups, overall) {
       return [g.label];
     });
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
-    // Kolor słupka zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
+    // Kolor pierścienia zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
     const barColors = chartGroups.map(g => scoreColor(g.score));
+    const overallColor = scoreColor(overall);
 
     // Układ orbitalny: centralny wynik ogólny + pierścienie kategorii wokół,
     // posortowane od najlepszego do najgorszego. Rysujemy deterministycznie
