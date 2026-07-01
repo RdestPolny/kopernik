@@ -1189,85 +1189,126 @@ function drawHeroRadar(groups, overall) {
       ctx.clearRect(0, 0, cssW, cssH);
 
       const n = data.length;
-      const padTop = 40, padBottom = 58, padLeft = 40, padRight = 26;
-      // Głębia bryły 3D (w prawo i w górę) — stała dla wszystkich słupków.
-      const depth = Math.min(22, cssW * 0.05);
-      const dx = depth, dy = -depth * 0.6;
-      const plotW = cssW - padLeft - padRight - dx;
-      const plotH = cssH - padTop - padBottom + dy;
-      const baseY = cssH - padBottom;
-      const baseX = padLeft;
-      const maxVal = 100;
-      const slot = plotW / n;
-      const barW = Math.min(slot * 0.55, 62);
+      const TAU = Math.PI * 2;
+      const startTop = -Math.PI / 2;         // start łuku od góry
+      const cx = cssW / 2;
+      const cy = cssH / 2;
+      const S = Math.min(cssW, cssH);
 
-      // Linie siatki i etykiety osi 0/25/50/75/100 (z efektem głębi).
-      for (let v = 0; v <= 100; v += 25) {
-        const y = baseY - (v / maxVal) * plotH;
-        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
-        ctx.lineWidth = 1;
+      // Rozmiary elementów.
+      const satR = Math.max(26, Math.min(46, S * 0.085));     // promień satelity
+      const centerR = Math.max(64, Math.min(120, S * 0.17));  // promień centralnego gauge
+      const labelSpace = 30;                                   // miejsce na etykietę pod satelitą
+      const maxOrbitW = cssW / 2 - satR - 14;
+      const maxOrbitH = cssH / 2 - satR - labelSpace - 8;
+      let orbitR = Math.min(maxOrbitW, maxOrbitH);
+      orbitR = Math.max(orbitR, centerR + satR + 18);
+
+      // Kąty satelitów: 6 pozycji co 60° (najlepszy zaczyna w lewym-górnym rogu),
+      // dla innej liczby kategorii rozkładamy równomiernie.
+      const angles = (n === 6)
+        ? [240, 300, 0, 60, 120, 180].map(d => d * Math.PI / 180)
+        : Array.from({ length: n }, (_, k) => (-90 + k * 360 / n) * Math.PI / 180);
+
+      // --- Orbita łącząca satelity ---
+      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, orbitR, 0, TAU);
+      ctx.stroke();
+
+      // Dekoracyjne "iskry" na orbicie pomiędzy satelitami.
+      const halfStep = TAU / (n * 2);
+      for (let k = 0; k < n; k++) {
+        const a = angles[k] + halfStep;
         ctx.beginPath();
-        ctx.moveTo(baseX + dx, y + dy);
-        ctx.lineTo(baseX + dx + plotW, y + dy);
-        ctx.stroke();
-        ctx.beginPath();
-        ctx.moveTo(baseX, y);
-        ctx.lineTo(baseX + dx, y + dy);
-        ctx.stroke();
-        ctx.fillStyle = 'rgba(255,255,255,0.5)';
-        ctx.font = "600 11px 'Inter', sans-serif";
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(String(v), baseX - 8, y);
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.arc(cx + Math.cos(a) * orbitR, cy + Math.sin(a) * orbitR, 1.6, 0, TAU);
+        ctx.fill();
       }
 
-      // Słupki 3D: ściana boczna, górna i czołowa.
+      // --- Pierścień centralny (wynik ogólny) ---
+      const cLineW = Math.max(10, centerR * 0.13);
+      // dekoracyjny kropkowany pierścień wokół centrum
+      ctx.save();
+      ctx.setLineDash([1.5, 7]);
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = 'rgba(255,255,255,0.22)';
+      ctx.lineWidth = 1.5;
+      ctx.beginPath();
+      ctx.arc(cx, cy, centerR + cLineW * 0.95, 0, TAU);
+      ctx.stroke();
+      ctx.restore();
+      // tor
+      ctx.beginPath();
+      ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+      ctx.lineWidth = cLineW;
+      ctx.lineCap = 'round';
+      ctx.arc(cx, cy, centerR, 0, TAU);
+      ctx.stroke();
+      // wynik
+      const cSweep = (overall || 0) / 100 * TAU * progress;
+      if (cSweep > 0.001) {
+        ctx.beginPath();
+        ctx.strokeStyle = overallColor;
+        ctx.lineWidth = cLineW;
+        ctx.lineCap = 'round';
+        ctx.arc(cx, cy, centerR, startTop, startTop + cSweep);
+        ctx.stroke();
+      }
+      // teksty centrum
+      ctx.textAlign = 'center';
+      ctx.fillStyle = 'rgba(255,255,255,0.6)';
+      ctx.font = `600 ${Math.round(centerR * 0.14)}px 'Inter', sans-serif`;
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('WYNIK OGÓLNY', cx, cy - centerR * 0.30);
+      ctx.fillStyle = overallColor;
+      ctx.font = `700 ${Math.round(centerR * 0.72)}px 'Inter', sans-serif`;
+      ctx.textBaseline = 'middle';
+      ctx.fillText(String(Math.round((overall || 0) * progress)), cx, cy + centerR * 0.06);
+      ctx.fillStyle = 'rgba(255,255,255,0.5)';
+      ctx.font = `600 ${Math.round(centerR * 0.16)}px 'Inter', sans-serif`;
+      ctx.textBaseline = 'alphabetic';
+      ctx.fillText('/100', cx, cy + centerR * 0.46);
+
+      // --- Satelity (kategorie) ---
+      const sLineW = Math.max(5, satR * 0.16);
       data.forEach((val, i) => {
-        const cx = baseX + slot * i + (slot - barW) / 2;
-        const h = (val / maxVal) * plotH * progress;
-        const topY = baseY - h;
-        const front = barColors[i];
-        const side = shadeColor(front, -0.24);
-        const top = shadeColor(front, 0.16);
+        const a = angles[i % angles.length];
+        const sx = cx + Math.cos(a) * orbitR;
+        const sy = cy + Math.sin(a) * orbitR;
+        const color = barColors[i];
 
-        // ściana boczna (prawa)
-        ctx.fillStyle = side;
+        // tor
         ctx.beginPath();
-        ctx.moveTo(cx + barW, topY);
-        ctx.lineTo(cx + barW + dx, topY + dy);
-        ctx.lineTo(cx + barW + dx, baseY + dy);
-        ctx.lineTo(cx + barW, baseY);
-        ctx.closePath();
-        ctx.fill();
-
-        // ściana górna
-        ctx.fillStyle = top;
-        ctx.beginPath();
-        ctx.moveTo(cx, topY);
-        ctx.lineTo(cx + dx, topY + dy);
-        ctx.lineTo(cx + barW + dx, topY + dy);
-        ctx.lineTo(cx + barW, topY);
-        ctx.closePath();
-        ctx.fill();
-
-        // ściana czołowa
-        ctx.fillStyle = front;
-        ctx.fillRect(cx, topY, barW, h);
-
-        // Wartość nad słupkiem.
-        ctx.fillStyle = 'rgba(255,255,255,0.96)';
-        ctx.font = "700 14px 'Inter', sans-serif";
+        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
+        ctx.lineWidth = sLineW;
+        ctx.lineCap = 'round';
+        ctx.arc(sx, sy, satR, 0, TAU);
+        ctx.stroke();
+        // wynik
+        const sSweep = val / 100 * TAU * progress;
+        if (sSweep > 0.001) {
+          ctx.beginPath();
+          ctx.strokeStyle = color;
+          ctx.lineWidth = sLineW;
+          ctx.lineCap = 'round';
+          ctx.arc(sx, sy, satR, startTop, startTop + sSweep);
+          ctx.stroke();
+        }
+        // liczba w środku satelity
+        ctx.fillStyle = color;
         ctx.textAlign = 'center';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(String(val), cx + barW / 2 + dx / 2, topY + dy - 5);
+        ctx.textBaseline = 'middle';
+        ctx.font = `700 ${Math.round(satR * 0.62)}px 'Inter', sans-serif`;
+        ctx.fillText(String(val), sx, sy);
 
-        // Etykieta kategorii pod słupkiem.
+        // etykieta pod satelitą
         ctx.fillStyle = 'rgba(255,255,255,0.9)';
-        ctx.font = "700 11px 'Inter', sans-serif";
-        ctx.textAlign = 'center';
+        ctx.font = "600 12px 'Inter', sans-serif";
         ctx.textBaseline = 'top';
         const lines = Array.isArray(labels[i]) ? labels[i] : [labels[i]];
-        lines.forEach((ln, li) => ctx.fillText(ln, cx + barW / 2, baseY + 10 + li * 13));
+        lines.forEach((ln, li) => ctx.fillText(ln, sx, sy + satR + 6 + li * 14));
       });
     }
 
