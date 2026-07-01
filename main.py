@@ -45,17 +45,23 @@ PERPLEXITY_KEY = os.getenv("PERPLEXITY_KEY", "")
 GPT_KEY = os.getenv("GPT_KEY", "")
 LEADS_TOKEN = os.getenv("LEADS_TOKEN", "")
 FIRESTORE_PROJECT = os.getenv("FIRESTORE_PROJECT", "")
-LEADS_EMAIL = os.getenv("LEADS_EMAIL", "")      # odbiorca powiadomień, np. marcin@...
+LEADS_EMAIL = os.getenv("LEADS_EMAIL", "marcin.zielinski@strategiczni.pl")  # odbiorca powiadomień o leadach
 SMTP_USER   = os.getenv("SMTP_USER", "")        # adres nadawcy / login SMTP
 SMTP_PASS   = os.getenv("SMTP_PASS", "")        # hasło lub App Password
 SMTP_HOST   = os.getenv("SMTP_HOST", "smtp.gmail.com")
 SMTP_PORT   = int(os.getenv("SMTP_PORT", "587"))
+# Publiczny adres bazowy aplikacji — używany do budowania linku do odblokowanego raportu
+# wysyłanego mailem do użytkownika. Bez końcowego slasha.
+PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://strategiczni.ai/llms-audit").rstrip("/")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 _PSI_TOKEN_CACHE: dict = {"token": None, "exp": 0}
 
 # In-memory lead storage (resets on restart; backed by Firestore/stdout for persistence)
 _LEADS_MEMORY: list[dict] = []
 _LEADS_LOCK = threading.Lock()
+# Zbiór adresów e-mail, które już pozyskaliśmy (do wykrywania powracających leadów).
+# In-memory + best-effort Firestore (kolekcja `lead_emails`), by przetrwać restart/instancje.
+_LEAD_EMAILS_SEEN: set[str] = set()
 
 AI_BOTS = ["GPTBot", "PerplexityBot", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "Google-Extended"]
 MAX_AUDIT_PAGES = 5
@@ -3684,30 +3690,136 @@ Jeśli wszystkie modele nie mają informacji — score=0."""
         return {"available": False, "error": str(e)}
 
 
+def _smtp_send(to_addr: str, subject: str, body: str) -> None:
+    """Wysyła jednego maila przez SMTP. Wymaga SMTP_USER + SMTP_PASS."""
+    if not (SMTP_USER and SMTP_PASS and to_addr):
+        return
+    msg = MIMEText(body, "plain", "utf-8")
+    msg["Subject"] = subject
+    msg["From"] = SMTP_USER
+    msg["To"] = to_addr
+    with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
+        s.starttls()
+        s.login(SMTP_USER, SMTP_PASS)
+        s.sendmail(SMTP_USER, [to_addr], msg.as_bytes())
+
+
+def _unlock_link_for(url_or_domain: str) -> str:
+    """Buduje link do odblokowanego raportu wysyłany mailem do użytkownika."""
+    key = _report_key(url_or_domain)
+    if not key:
+        return PUBLIC_BASE_URL + "/"
+    from urllib.parse import quote
+    return f"{PUBLIC_BASE_URL}/?d={quote(key)}&unlocked=1"
+
+
 def _send_lead_email(record: dict) -> None:
-    """Best-effort e-mail notification for new lead. Requires LEADS_EMAIL + SMTP_USER + SMTP_PASS."""
+    """Best-effort powiadomienie dla nas o nowym leadzie. Requires LEADS_EMAIL + SMTP_USER + SMTP_PASS."""
     if not (LEADS_EMAIL and SMTP_USER and SMTP_PASS):
         return
     try:
         score_str = f"  Wynik audytu: {record['score']}\n" if record.get("score") is not None else ""
+        returning = "  (POWRACAJĄCY — e-mail już był w bazie)\n" if record.get("returning") else ""
         body = (
             f"Nowy lead z audytu AI SEO\n"
             f"{'─' * 36}\n"
             f"  E-mail:  {record['email']}\n"
             f"  Domena:  {record.get('url', '—')}\n"
             f"{score_str}"
+            f"{returning}"
             f"  Czas:    {record['ts']}\n"
         )
-        msg = MIMEText(body, "plain", "utf-8")
-        msg["Subject"] = f"[Kopernik] Lead: {record['email']}"
-        msg["From"] = SMTP_USER
-        msg["To"] = LEADS_EMAIL
-        with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
-            s.starttls()
-            s.login(SMTP_USER, SMTP_PASS)
-            s.sendmail(SMTP_USER, [LEADS_EMAIL], msg.as_bytes())
+        subject = f"[Kopernik] {'Powrót' if record.get('returning') else 'Lead'}: {record['email']}"
+        _smtp_send(LEADS_EMAIL, subject, body)
     except Exception as e:
         print(f"LEAD_EMAIL_ERR: {e}", flush=True)
+
+
+def _send_report_link_email(record: dict) -> None:
+    """Best-effort e-mail do użytkownika z linkiem do odblokowanego raportu."""
+    if not (SMTP_USER and SMTP_PASS):
+        return
+    try:
+        link = _unlock_link_for(record.get("url", ""))
+        domain = _report_key(record.get("url", "")) or "Twojej strony"
+        body = (
+            f"Dzień dobry,\n\n"
+            f"dziękujemy za skorzystanie z audytu AI SEO. Poniżej link do pełnego, "
+            f"odblokowanego raportu dla domeny {domain}:\n\n"
+            f"{link}\n\n"
+            f"W raporcie znajdziesz wynik ogólny oraz szczegółową listę wszystkich "
+            f"kategorii, luk treści i rekomendacji.\n\n"
+            f"Pozdrawiamy,\n"
+            f"Zespół Strategiczni\n"
+        )
+        _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji", body)
+    except Exception as e:
+        print(f"REPORT_LINK_EMAIL_ERR: {e}", flush=True)
+
+
+def _lead_email_seen_firestore(email: str) -> bool:
+    """Sprawdza w Firestore czy dany e-mail już istnieje (best-effort)."""
+    project = FIRESTORE_PROJECT
+    if not project:
+        return False
+    try:
+        key = re.sub(r"[^a-z0-9]", "_", email.lower())[:200]
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        r = requests.get(
+            f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/lead_emails/{key}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
+        )
+        return r.status_code == 200
+    except Exception:
+        return False
+
+
+def _mark_lead_email_firestore(email: str) -> None:
+    """Zapisuje e-mail do kolekcji lead_emails (best-effort)."""
+    project = FIRESTORE_PROJECT
+    if not project:
+        return
+    try:
+        key = re.sub(r"[^a-z0-9]", "_", email.lower())[:200]
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        requests.patch(
+            f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/lead_emails/{key}",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"fields": {
+                "email": {"stringValue": email},
+                "ts": {"stringValue": datetime.utcnow().isoformat() + "Z"},
+            }},
+            timeout=10,
+        )
+    except Exception:
+        pass
+
+
+def _is_returning_lead(email: str) -> bool:
+    """True, jeśli e-mail już pozyskaliśmy wcześniej (pamięć procesu lub Firestore)."""
+    e = email.strip().lower()
+    with _LEADS_LOCK:
+        if e in _LEAD_EMAILS_SEEN:
+            return True
+    return _lead_email_seen_firestore(e)
+
+
+def _remember_lead_email(email: str) -> None:
+    e = email.strip().lower()
+    with _LEADS_LOCK:
+        _LEAD_EMAILS_SEEN.add(e)
+    threading.Thread(target=_mark_lead_email_firestore, args=(e,), daemon=True).start()
 
 
 def _save_lead_to_firestore(record: dict) -> None:
@@ -4879,11 +4991,14 @@ async def capture_lead(lead: LeadRequest):
     email = (lead.email or "").strip()
     if "@" not in email or "." not in email or len(email) > 200:
         raise HTTPException(status_code=400, detail="Invalid email")
+
+    returning = _is_returning_lead(email)
     record = {
         "ts": datetime.utcnow().isoformat() + "Z",
         "email": email,
         "url": (lead.url or "").strip()[:500],
         "score": lead.score,
+        "returning": returning,
     }
     # 1. stdout → Cloud Logging (persists across restarts)
     print(f"LEAD: {json.dumps(record, ensure_ascii=False)}", flush=True)
@@ -4900,9 +5015,23 @@ async def capture_lead(lead: LeadRequest):
             pass
     # 4. Firestore (best-effort, if FIRESTORE_PROJECT is set)
     threading.Thread(target=_save_lead_to_firestore, args=(record,), daemon=True).start()
-    # 5. E-mail notification (best-effort, if LEADS_EMAIL + SMTP_USER + SMTP_PASS set)
+    # 5. Powiadomienie do nas o leadzie (marcin@...) — zawsze, także przy powrocie.
     threading.Thread(target=_send_lead_email, args=(record,), daemon=True).start()
-    return {"status": "ok"}
+
+    if returning:
+        # E-mail już w bazie — NIE wysyłamy kolejnego linku. Prosimy o kontakt.
+        return {
+            "status": "already_seen",
+            "message": (
+                "Ten adres e-mail jest już w naszej bazie. Jeśli chcesz pozyskać więcej "
+                "informacji lub sprawdzić konkurencję, skontaktuj się z nami."
+            ),
+        }
+
+    # Nowy lead: zapamiętaj e-mail i wyślij użytkownikowi link do odblokowanego raportu.
+    _remember_lead_email(email)
+    threading.Thread(target=_send_report_link_email, args=(record,), daemon=True).start()
+    return {"status": "sent", "message": "Link do pełnego raportu wysłaliśmy na podany adres e-mail."}
 
 
 @app.get("/leads")

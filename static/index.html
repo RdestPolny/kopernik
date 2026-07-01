@@ -2100,8 +2100,25 @@ results.addEventListener('submit', async (e) => {
       body: JSON.stringify({email, url: currentResult?.url || '', score}),
     });
     if (!r.ok) throw new Error('Nie udało się zapisać.');
-    unlockDomain(domainKey(currentResult));
-    refreshAuditView();
+    const data = await r.json().catch(() => ({}));
+    // NIE odblokowujemy raportu w przeglądarce — link do pełnego raportu idzie mailem.
+    const card = form.closest('.locked-card');
+    if (data.status === 'already_seen') {
+      // E-mail już w bazie — prośba o kontakt zamiast kolejnego linku.
+      if (card) card.innerHTML = `
+        <div class="eyebrow" style="margin-bottom:10px;">Masz już u nas raport</div>
+        <h3>Ten e-mail jest już w naszej bazie</h3>
+        <p>${esc(data.message || 'Jeśli chcesz pozyskać więcej informacji lub sprawdzić konkurencję, skontaktuj się z nami.')}</p>
+        <p style="margin-top:14px;"><a class="btn" href="mailto:marcin.zielinski@strategiczni.pl?subject=Chc%C4%99%20wi%C4%99cej%20informacji%20o%20AI%20SEO">Skontaktuj się z nami</a></p>
+      `;
+    } else {
+      // Nowy lead — link do pełnego raportu wysłany mailem.
+      if (card) card.innerHTML = `
+        <div class="eyebrow" style="margin-bottom:10px;">Sprawdź skrzynkę</div>
+        <h3>Wysłaliśmy Ci pełny raport</h3>
+        <p>${esc(data.message || 'Link do pełnego, odblokowanego raportu wysłaliśmy na podany adres e-mail.')} Sprawdź skrzynkę (także folder spam/oferty).</p>
+      `;
+    }
   } catch (err) {
     errEl.textContent = err.message || 'Błąd zapisu — spróbuj ponownie.';
     btn.disabled = false;
@@ -2343,6 +2360,10 @@ function applyMode() {
   const params = new URLSearchParams(location.search);
   const dom = params.get('d') || params.get('report');
   if (!dom) return;
+  // Link z maila (?unlocked=1) odblokowuje pełny raport dla tej domeny.
+  if (params.get('unlocked') === '1') {
+    try { unlockDomain(dom.replace(/^www\./, '').toLowerCase()); } catch (e) {}
+  }
   showAuditLoader('Wczytuję udostępniony raport…');
   setAuditPct(30);
   fetch('report?domain=' + encodeURIComponent(dom))
@@ -2350,6 +2371,7 @@ function applyMode() {
     .then(data => {
       if (data && data.found && data.result) {
         setAuditPct(100);
+        if (params.get('unlocked') === '1') { try { unlockDomain(domainKey(data.result)); } catch (e) {} }
         renderResult(data.result);
       } else {
         auditLoaderError('Nie znaleziono zapisanego raportu dla: ' + dom + '. Uruchom audyt, aby go wygenerować.');
