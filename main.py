@@ -16,6 +16,8 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 from urllib.parse import urlparse, urljoin
 
 import requests
@@ -54,6 +56,15 @@ SMTP_PORT   = int(os.getenv("SMTP_PORT", "587"))
 # Publiczny adres bazowy aplikacji — używany do budowania linku do odblokowanego raportu
 # wysyłanego mailem do użytkownika. Bez końcowego slasha.
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://strategiczni.ai/llms-audit").rstrip("/")
+# Branding maila z raportem (można nadpisać zmiennymi env, bez zmian w kodzie).
+BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://strategiczni.pl/wp-content/uploads/2026/01/ai-llm-ready-baner-1-e1769683544267.png")
+BRAND_SITE_URL = os.getenv("BRAND_SITE_URL", "https://strategiczni.pl")
+CONTACT_NAME = os.getenv("CONTACT_NAME", "Marcin Zieliński")
+CONTACT_TITLE = os.getenv("CONTACT_TITLE", "Strategiczni — AI SEO")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "marcin.zielinski@strategiczni.pl")
+CONTACT_PHONE = os.getenv("CONTACT_PHONE", "")          # opcjonalnie, np. "+48 600 000 000"
+CONTACT_PHOTO_URL = os.getenv("CONTACT_PHOTO_URL", "")  # opcjonalnie URL zdjęcia; brak → monogram
+CLUTCH_PROFILE_URL = os.getenv("CLUTCH_PROFILE_URL", "https://clutch.co/profile/strategicznipl#summary")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 _PSI_TOKEN_CACHE: dict = {"token": None, "exp": 0}
 
@@ -3691,14 +3702,22 @@ Jeśli wszystkie modele nie mają informacji — score=0."""
         return {"available": False, "error": str(e)}
 
 
-def _smtp_send(to_addr: str, subject: str, body: str) -> None:
-    """Wysyła jednego maila przez SMTP. Wymaga SMTP_USER + SMTP_PASS."""
+def _smtp_send(to_addr: str, subject: str, body: str, html: str | None = None,
+               from_name: str = "Strategiczni") -> None:
+    """Wysyła jednego maila przez SMTP. Wymaga SMTP_USER + SMTP_PASS.
+    Jeśli podano `html`, wysyła multipart/alternative (tekst + HTML)."""
     if not (SMTP_USER and SMTP_PASS and to_addr):
         return
-    msg = MIMEText(body, "plain", "utf-8")
+    if html:
+        msg = MIMEMultipart("alternative")
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+        msg.attach(MIMEText(html, "html", "utf-8"))
+    else:
+        msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = SMTP_USER
+    msg["From"] = formataddr((from_name, SMTP_USER))
     msg["To"] = to_addr
+    msg["Reply-To"] = SMTP_USER
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
         s.starttls()
         s.login(SMTP_USER, SMTP_PASS)
@@ -3738,8 +3757,121 @@ def _send_lead_email(record: dict) -> str | None:
         return str(e)
 
 
+CLUTCH_BADGES = [
+    ("https://strategiczni.pl/wp-content/uploads/2026/02/Top-Clutch-Seo-Company-Poland-2026-278x300.png", "Top SEO Company Poland 2026"),
+    ("https://strategiczni.pl/wp-content/uploads/2026/02/Top-Clutch-Sem-Company-Poland-2026-278x300.png", "Top SEM Company Poland 2026"),
+    ("https://strategiczni.pl/wp-content/uploads/2026/02/Top-Clutch-Social-Media-Marketing-Company-Poland-2026-278x300.png", "Top Social Media Poland 2026"),
+    ("https://strategiczni.pl/wp-content/uploads/2024/05/global_award_spring_2024-300x257.png", "Clutch Global Award Spring 2024"),
+]
+
+
+def _report_link_email_html(link: str, domain: str) -> str:
+    """Zwraca responsywny, table-based HTML maila z linkiem do raportu."""
+    def esc(s: str) -> str:
+        return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    domain_e, link_e = esc(domain), esc(link)
+    font = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"
+
+    # Awatar osoby kontaktowej: zdjęcie (jeśli podane) lub monogram na złotym kółku.
+    if CONTACT_PHOTO_URL:
+        avatar = (f'<img src="{esc(CONTACT_PHOTO_URL)}" width="56" height="56" alt="{esc(CONTACT_NAME)}" '
+                  f'style="width:56px;height:56px;border-radius:50%;display:block;border:2px solid #E5E3DA;">')
+    else:
+        initials = "".join(w[0] for w in CONTACT_NAME.split()[:2]).upper() or "S"
+        avatar = (f'<table cellpadding="0" cellspacing="0" role="presentation"><tr>'
+                  f'<td width="56" height="56" align="center" valign="middle" bgcolor="#b88f3a" '
+                  f'style="width:56px;height:56px;border-radius:50%;{font}color:#0A0A0A;font-size:19px;font-weight:700;">'
+                  f'{esc(initials)}</td></tr></table>')
+
+    phone_html = (f'&nbsp;·&nbsp;<a href="tel:{esc(CONTACT_PHONE)}" style="color:#6B6B68;text-decoration:none;">{esc(CONTACT_PHONE)}</a>'
+                  if CONTACT_PHONE else "")
+
+    badges_cells = "".join(
+        f'<td align="center" valign="middle" style="padding:0 6px;">'
+        f'<img src="{esc(u)}" alt="{esc(a)}" width="60" '
+        f'style="width:60px;height:auto;display:block;">' f'</td>'
+        for u, a in CLUTCH_BADGES
+    )
+
+    return f"""<!doctype html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only"></head>
+<body style="margin:0;padding:0;background:#ECEAE3;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ECEAE3;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#FFFFFF;border:1px solid #E5E3DA;border-radius:10px;overflow:hidden;">
+
+<tr><td align="center" bgcolor="#0A0A0A" style="background:#0A0A0A;padding:30px 24px;">
+<img src="{esc(BRAND_LOGO_URL)}" alt="Strategiczni — AI LLM Ready" width="240" style="display:block;width:240px;max-width:80%;height:auto;margin:0 auto;">
+</td></tr>
+
+<tr><td style="padding:34px 36px 6px;{font}color:#1F1F1F;font-size:16px;line-height:1.6;">
+<p style="margin:0 0 16px;">Dzień dobry,</p>
+<p style="margin:0 0 16px;">dziękujemy za skorzystanie z audytu AI SEO. Przygotowaliśmy dla Ciebie pełny, odblokowany raport dla domeny <strong style="color:#0A0A0A;">{domain_e}</strong>.</p>
+</td></tr>
+
+<tr><td align="center" style="padding:10px 36px 26px;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td align="center" bgcolor="#b88f3a" style="border-radius:6px;">
+<a href="{link_e}" target="_blank" style="display:inline-block;padding:15px 36px;{font}font-size:16px;font-weight:700;color:#0A0A0A;text-decoration:none;letter-spacing:.3px;">Otwórz pełny raport →</a>
+</td></tr></table>
+<p style="margin:14px 0 0;{font}font-size:12px;color:#6B6B68;">Link działa od razu, bez logowania.</p>
+</td></tr>
+
+<tr><td style="padding:0 36px 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F7F6F1" style="background:#F7F6F1;border-left:4px solid #b88f3a;border-radius:6px;">
+<tr><td style="padding:20px 22px;{font}color:#1F1F1F;font-size:15px;line-height:1.6;">
+<p style="margin:0 0 10px;font-weight:700;color:#0A0A0A;">W raporcie znajdziesz:</p>
+<p style="margin:0 0 6px;">Wynik ogólny widoczności w AI — ChatGPT, Perplexity, Gemini oraz Google AI Overviews.</p>
+<p style="margin:0 0 6px;">Szczegółową listę wszystkich kategorii i wykrytych luk w treści.</p>
+<p style="margin:0;">Priorytetowe rekomendacje — od czego zacząć, żeby AI zaczęło Cię cytować.</p>
+</td></tr></table>
+</td></tr>
+
+<tr><td style="padding:0 36px 26px;{font}color:#1F1F1F;font-size:15px;line-height:1.6;">
+<p style="margin:0;">Chcesz omówić wyniki albo sprawdzić, jak wypadasz na tle konkurencji? Odpisz na tę wiadomość — chętnie pomożemy.</p>
+</td></tr>
+
+<tr><td style="padding:0 36px 30px;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td valign="middle" style="padding-right:14px;">{avatar}</td>
+<td valign="middle" style="{font}">
+<p style="margin:0;color:#0A0A0A;font-size:15px;font-weight:700;">{esc(CONTACT_NAME)}</p>
+<p style="margin:2px 0 0;color:#6B6B68;font-size:13px;">{esc(CONTACT_TITLE)}</p>
+<p style="margin:2px 0 0;font-size:13px;"><a href="mailto:{esc(CONTACT_EMAIL)}" style="color:#b88f3a;text-decoration:none;">{esc(CONTACT_EMAIL)}</a>{phone_html}</p>
+</td></tr></table>
+</td></tr>
+
+<tr><td style="padding:0 36px 30px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F7F6F1" style="background:#F7F6F1;border:1px solid #E5E3DA;border-radius:8px;">
+<tr><td style="padding:20px 22px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td valign="middle" style="{font}">
+<span style="font-size:26px;font-weight:700;color:#0A0A0A;">5.0</span>
+<span style="color:#b88f3a;font-size:18px;letter-spacing:1px;">★★★★★</span><br>
+<span style="color:#6B6B68;font-size:12px;"><strong style="color:#1F1F1F;">28</strong> zweryfikowanych recenzji na Clutch.co</span>
+</td>
+<td valign="middle" align="right">
+<a href="{esc(CLUTCH_PROFILE_URL)}" target="_blank" style="display:inline-block;background:#0A0A0A;color:#FFFFFF;border-radius:4px;padding:9px 15px;{font}font-size:12px;font-weight:700;text-decoration:none;">Przeczytaj opinie →</a>
+</td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:16px auto 0;"><tr>{badges_cells}</tr></table>
+</td></tr></table>
+</td></tr>
+
+<tr><td style="padding:18px 36px 28px;border-top:1px solid #E5E3DA;{font}color:#9A9A97;font-size:11px;line-height:1.6;text-align:center;">
+Strategiczni · <a href="{esc(BRAND_SITE_URL)}" target="_blank" style="color:#6B6B68;text-decoration:none;">strategiczni.pl</a><br>
+Otrzymujesz tę wiadomość, ponieważ poprosiłeś o pełny raport z audytu AI SEO.
+</td></tr>
+
+</table>
+</td></tr></table>
+</body></html>"""
+
+
 def _send_report_link_email(record: dict) -> str | None:
-    """E-mail do użytkownika z linkiem do raportu. Zwraca None przy sukcesie, inaczej błąd."""
+    """E-mail do użytkownika z linkiem do raportu (HTML + tekst). Zwraca None lub błąd."""
     if not (SMTP_USER and SMTP_PASS):
         return "SMTP nieustawione"
     try:
@@ -3750,12 +3882,14 @@ def _send_report_link_email(record: dict) -> str | None:
             f"dziękujemy za skorzystanie z audytu AI SEO. Poniżej link do pełnego, "
             f"odblokowanego raportu dla domeny {domain}:\n\n"
             f"{link}\n\n"
-            f"W raporcie znajdziesz wynik ogólny oraz szczegółową listę wszystkich "
-            f"kategorii, luk treści i rekomendacji.\n\n"
-            f"Pozdrawiamy,\n"
-            f"Zespół Strategiczni\n"
+            f"W raporcie znajdziesz wynik ogólny widoczności w AI, szczegółową listę "
+            f"wszystkich kategorii i luk treści oraz priorytetowe rekomendacje.\n\n"
+            f"Chcesz omówić wyniki lub sprawdzić konkurencję? Odpisz na tę wiadomość.\n\n"
+            f"{CONTACT_NAME}\n{CONTACT_TITLE}\n{CONTACT_EMAIL}\n"
         )
-        _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji", body)
+        html = _report_link_email_html(link, domain)
+        _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji",
+                   body, html=html)
         return None
     except Exception as e:
         print(f"REPORT_LINK_EMAIL_ERR: {e}", flush=True)
