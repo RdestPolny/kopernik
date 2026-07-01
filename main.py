@@ -3773,20 +3773,6 @@ def _report_link_email_html(link: str, domain: str) -> str:
     domain_e, link_e = esc(domain), esc(link)
     font = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"
 
-    # Awatar osoby kontaktowej: zdjęcie (jeśli podane) lub monogram na złotym kółku.
-    if CONTACT_PHOTO_URL:
-        avatar = (f'<img src="{esc(CONTACT_PHOTO_URL)}" width="56" height="56" alt="{esc(CONTACT_NAME)}" '
-                  f'style="width:56px;height:56px;border-radius:50%;display:block;border:2px solid #E5E3DA;">')
-    else:
-        initials = "".join(w[0] for w in CONTACT_NAME.split()[:2]).upper() or "S"
-        avatar = (f'<table cellpadding="0" cellspacing="0" role="presentation"><tr>'
-                  f'<td width="56" height="56" align="center" valign="middle" bgcolor="#b88f3a" '
-                  f'style="width:56px;height:56px;border-radius:50%;{font}color:#0A0A0A;font-size:19px;font-weight:700;">'
-                  f'{esc(initials)}</td></tr></table>')
-
-    phone_html = (f'&nbsp;·&nbsp;<a href="tel:{esc(CONTACT_PHONE)}" style="color:#6B6B68;text-decoration:none;">{esc(CONTACT_PHONE)}</a>'
-                  if CONTACT_PHONE else "")
-
     badges_cells = "".join(
         f'<td align="center" valign="middle" style="padding:0 6px;">'
         f'<img src="{esc(u)}" alt="{esc(a)}" width="60" '
@@ -3830,18 +3816,8 @@ def _report_link_email_html(link: str, domain: str) -> str:
 </td></tr></table>
 </td></tr>
 
-<tr><td style="padding:0 36px 26px;{font}color:#1F1F1F;font-size:15px;line-height:1.6;">
+<tr><td style="padding:0 36px 30px;{font}color:#1F1F1F;font-size:15px;line-height:1.6;">
 <p style="margin:0;">Chcesz omówić wyniki albo sprawdzić, jak wypadasz na tle konkurencji? Odpisz na tę wiadomość — chętnie pomożemy.</p>
-</td></tr>
-
-<tr><td style="padding:0 36px 30px;">
-<table role="presentation" cellpadding="0" cellspacing="0"><tr>
-<td valign="middle" style="padding-right:14px;">{avatar}</td>
-<td valign="middle" style="{font}">
-<p style="margin:0;color:#0A0A0A;font-size:15px;font-weight:700;">{esc(CONTACT_NAME)}</p>
-<p style="margin:2px 0 0;color:#6B6B68;font-size:13px;">{esc(CONTACT_TITLE)}</p>
-<p style="margin:2px 0 0;font-size:13px;"><a href="mailto:{esc(CONTACT_EMAIL)}" style="color:#b88f3a;text-decoration:none;">{esc(CONTACT_EMAIL)}</a>{phone_html}</p>
-</td></tr></table>
 </td></tr>
 
 <tr><td style="padding:0 36px 30px;">
@@ -3885,7 +3861,7 @@ def _send_report_link_email(record: dict) -> str | None:
             f"W raporcie znajdziesz wynik ogólny widoczności w AI, szczegółową listę "
             f"wszystkich kategorii i luk treści oraz priorytetowe rekomendacje.\n\n"
             f"Chcesz omówić wyniki lub sprawdzić konkurencję? Odpisz na tę wiadomość.\n\n"
-            f"{CONTACT_NAME}\n{CONTACT_TITLE}\n{CONTACT_EMAIL}\n"
+            f"Pozdrawiamy,\nStrategiczni\n"
         )
         html = _report_link_email_html(link, domain)
         _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji",
