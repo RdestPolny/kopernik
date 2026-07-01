@@ -21,6 +21,7 @@ from urllib.parse import urlparse, urljoin
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -3713,10 +3714,10 @@ def _unlock_link_for(url_or_domain: str) -> str:
     return f"{PUBLIC_BASE_URL}/?d={quote(key)}&unlocked=1"
 
 
-def _send_lead_email(record: dict) -> None:
-    """Best-effort powiadomienie dla nas o nowym leadzie. Requires LEADS_EMAIL + SMTP_USER + SMTP_PASS."""
+def _send_lead_email(record: dict) -> str | None:
+    """Powiadomienie dla nas o nowym leadzie. Zwraca None przy sukcesie, inaczej treść błędu."""
     if not (LEADS_EMAIL and SMTP_USER and SMTP_PASS):
-        return
+        return "SMTP/LEADS_EMAIL nieustawione"
     try:
         score_str = f"  Wynik audytu: {record['score']}\n" if record.get("score") is not None else ""
         returning = "  (POWRACAJĄCY — e-mail już był w bazie)\n" if record.get("returning") else ""
@@ -3731,14 +3732,16 @@ def _send_lead_email(record: dict) -> None:
         )
         subject = f"[Kopernik] {'Powrót' if record.get('returning') else 'Lead'}: {record['email']}"
         _smtp_send(LEADS_EMAIL, subject, body)
+        return None
     except Exception as e:
         print(f"LEAD_EMAIL_ERR: {e}", flush=True)
+        return str(e)
 
 
-def _send_report_link_email(record: dict) -> None:
-    """Best-effort e-mail do użytkownika z linkiem do odblokowanego raportu."""
+def _send_report_link_email(record: dict) -> str | None:
+    """E-mail do użytkownika z linkiem do raportu. Zwraca None przy sukcesie, inaczej błąd."""
     if not (SMTP_USER and SMTP_PASS):
-        return
+        return "SMTP nieustawione"
     try:
         link = _unlock_link_for(record.get("url", ""))
         domain = _report_key(record.get("url", "")) or "Twojej strony"
@@ -3753,8 +3756,10 @@ def _send_report_link_email(record: dict) -> None:
             f"Zespół Strategiczni\n"
         )
         _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji", body)
+        return None
     except Exception as e:
         print(f"REPORT_LINK_EMAIL_ERR: {e}", flush=True)
+        return str(e)
 
 
 def _lead_email_seen_firestore(email: str) -> bool:
@@ -3816,10 +3821,11 @@ def _is_returning_lead(email: str) -> bool:
 
 
 def _remember_lead_email(email: str) -> None:
+    """Zapamiętuje e-mail. UWAGA: na Cloud Run wołaj Firestore synchronicznie (nie w wątku),
+    bo instancja jest zamrażana po odpowiedzi. Zapis do Firestore robimy w endpoincie."""
     e = email.strip().lower()
     with _LEADS_LOCK:
         _LEAD_EMAILS_SEEN.add(e)
-    threading.Thread(target=_mark_lead_email_firestore, args=(e,), daemon=True).start()
 
 
 def _save_lead_to_firestore(record: dict) -> None:
@@ -4992,7 +4998,11 @@ async def capture_lead(lead: LeadRequest):
     if "@" not in email or "." not in email or len(email) > 200:
         raise HTTPException(status_code=400, detail="Invalid email")
 
-    returning = _is_returning_lead(email)
+    # UWAGA (Cloud Run): instancja jest zamrażana zaraz po zwróceniu odpowiedzi, więc
+    # NIE wolno wysyłać maili ani pisać do Firestore w wątkach "fire-and-forget" — nie
+    # zdążą się wykonać. Wszystkie efekty uboczne robimy synchronicznie w obrębie requestu
+    # (przez run_in_threadpool, żeby nie blokować pętli zdarzeń).
+    returning = await run_in_threadpool(_is_returning_lead, email)
     record = {
         "ts": datetime.utcnow().isoformat() + "Z",
         "email": email,
@@ -5013,10 +5023,12 @@ async def capture_lead(lead: LeadRequest):
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
         except Exception:
             pass
-    # 4. Firestore (best-effort, if FIRESTORE_PROJECT is set)
-    threading.Thread(target=_save_lead_to_firestore, args=(record,), daemon=True).start()
-    # 5. Powiadomienie do nas o leadzie (marcin@...) — zawsze, także przy powrocie.
-    threading.Thread(target=_send_lead_email, args=(record,), daemon=True).start()
+    # 4. Firestore — zapis leada (synchronicznie)
+    await run_in_threadpool(_save_lead_to_firestore, record)
+    # 5. Powiadomienie do nas o leadzie (marcin@...) — zawsze, także przy powrocie (synchronicznie).
+    notify_err = await run_in_threadpool(_send_lead_email, record)
+    if notify_err:
+        print(f"LEAD_NOTIFY_FAIL: {notify_err}", flush=True)
 
     if returning:
         # E-mail już w bazie — NIE wysyłamy kolejnego linku. Prosimy o kontakt.
@@ -5028,9 +5040,15 @@ async def capture_lead(lead: LeadRequest):
             ),
         }
 
-    # Nowy lead: zapamiętaj e-mail i wyślij użytkownikowi link do odblokowanego raportu.
+    # Nowy lead: wyślij użytkownikowi link do raportu, a potem zapamiętaj e-mail.
+    # Kolejność ważna: markujemy jako "widziany" DOPIERO po udanej wysyłce, żeby przy
+    # błędzie SMTP user nie został zablokowany bez raportu.
+    link_err = await run_in_threadpool(_send_report_link_email, record)
+    if link_err:
+        print(f"REPORT_LINK_FAIL: {link_err}", flush=True)
+        raise HTTPException(status_code=502, detail="Nie udało się wysłać maila z raportem. Spróbuj ponownie.")
     _remember_lead_email(email)
-    threading.Thread(target=_send_report_link_email, args=(record,), daemon=True).start()
+    await run_in_threadpool(_mark_lead_email_firestore, email)
     return {"status": "sent", "message": "Link do pełnego raportu wysłaliśmy na podany adres e-mail."}
 
 
@@ -5042,6 +5060,36 @@ async def list_leads(token: str = ""):
         raise HTTPException(status_code=403, detail="Forbidden — set LEADS_TOKEN and pass ?token=...")
     with _LEADS_LOCK:
         return {"leads": list(_LEADS_MEMORY), "count": len(_LEADS_MEMORY)}
+
+
+@app.get("/lead/test")
+async def lead_test(token: str = "", to: str = ""):
+    """Diagnostyka SMTP: wysyła testowego maila i zwraca dokładny błąd (jeśli wystąpi).
+    Chronione LEADS_TOKEN. Użycie: /llms-audit/lead/test?token=...&to=twoj@email.pl"""
+    if not LEADS_TOKEN or token != LEADS_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden — ustaw LEADS_TOKEN i podaj ?token=...")
+    to_addr = (to or LEADS_EMAIL or "").strip()
+    cfg = {
+        "SMTP_HOST": SMTP_HOST,
+        "SMTP_PORT": SMTP_PORT,
+        "SMTP_USER_set": bool(SMTP_USER),
+        "SMTP_PASS_set": bool(SMTP_PASS),
+        "LEADS_EMAIL": LEADS_EMAIL,
+        "PUBLIC_BASE_URL": PUBLIC_BASE_URL,
+        "FIRESTORE_PROJECT_set": bool(FIRESTORE_PROJECT),
+        "test_to": to_addr,
+    }
+    if not (SMTP_USER and SMTP_PASS):
+        return {"ok": False, "error": "SMTP_USER/SMTP_PASS nieustawione", "config": cfg}
+
+    def _try():
+        _smtp_send(to_addr, "[Kopernik] Test SMTP", "To jest testowy e-mail z diagnostyki /lead/test.")
+
+    try:
+        await run_in_threadpool(_try)
+        return {"ok": True, "message": f"Wysłano testowego maila na {to_addr}.", "config": cfg}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(e).__name__}: {e}", "config": cfg}
 
 
 # --- Serwowanie pod prefiksem /llms-audit (za Firebase Hosting) ---
