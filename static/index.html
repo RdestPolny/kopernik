@@ -624,9 +624,9 @@ function showPagePicker(data) {
   const cand = data.candidates || {};
   const homepage = data.homepage;
   const groups = [
-    {key: 'service', label: 'Strona sprzedażowa (oferta / usługa / produkt)', hint: 'Podstrona, na której sprzedajesz usługę lub produkt.', required: true},
-    {key: 'article', label: 'Artykuł / wpis blogowy / poradnik', hint: 'Treść ekspercka — blog, poradnik lub baza wiedzy.', required: true},
-    {key: 'about', label: 'O firmie / zespół', hint: 'Strona budująca zaufanie (E-E-A-T). Możesz pominąć ten krok.', required: false},
+    {key: 'service', label: 'Strona usługowa / oferta / produkt', hint: 'Podstrona, na której faktycznie sprzedajesz — opis konkretnej usługi, produktu lub oferty (np. /uslugi/…, /produkt/…). To właśnie takie strony AI najczęściej podaje w odpowiedzi na pytania zakupowe, dlatego sprawdzamy, czy Twoja jest dla modeli zrozumiała i „wybieralna”.', required: true},
+    {key: 'article', label: 'Artykuł / wpis blogowy / poradnik', hint: 'Treść ekspercka, która nie sprzedaje wprost, tylko odpowiada na pytania — blog, poradnik, baza wiedzy lub FAQ. To ona buduje autorytet tematyczny i najczęściej trafia do odpowiedzi AI wraz z cytowaniem źródła.', required: true},
+    {key: 'about', label: 'O firmie / zespół / kontakt', hint: 'Strona, która pokazuje, kto stoi za marką — zespół, doświadczenie, dane firmy. Buduje sygnały wiarygodności (E-E-A-T), po których AI ocenia, czy można Ci zaufać. Nie masz takiej strony? Możesz pominąć ten krok.', required: false},
   ];
   const total = groups.length;
   const dots = groups.map((g, i) => `<span class="pp-dot${i === 0 ? ' active' : ''}" data-dot="${i}"></span>`).join('');
@@ -646,7 +646,7 @@ function showPagePicker(data) {
           <span id="ppStepLabel" style="font-size:0.82rem;color:#6B6B68;white-space:nowrap;">Krok 1 z ${total}</span>
         </div>
         <div style="display:flex;gap:6px;margin-bottom:18px;">${dots}</div>
-        <p style="color:#6B6B68;margin:0 0 22px;font-size:0.92rem;">Strona główna (${esc(homepage)}) jest wybrana automatycznie. Dla każdego typu wskaż jednego kandydata — Gemini zasugerował najbardziej prawdopodobnych. Możesz też wpisać własny URL.</p>
+        <p style="color:#6B6B68;margin:0 0 22px;font-size:0.92rem;line-height:1.5;">Audyt nie analizuje całej strony naraz, tylko po jednej reprezentatywnej podstronie każdego typu — bo AI ocenia stronę usługową, artykuł i stronę „o firmie” zupełnie innym zestawem kryteriów. Stronę główną (${esc(homepage)}) bierzemy automatycznie. W każdym kroku wskaż jeden adres danego typu — poniżej podpowiadamy kandydatów wykrytych przez Gemini, ale możesz też wpisać własny URL.</p>
         <form id="pagePickerForm">
           ${stepsHtml}
           <div style="display:flex;gap:12px;margin-top:24px;flex-wrap:wrap;align-items:center;">
@@ -1148,26 +1148,23 @@ function drawHeroRadar(groups, overall) {
     let chartGroups = groupOrder(currentResult).map(id => groups.find(g => g.id === id) || {id, label: groupLabel(currentResult, id), score: 0});
     // Sortuj od najlepszego do najgorszego wyniku (null traktujemy jako najgorszy).
     chartGroups = chartGroups.slice().sort((a, b) => (b.score === null ? -1 : b.score) - (a.score === null ? -1 : a.score));
-    const legendLabels = chartGroups.map(g => {
-      if (g.id === 'ai_aeo') return 'AI AEO';
-      if (g.id === 'patents') return 'Patenty Google';
-      if (g.id === 'technical') return 'Techniczne SEO';
-      return g.label;
+    const labels = chartGroups.map(g => {
+      if (g.id === 'ai_aeo') return ['AI', 'AEO'];
+      if (g.id === 'patents') return ['Patenty', 'Google'];
+      if (g.id === 'technical') return ['Techniczne', 'SEO'];
+      return [g.label];
     });
     const data = chartGroups.map(g => g.score === null ? 0 : g.score);
-    // Kolor pierścienia zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
-    const ringColors = chartGroups.map(g => scoreColor(g.score));
-    const overallColor = scoreColor(overall);
+    // Kolor słupka zależny od wyniku kategorii (90+ zielony, 75-89 żółty, <75 czerwony).
+    const barColors = chartGroups.map(g => scoreColor(g.score));
 
-    // Pierścienie aktywności (styl Apple Watch): każda kategoria = jeden łuk,
-    // długość łuku = wynik, w środku wynik ogólny, na dole legenda.
+    // Pionowe słupki 3D obok siebie, posortowane od najlepszego do najgorszego.
     let rafId = null;
     const animStart = performance.now();
-    const animMs = 1100;
+    const animMs = 900;
     const easeOut = t => 1 - Math.pow(1 - t, 3);
-    const TAU = Math.PI * 2;
 
-    function drawRings(progress) {
+    function drawBars(progress) {
       const wrap = canvas.parentElement;
       const cssW = (wrap && wrap.clientWidth) || 480;
       const cssH = (wrap && wrap.clientHeight) || 480;
@@ -1181,97 +1178,102 @@ function drawHeroRadar(groups, overall) {
       ctx.clearRect(0, 0, cssW, cssH);
 
       const n = data.length;
-      const legendCols = 2;
-      const legendRows = Math.ceil(n / legendCols);
-      const legendRowH = 22;
-      const legendH = legendRows * legendRowH + 12;
-      const padTop = 14;
-      const ringsAreaH = cssH - padTop - legendH;
-      const cx = cssW / 2;
-      const cy = padTop + ringsAreaH / 2;
-      const outerR = Math.min(cssW, ringsAreaH) / 2 - 10;
-      const centerR = outerR * 0.32;            // wolne pole na wynik ogólny
-      const band = (outerR - centerR) / n;
-      const lineW = Math.max(6, band * 0.60);
-      const start = -Math.PI / 2;               // start od góry
+      const padTop = 40, padBottom = 58, padLeft = 40, padRight = 26;
+      // Głębia bryły 3D (w prawo i w górę) — stała dla wszystkich słupków.
+      const depth = Math.min(22, cssW * 0.05);
+      const dx = depth, dy = -depth * 0.6;
+      const plotW = cssW - padLeft - padRight - dx;
+      const plotH = cssH - padTop - padBottom + dy;
+      const baseY = cssH - padBottom;
+      const baseX = padLeft;
+      const maxVal = 100;
+      const slot = plotW / n;
+      const barW = Math.min(slot * 0.55, 62);
 
-      // Pierścienie: zewnętrzny = najlepszy wynik (sortowanie malejące).
-      data.forEach((val, i) => {
-        const r = outerR - band * (i + 0.5);
-        const sweep = (val / 100) * TAU * progress;
-        const color = ringColors[i];
-
-        // tor (tło pierścienia)
+      // Linie siatki i etykiety osi 0/25/50/75/100 (z efektem głębi).
+      for (let v = 0; v <= 100; v += 25) {
+        const y = baseY - (v / maxVal) * plotH;
+        ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+        ctx.lineWidth = 1;
         ctx.beginPath();
-        ctx.strokeStyle = 'rgba(255,255,255,0.10)';
-        ctx.lineWidth = lineW;
-        ctx.lineCap = 'round';
-        ctx.arc(cx, cy, r, 0, TAU);
+        ctx.moveTo(baseX + dx, y + dy);
+        ctx.lineTo(baseX + dx + plotW, y + dy);
         ctx.stroke();
-
-        // wynik z delikatną poświatą
-        if (sweep > 0.001) {
-          ctx.save();
-          ctx.beginPath();
-          ctx.strokeStyle = color;
-          ctx.lineWidth = lineW;
-          ctx.lineCap = 'round';
-          ctx.shadowColor = color;
-          ctx.shadowBlur = 14;
-          ctx.arc(cx, cy, r, start, start + sweep);
-          ctx.stroke();
-          ctx.restore();
-        }
-      });
-
-      // Środek: wynik ogólny.
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = overallColor;
-      ctx.font = `700 ${Math.round(centerR * 0.92)}px 'Inter', sans-serif`;
-      ctx.fillText(String(Math.round((overall || 0) * progress)), cx, cy - centerR * 0.08);
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.font = "600 10px 'Inter', sans-serif";
-      ctx.fillText('WYNIK OGÓLNY', cx, cy + centerR * 0.52);
-
-      // Legenda na dole: kropka koloru + nazwa + wynik.
-      const legendTop = padTop + ringsAreaH + 6;
-      const colW = cssW / legendCols;
-      legendLabels.forEach((lbl, i) => {
-        const col = i % legendCols;
-        const row = Math.floor(i / legendCols);
-        const lx = col * colW + 16;
-        const ly = legendTop + row * legendRowH + legendRowH / 2;
         ctx.beginPath();
-        ctx.fillStyle = ringColors[i];
-        ctx.arc(lx, ly, 5, 0, TAU);
-        ctx.fill();
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillStyle = 'rgba(255,255,255,0.85)';
-        ctx.font = "600 12px 'Inter', sans-serif";
-        ctx.fillText(lbl, lx + 12, ly);
+        ctx.moveTo(baseX, y);
+        ctx.lineTo(baseX + dx, y + dy);
+        ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.5)';
+        ctx.font = "600 11px 'Inter', sans-serif";
         ctx.textAlign = 'right';
-        ctx.fillStyle = ringColors[i];
-        ctx.font = "700 12px 'Inter', sans-serif";
-        ctx.fillText(String(data[i]), col * colW + colW - 14, ly);
+        ctx.textBaseline = 'middle';
+        ctx.fillText(String(v), baseX - 8, y);
+      }
+
+      // Słupki 3D: ściana boczna, górna i czołowa.
+      data.forEach((val, i) => {
+        const cx = baseX + slot * i + (slot - barW) / 2;
+        const h = (val / maxVal) * plotH * progress;
+        const topY = baseY - h;
+        const front = barColors[i];
+        const side = shadeColor(front, -0.24);
+        const top = shadeColor(front, 0.16);
+
+        // ściana boczna (prawa)
+        ctx.fillStyle = side;
+        ctx.beginPath();
+        ctx.moveTo(cx + barW, topY);
+        ctx.lineTo(cx + barW + dx, topY + dy);
+        ctx.lineTo(cx + barW + dx, baseY + dy);
+        ctx.lineTo(cx + barW, baseY);
+        ctx.closePath();
+        ctx.fill();
+
+        // ściana górna
+        ctx.fillStyle = top;
+        ctx.beginPath();
+        ctx.moveTo(cx, topY);
+        ctx.lineTo(cx + dx, topY + dy);
+        ctx.lineTo(cx + barW + dx, topY + dy);
+        ctx.lineTo(cx + barW, topY);
+        ctx.closePath();
+        ctx.fill();
+
+        // ściana czołowa
+        ctx.fillStyle = front;
+        ctx.fillRect(cx, topY, barW, h);
+
+        // Wartość nad słupkiem.
+        ctx.fillStyle = 'rgba(255,255,255,0.96)';
+        ctx.font = "700 14px 'Inter', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'bottom';
+        ctx.fillText(String(val), cx + barW / 2 + dx / 2, topY + dy - 5);
+
+        // Etykieta kategorii pod słupkiem.
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.font = "700 11px 'Inter', sans-serif";
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'top';
+        const lines = Array.isArray(labels[i]) ? labels[i] : [labels[i]];
+        lines.forEach((ln, li) => ctx.fillText(ln, cx + barW / 2, baseY + 10 + li * 13));
       });
     }
 
     function animate(now) {
       const t = Math.min(1, (now - animStart) / animMs);
-      drawRings(easeOut(t));
+      drawBars(easeOut(t));
       if (t < 1) rafId = requestAnimationFrame(animate);
       else rafId = null;
     }
     rafId = requestAnimationFrame(animate);
 
     if (drawHeroRadar._onResize) window.removeEventListener('resize', drawHeroRadar._onResize);
-    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart') === canvas) drawRings(1); };
+    drawHeroRadar._onResize = () => { if (document.getElementById('heroRadarChart') === canvas) drawBars(1); };
     window.addEventListener('resize', drawHeroRadar._onResize);
 
     heroRadarChart = {
-      toBase64Image: () => { try { drawRings(1); return canvas.toDataURL('image/png'); } catch (e) { return ''; } },
+      toBase64Image: () => { try { drawBars(1); return canvas.toDataURL('image/png'); } catch (e) { return ''; } },
       destroy: () => {
         if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
         if (drawHeroRadar._onResize) { window.removeEventListener('resize', drawHeroRadar._onResize); drawHeroRadar._onResize = null; }
