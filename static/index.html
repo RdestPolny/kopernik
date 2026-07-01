@@ -463,7 +463,6 @@ button{font:inherit;cursor:pointer}
       </form>
       <div id="ctaContainer" style="display:none; margin-top:32px; background:#1e3351; border:1px solid rgba(255,255,255,0.05); border-radius:8px; padding:32px; box-shadow:0 10px 30px rgba(0,0,0,0.15);">
         <div style="display:flex; align-items:center; gap:32px; flex-wrap:wrap; margin-bottom:24px; border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:24px;">
-          <div id="ctaScoreWrapper" style="flex-shrink:0;"></div>
           <div style="flex:1; min-width:200px;">
             <h3 style="color:#fff; margin-bottom:8px; font-size:1.25rem; font-family:var(--sans); font-weight:600;">Chcesz poprawić ten wynik?</h3>
             <p style="color:#D8D8D5; font-size:0.95rem; line-height:1.5; margin:0; max-width:400px;">Umów się na konsultację i porozmawiajmy o dedykowanej strategii AI SEO dla Twojej firmy.</p>
@@ -1104,11 +1103,6 @@ function renderResult(r) {
   const heroLede = document.querySelector('.hero .lede');
   if (heroH1) heroH1.innerHTML = `Wyniki audytu AI SEO dla <em>${esc(domainLabel)}</em>`;
   if (heroLede) heroLede.style.display = 'none';
-  document.getElementById('ctaScoreWrapper').innerHTML = `
-    <div style="display:flex; align-items:baseline; color:${scoreColor(overall)}; font-family:var(--sans); letter-spacing:-0.04em;">
-      <span style="font-size:5.5rem; line-height:0.8; font-weight:700;">${overall}</span>
-      <span style="color:rgba(255,255,255,0.5); font-size:1.4rem; font-weight:500; letter-spacing:0; margin-left:4px;">/100</span>
-    </div>`;
   document.getElementById('ctaContainer').style.display = 'block';
   drawHeroRadar(initialState.groups, initialState.overall);
 
@@ -1198,19 +1192,25 @@ function drawHeroRadar(groups, overall) {
       const S = Math.min(cssW, cssH);
 
       // Rozmiary elementów.
-      const satR = Math.max(26, Math.min(46, S * 0.085));     // promień satelity
+      const satR = Math.max(26, Math.min(44, S * 0.082));     // promień satelity
       const centerR = Math.max(64, Math.min(120, S * 0.17));  // promień centralnego gauge
-      const labelSpace = 30;                                   // miejsce na etykietę pod satelitą
-      const maxOrbitW = cssW / 2 - satR - 14;
-      const maxOrbitH = cssH / 2 - satR - labelSpace - 8;
-      let orbitR = Math.min(maxOrbitW, maxOrbitH);
-      orbitR = Math.max(orbitR, centerR + satR + 18);
+      const labelSpace = 28;                                   // miejsce na etykietę pod satelitą
 
       // Kąty satelitów: 6 pozycji co 60° (najlepszy zaczyna w lewym-górnym rogu),
       // dla innej liczby kategorii rozkładamy równomiernie.
       const angles = (n === 6)
         ? [240, 300, 0, 60, 120, 180].map(d => d * Math.PI / 180)
         : Array.from({ length: n }, (_, k) => (-90 + k * 360 / n) * Math.PI / 180);
+
+      // Promień orbity z realnej geometrii kątów (satelity nie sięgają pionowych
+      // krawędzi), więc pierścień jest możliwie duży — większy odstęp między
+      // wskaźnikami bez zmiany kształtu i układu.
+      const maxCos = Math.max.apply(null, angles.map(a => Math.abs(Math.cos(a)))) || 1;
+      const maxSin = Math.max.apply(null, angles.map(a => Math.abs(Math.sin(a)))) || 1;
+      const maxOrbitW = (cssW / 2 - satR - 8) / maxCos;
+      const maxOrbitH = (cssH / 2 - satR - labelSpace - 4) / maxSin;
+      let orbitR = Math.min(maxOrbitW, maxOrbitH);
+      orbitR = Math.max(orbitR, centerR + satR + 18);
 
       // --- Orbita łącząca satelity ---
       ctx.strokeStyle = 'rgba(255,255,255,0.10)';
