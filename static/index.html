@@ -141,6 +141,8 @@ button{font:inherit;cursor:pointer}
 .fan-cov.covered{background:#E8F4EC;color:var(--green)}
 .fan-cov.partial{background:#FBF1DD;color:var(--amber)}
 .fan-cov.missing{background:#FBE6E4;color:var(--red)}
+.fan-note{font-size:0.8rem;color:var(--muted);margin-top:6px;line-height:1.45}
+.fan-note a{color:inherit;text-decoration:underline}
 /* Sekcja AIO (dane Senuto) */
 .aio-sec{margin:0 0 26px;border:1px solid var(--rule);border-radius:8px;background:var(--paper);overflow:hidden}
 .aio-head{display:flex;align-items:baseline;justify-content:space-between;gap:12px;flex-wrap:wrap;padding:16px 20px;border-bottom:1px solid var(--rule);background:var(--paper-2)}
@@ -877,14 +879,27 @@ function renderGaps(r, mode) {
   return gaps.map(g => `<div class="gap-card">${esc(g)}</div>`).join('');
 }
 
+// Pokrycie fan-out dotyczy WYŁĄCZNIE audytowanej podstrony (nie całej domeny).
+const FAN_COV_LABELS = {
+  covered: 'pokryte',
+  partial: 'częściowo na tej podstronie',
+  missing: 'brak na tej podstronie',
+};
 function renderFanOut(fan) {
   const qs = fan.queries || [];
   if (!qs.length) return '<div class="gap-card">Brak danych fan-out.</div>';
-  return qs.map(q => `
+  return qs.map(q => {
+    const cov = q.coverage || 'missing';
+    const note = (cov !== 'covered' && q.gap_note)
+      ? `<div class="fan-note">${esc(q.gap_note)}</div>` : '';
+    const elsewhere = (cov !== 'covered' && q.elsewhere_url)
+      ? `<div class="fan-note">Prawdopodobna odpowiedź w domenie (poza audytem): <a href="${esc(q.elsewhere_url)}" target="_blank" rel="noopener">${esc(q.elsewhere_url)}</a></div>` : '';
+    return `
     <div class="fan-item">
-      <div class="fan-q"><span class="intent">${esc(q.intent || 'query')}</span>${esc(q.query || '')}</div>
-      <div class="fan-cov ${esc(q.coverage || 'missing')}">${esc(q.coverage || 'missing')}</div>
-    </div>`).join('');
+      <div class="fan-q"><span class="intent">${esc(q.intent || 'query')}</span>${esc(q.query || '')}${note}${elsewhere}</div>
+      <div class="fan-cov ${esc(cov)}">${esc(FAN_COV_LABELS[cov] || cov)}</div>
+    </div>`;
+  }).join('');
 }
 
 
@@ -1421,10 +1436,14 @@ function exportBarHtml() {
 }
 
 // Link do udostępnienia raportu — przywołuje zapisany raport tej domeny (?d=domena).
+// Jeśli udostępniający ma raport odblokowany (tryb sales/PRO albo domena odblokowana),
+// link dostaje unlocked=1 — odbiorca NIE jest ponownie proszony o e-mail.
 function shareUrlFor(r) {
   const d = domainKey(r);
   if (!d) return location.href;
-  return location.origin + location.pathname + '?d=' + encodeURIComponent(d);
+  let u = location.origin + location.pathname + '?d=' + encodeURIComponent(d);
+  if (PRO_UNLOCKED || currentMode === 'sales' || isDomainUnlocked(d)) u += '&unlocked=1';
+  return u;
 }
 
 function shareBarHtml(r) {
@@ -1924,7 +1943,7 @@ function renderExtras(r) {
       </section>
       <section class="extra">
         <div class="extra-head"><span class="extra-num">08</span><h2>Fan-out zapytań</h2></div>
-        <p class="extra-blurb">Symulacja pytań użytkowników w ChatGPT/Perplexity${fanUrl} — ile z nich pokrywa treść.</p>
+        <p class="extra-blurb">Symulacja pytań użytkowników w ChatGPT/Perplexity${fanUrl} — ile z nich pokrywa treść <b>tej jednej audytowanej podstrony</b>. „Brak" oznacza brak na tej podstronie, nie w całej domenie.</p>
         <div class="fan-grid">${renderFanOut(r.fan_out || {})}</div>
       </section>
       <section class="extra">

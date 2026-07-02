@@ -16,11 +16,14 @@ import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import datetime
 from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.utils import formataddr
 from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
 from fastapi import FastAPI, HTTPException
+from fastapi.concurrency import run_in_threadpool
 from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -53,6 +56,15 @@ SMTP_PORT   = int(os.getenv("SMTP_PORT", "587"))
 # Publiczny adres bazowy aplikacji — używany do budowania linku do odblokowanego raportu
 # wysyłanego mailem do użytkownika. Bez końcowego slasha.
 PUBLIC_BASE_URL = os.getenv("PUBLIC_BASE_URL", "https://strategiczni.ai/llms-audit").rstrip("/")
+# Branding maila z raportem (można nadpisać zmiennymi env, bez zmian w kodzie).
+BRAND_LOGO_URL = os.getenv("BRAND_LOGO_URL", "https://strategiczni.pl/wp-content/uploads/2026/01/ai-llm-ready-baner-1-e1769683544267.png")
+BRAND_SITE_URL = os.getenv("BRAND_SITE_URL", "https://strategiczni.pl")
+CONTACT_NAME = os.getenv("CONTACT_NAME", "Marcin Zieliński")
+CONTACT_TITLE = os.getenv("CONTACT_TITLE", "Strategiczni — AI SEO")
+CONTACT_EMAIL = os.getenv("CONTACT_EMAIL", "marcin.zielinski@strategiczni.pl")
+CONTACT_PHONE = os.getenv("CONTACT_PHONE", "")          # opcjonalnie, np. "+48 600 000 000"
+CONTACT_PHOTO_URL = os.getenv("CONTACT_PHOTO_URL", "")  # opcjonalnie URL zdjęcia; brak → monogram
+CLUTCH_PROFILE_URL = os.getenv("CLUTCH_PROFILE_URL", "https://clutch.co/profile/strategicznipl#summary")
 GOOGLE_APPLICATION_CREDENTIALS = os.getenv("GOOGLE_APPLICATION_CREDENTIALS", "")
 _PSI_TOKEN_CACHE: dict = {"token": None, "exp": 0}
 
@@ -3690,14 +3702,22 @@ Jeśli wszystkie modele nie mają informacji — score=0."""
         return {"available": False, "error": str(e)}
 
 
-def _smtp_send(to_addr: str, subject: str, body: str) -> None:
-    """Wysyła jednego maila przez SMTP. Wymaga SMTP_USER + SMTP_PASS."""
+def _smtp_send(to_addr: str, subject: str, body: str, html: str | None = None,
+               from_name: str = "Strategiczni") -> None:
+    """Wysyła jednego maila przez SMTP. Wymaga SMTP_USER + SMTP_PASS.
+    Jeśli podano `html`, wysyła multipart/alternative (tekst + HTML)."""
     if not (SMTP_USER and SMTP_PASS and to_addr):
         return
-    msg = MIMEText(body, "plain", "utf-8")
+    if html:
+        msg = MIMEMultipart("alternative")
+        msg.attach(MIMEText(body, "plain", "utf-8"))
+        msg.attach(MIMEText(html, "html", "utf-8"))
+    else:
+        msg = MIMEText(body, "plain", "utf-8")
     msg["Subject"] = subject
-    msg["From"] = SMTP_USER
+    msg["From"] = formataddr((from_name, SMTP_USER))
     msg["To"] = to_addr
+    msg["Reply-To"] = SMTP_USER
     with smtplib.SMTP(SMTP_HOST, SMTP_PORT, timeout=15) as s:
         s.starttls()
         s.login(SMTP_USER, SMTP_PASS)
@@ -3713,10 +3733,10 @@ def _unlock_link_for(url_or_domain: str) -> str:
     return f"{PUBLIC_BASE_URL}/?d={quote(key)}&unlocked=1"
 
 
-def _send_lead_email(record: dict) -> None:
-    """Best-effort powiadomienie dla nas o nowym leadzie. Requires LEADS_EMAIL + SMTP_USER + SMTP_PASS."""
+def _send_lead_email(record: dict) -> str | None:
+    """Powiadomienie dla nas o nowym leadzie. Zwraca None przy sukcesie, inaczej treść błędu."""
     if not (LEADS_EMAIL and SMTP_USER and SMTP_PASS):
-        return
+        return "SMTP/LEADS_EMAIL nieustawione"
     try:
         score_str = f"  Wynik audytu: {record['score']}\n" if record.get("score") is not None else ""
         returning = "  (POWRACAJĄCY — e-mail już był w bazie)\n" if record.get("returning") else ""
@@ -3731,14 +3751,105 @@ def _send_lead_email(record: dict) -> None:
         )
         subject = f"[Kopernik] {'Powrót' if record.get('returning') else 'Lead'}: {record['email']}"
         _smtp_send(LEADS_EMAIL, subject, body)
+        return None
     except Exception as e:
         print(f"LEAD_EMAIL_ERR: {e}", flush=True)
+        return str(e)
 
 
-def _send_report_link_email(record: dict) -> None:
-    """Best-effort e-mail do użytkownika z linkiem do odblokowanego raportu."""
+CLUTCH_BADGES = [
+    ("https://strategiczni.pl/wp-content/uploads/2026/02/Top-Clutch-Seo-Company-Poland-2026-278x300.png", "Top SEO Company Poland 2026"),
+    ("https://strategiczni.pl/wp-content/uploads/2026/02/Top-Clutch-Sem-Company-Poland-2026-278x300.png", "Top SEM Company Poland 2026"),
+    ("https://strategiczni.pl/wp-content/uploads/2026/02/Top-Clutch-Social-Media-Marketing-Company-Poland-2026-278x300.png", "Top Social Media Poland 2026"),
+    ("https://strategiczni.pl/wp-content/uploads/2024/05/global_award_spring_2024-300x257.png", "Clutch Global Award Spring 2024"),
+]
+
+
+def _report_link_email_html(link: str, domain: str) -> str:
+    """Zwraca responsywny, table-based HTML maila z linkiem do raportu."""
+    def esc(s: str) -> str:
+        return (s or "").replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+    domain_e, link_e = esc(domain), esc(link)
+    font = "font-family:'Helvetica Neue',Helvetica,Arial,sans-serif;"
+
+    badges_cells = "".join(
+        f'<td align="center" valign="middle" style="padding:0 6px;">'
+        f'<img src="{esc(u)}" alt="{esc(a)}" width="60" '
+        f'style="width:60px;height:auto;display:block;">' f'</td>'
+        for u, a in CLUTCH_BADGES
+    )
+
+    return f"""<!doctype html>
+<html lang="pl"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light only"></head>
+<body style="margin:0;padding:0;background:#ECEAE3;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#ECEAE3;">
+<tr><td align="center" style="padding:24px 12px;">
+<table role="presentation" width="600" cellpadding="0" cellspacing="0" style="width:600px;max-width:600px;background:#FFFFFF;border:1px solid #E5E3DA;border-radius:10px;overflow:hidden;">
+
+<tr><td align="center" bgcolor="#0A0A0A" style="background:#0A0A0A;padding:30px 24px;">
+<img src="{esc(BRAND_LOGO_URL)}" alt="Strategiczni — AI LLM Ready" width="240" style="display:block;width:240px;max-width:80%;height:auto;margin:0 auto;">
+</td></tr>
+
+<tr><td style="padding:34px 36px 6px;{font}color:#1F1F1F;font-size:16px;line-height:1.6;">
+<p style="margin:0 0 16px;">Dzień dobry,</p>
+<p style="margin:0 0 16px;">dziękujemy za skorzystanie z audytu AI SEO. Przygotowaliśmy dla Ciebie pełny, odblokowany raport dla domeny <strong style="color:#0A0A0A;">{domain_e}</strong>.</p>
+</td></tr>
+
+<tr><td align="center" style="padding:10px 36px 26px;">
+<table role="presentation" cellpadding="0" cellspacing="0"><tr>
+<td align="center" bgcolor="#b88f3a" style="border-radius:6px;">
+<a href="{link_e}" target="_blank" style="display:inline-block;padding:15px 36px;{font}font-size:16px;font-weight:700;color:#0A0A0A;text-decoration:none;letter-spacing:.3px;">Otwórz pełny raport →</a>
+</td></tr></table>
+<p style="margin:14px 0 0;{font}font-size:12px;color:#6B6B68;">Link działa od razu, bez logowania.</p>
+</td></tr>
+
+<tr><td style="padding:0 36px 28px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F7F6F1" style="background:#F7F6F1;border-left:4px solid #b88f3a;border-radius:6px;">
+<tr><td style="padding:20px 22px;{font}color:#1F1F1F;font-size:15px;line-height:1.6;">
+<p style="margin:0 0 10px;font-weight:700;color:#0A0A0A;">W raporcie znajdziesz:</p>
+<p style="margin:0 0 6px;">Wynik ogólny widoczności w AI — ChatGPT, Perplexity, Gemini oraz Google AI Overviews.</p>
+<p style="margin:0 0 6px;">Szczegółową listę wszystkich kategorii i wykrytych luk w treści.</p>
+<p style="margin:0;">Priorytetowe rekomendacje — od czego zacząć, żeby AI zaczęło Cię cytować.</p>
+</td></tr></table>
+</td></tr>
+
+<tr><td style="padding:0 36px 30px;{font}color:#1F1F1F;font-size:15px;line-height:1.6;">
+<p style="margin:0;">Chcesz omówić wyniki albo sprawdzić, jak wypadasz na tle konkurencji? Odpisz na tę wiadomość — chętnie pomożemy.</p>
+</td></tr>
+
+<tr><td style="padding:0 36px 30px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0" bgcolor="#F7F6F1" style="background:#F7F6F1;border:1px solid #E5E3DA;border-radius:8px;">
+<tr><td style="padding:20px 22px;">
+<table role="presentation" width="100%" cellpadding="0" cellspacing="0"><tr>
+<td valign="middle" style="{font}">
+<span style="font-size:26px;font-weight:700;color:#0A0A0A;">5.0</span>
+<span style="color:#b88f3a;font-size:18px;letter-spacing:1px;">★★★★★</span><br>
+<span style="color:#6B6B68;font-size:12px;"><strong style="color:#1F1F1F;">28</strong> zweryfikowanych recenzji na Clutch.co</span>
+</td>
+<td valign="middle" align="right">
+<a href="{esc(CLUTCH_PROFILE_URL)}" target="_blank" style="display:inline-block;background:#0A0A0A;color:#FFFFFF;border-radius:4px;padding:9px 15px;{font}font-size:12px;font-weight:700;text-decoration:none;">Przeczytaj opinie →</a>
+</td></tr></table>
+<table role="presentation" cellpadding="0" cellspacing="0" align="center" style="margin:16px auto 0;"><tr>{badges_cells}</tr></table>
+</td></tr></table>
+</td></tr>
+
+<tr><td style="padding:18px 36px 28px;border-top:1px solid #E5E3DA;{font}color:#9A9A97;font-size:11px;line-height:1.6;text-align:center;">
+Strategiczni · <a href="{esc(BRAND_SITE_URL)}" target="_blank" style="color:#6B6B68;text-decoration:none;">strategiczni.pl</a><br>
+Otrzymujesz tę wiadomość, ponieważ poprosiłeś o pełny raport z audytu AI SEO.
+</td></tr>
+
+</table>
+</td></tr></table>
+</body></html>"""
+
+
+def _send_report_link_email(record: dict) -> str | None:
+    """E-mail do użytkownika z linkiem do raportu (HTML + tekst). Zwraca None lub błąd."""
     if not (SMTP_USER and SMTP_PASS):
-        return
+        return "SMTP nieustawione"
     try:
         link = _unlock_link_for(record.get("url", ""))
         domain = _report_key(record.get("url", "")) or "Twojej strony"
@@ -3747,14 +3858,18 @@ def _send_report_link_email(record: dict) -> None:
             f"dziękujemy za skorzystanie z audytu AI SEO. Poniżej link do pełnego, "
             f"odblokowanego raportu dla domeny {domain}:\n\n"
             f"{link}\n\n"
-            f"W raporcie znajdziesz wynik ogólny oraz szczegółową listę wszystkich "
-            f"kategorii, luk treści i rekomendacji.\n\n"
-            f"Pozdrawiamy,\n"
-            f"Zespół Strategiczni\n"
+            f"W raporcie znajdziesz wynik ogólny widoczności w AI, szczegółową listę "
+            f"wszystkich kategorii i luk treści oraz priorytetowe rekomendacje.\n\n"
+            f"Chcesz omówić wyniki lub sprawdzić konkurencję? Odpisz na tę wiadomość.\n\n"
+            f"Pozdrawiamy,\nStrategiczni\n"
         )
-        _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji", body)
+        html = _report_link_email_html(link, domain)
+        _smtp_send(record["email"], "Twój pełny raport AI SEO — link do odblokowanej wersji",
+                   body, html=html)
+        return None
     except Exception as e:
         print(f"REPORT_LINK_EMAIL_ERR: {e}", flush=True)
+        return str(e)
 
 
 def _lead_email_seen_firestore(email: str) -> bool:
@@ -3816,10 +3931,11 @@ def _is_returning_lead(email: str) -> bool:
 
 
 def _remember_lead_email(email: str) -> None:
+    """Zapamiętuje e-mail. UWAGA: na Cloud Run wołaj Firestore synchronicznie (nie w wątku),
+    bo instancja jest zamrażana po odpowiedzi. Zapis do Firestore robimy w endpoincie."""
     e = email.strip().lower()
     with _LEADS_LOCK:
         _LEAD_EMAILS_SEEN.add(e)
-    threading.Thread(target=_mark_lead_email_firestore, args=(e,), daemon=True).start()
 
 
 def _save_lead_to_firestore(record: dict) -> None:
@@ -3892,34 +4008,95 @@ def _report_key(domain_or_url: str) -> str:
     return re.sub(r"[^a-z0-9.-]", "_", s)[:200]
 
 
-def _save_report_to_firestore(key: str, payload: dict) -> None:
+def _save_report_to_firestore(key: str, payload: dict) -> bool:
+    """Synchroniczny zapis raportu do Firestore z retry. Zwraca True przy sukcesie.
+
+    UWAGA (Cloud Run): NIE wywołuj w wątku fire-and-forget — instancja jest zamrażana
+    po zakończeniu requestu i wątek nie zdąży się wykonać (raport 'znika' po deployu).
+    """
     project = FIRESTORE_PROJECT
     if not project:
-        return
+        return False
+    # Sekcja `meta` jest statyczna (odtwarzalna z kodu przez _result_meta) — nie zapisujemy
+    # jej do Firestore. Oszczędza ~1/3 rozmiaru dokumentu (limit ~1 MiB).
+    slim = {k: v for k, v in payload.items() if k != "meta"}
     try:
-        gz = gzip.compress(json.dumps(payload, ensure_ascii=False).encode("utf-8"))
+        gz = gzip.compress(json.dumps(slim, ensure_ascii=False).encode("utf-8"))
         data_b64 = base64.b64encode(gz).decode("ascii")
-        # Firestore: limit ~1 MiB na dokument — przy bardzo dużych raportach zapis się nie powiedzie
-        # (best-effort; pamięć procesu i tak działa).
+    except Exception as e:  # noqa: BLE001
+        logging.info("Firestore report serialize failed: %s", e)
+        return False
+    fields = {
+        "data_gz_b64": {"stringValue": data_b64},
+        "url": {"stringValue": str(payload.get("url", ""))},
+        "ts": {"stringValue": datetime.utcnow().isoformat() + "Z"},
+    }
+    for attempt in range(3):
+        try:
+            tok_r = requests.get(
+                "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+                headers={"Metadata-Flavor": "Google"},
+                timeout=5,
+            )
+            token = tok_r.json()["access_token"]
+            r = requests.patch(
+                f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/reports/{key}",
+                headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+                json={"fields": fields},
+                timeout=20,
+            )
+            if r.status_code == 200:
+                print(f"REPORT_SAVED: {key} ({len(data_b64) // 1024} KB gz)", flush=True)
+                return True
+            logging.info("Firestore report save HTTP %s (próba %s): %s", r.status_code, attempt + 1, r.text[:200])
+        except Exception as e:  # noqa: BLE001
+            logging.info("Firestore report save failed (próba %s): %s", attempt + 1, e)
+        time.sleep(1.0 * (attempt + 1))
+    print(f"REPORT_SAVE_FAIL: {key}", flush=True)
+    return False
+
+
+def _list_reports_from_firestore() -> list[dict]:
+    """Lista zapisanych raportów w Firestore (klucz + url + ts), bez treści."""
+    project = FIRESTORE_PROJECT
+    if not project:
+        return []
+    try:
         tok_r = requests.get(
             "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
             headers={"Metadata-Flavor": "Google"},
             timeout=5,
         )
         token = tok_r.json()["access_token"]
-        fields = {
-            "data_gz_b64": {"stringValue": data_b64},
-            "url": {"stringValue": str(payload.get("url", ""))},
-            "ts": {"stringValue": datetime.utcnow().isoformat() + "Z"},
-        }
-        requests.patch(
-            f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/reports/{key}",
-            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
-            json={"fields": fields},
-            timeout=15,
-        )
+        out: list[dict] = []
+        page_token = ""
+        for _ in range(10):  # max 10 stron × 300
+            params = {"pageSize": 300, "mask.fieldPaths": ["url", "ts"]}
+            if page_token:
+                params["pageToken"] = page_token
+            r = requests.get(
+                f"https://firestore.googleapis.com/v1/projects/{project}/databases/(default)/documents/reports",
+                headers={"Authorization": f"Bearer {token}"},
+                params=params,
+                timeout=20,
+            )
+            if r.status_code != 200:
+                break
+            data = r.json()
+            for doc in data.get("documents", []):
+                f = doc.get("fields", {})
+                out.append({
+                    "domain": doc.get("name", "").rsplit("/", 1)[-1],
+                    "url": (f.get("url", {}) or {}).get("stringValue", ""),
+                    "ts": (f.get("ts", {}) or {}).get("stringValue", ""),
+                })
+            page_token = data.get("nextPageToken", "")
+            if not page_token:
+                break
+        return out
     except Exception as e:  # noqa: BLE001
-        logging.info("Firestore report save skipped: %s", e)
+        logging.info("Firestore report list failed: %s", e)
+        return []
 
 
 def _load_report_from_firestore(key: str) -> dict | None:
@@ -3950,7 +4127,8 @@ def _load_report_from_firestore(key: str) -> dict | None:
 
 
 def save_report(result: dict) -> str:
-    """Zapisuje raport pod kluczem domeny. Zwraca klucz (do linku udostępniania)."""
+    """Zapisuje raport pod kluczem domeny (pamięć + SYNCHRONICZNIE Firestore).
+    Zwraca klucz (do linku udostępniania)."""
     key = _report_key(result.get("url", ""))
     if not key:
         return ""
@@ -3962,7 +4140,10 @@ def save_report(result: dict) -> str:
                 _REPORTS_MEMORY.pop(next(iter(_REPORTS_MEMORY)))
             except StopIteration:
                 pass
-    threading.Thread(target=_save_report_to_firestore, args=(key, result), daemon=True).start()
+    # Synchronicznie (nie w wątku daemon!) — na Cloud Run wątki fire-and-forget
+    # są zamrażane i zapis nigdy się nie wykonuje. Wołane z wątku roboczego audytu
+    # lub z endpointu importu, więc nie blokuje pętli zdarzeń.
+    _save_report_to_firestore(key, result)
     return key
 
 
@@ -3976,9 +4157,30 @@ def load_report(domain_or_url: str) -> dict | None:
         return cached
     fetched = _load_report_from_firestore(key)
     if fetched is not None:
+        # `meta` nie jest zapisywana w Firestore (statyczna) — odtwarzamy z kodu.
+        if "meta" not in fetched:
+            fetched["meta"] = _result_meta()
         with _REPORTS_LOCK:
             _REPORTS_MEMORY[key] = fetched
     return fetched
+
+
+def _result_meta() -> dict:
+    """Statyczna sekcja `meta` wyniku audytu — odtwarzalna z kodu.
+    Nie zapisujemy jej do Firestore; dołączamy przy generowaniu i wczytywaniu raportu."""
+    return {
+        "factor_meta": FACTOR_META,
+        "tech_factor_meta": TECH_FACTOR_META,
+        "domain_tech_meta": DOMAIN_TECH_META,
+        "category_labels": CATEGORY_LABELS,
+        "group_labels": UI_GROUP_LABELS,
+        "group_order": UI_GROUP_ORDER,
+        "group_weights": UI_GROUP_WEIGHTS,
+        "score_value_map": SCORE_VALUE_MAP,
+        "page_type_labels": PAGE_TYPE_LABELS,
+        "patent_factor_count": len(PATENT_FACTORS),
+        "patent_scored_factor_count": len(scored_patent_factor_ids()),
+    }
 
 
 def _extract_json(text: str) -> dict:
@@ -3990,6 +4192,56 @@ def _extract_json(text: str) -> dict:
     if first != -1 and last != -1:
         text = text[first : last + 1]
     return json.loads(text)
+
+
+# Słowa kluczowe w slugach, które wskazują na dedykowane podstrony domeny.
+# Używane, żeby NIE komunikować "brak cen/opinii w domenie", gdy audytowana
+# podstrona ich nie ma, ale istnieje np. /cennik lub /opinie.
+_DOMAIN_SIGNAL_SLUGS: dict[str, tuple[str, ...]] = {
+    "cennik": ("cennik", "pricing", "cena", "ceny", "koszt", "oplaty", "price"),
+    "opinie": ("opinie", "opinia", "referencje", "recenzje", "review", "testimonial",
+               "realizacje", "case-stud", "casestud", "portfolio"),
+    "faq": ("faq", "najczesciej-zadawane", "pytania-i-odpowiedzi"),
+    "blog": ("/blog", "/artykuly", "/poradnik", "/baza-wiedzy", "/wiedza"),
+}
+
+
+def _domain_signal_urls(sitemap_urls: list[str] | None) -> dict[str, str]:
+    """Zwraca {kategoria: przykładowy_url} dla dedykowanych podstron znalezionych w sitemapie."""
+    found: dict[str, str] = {}
+    for u in (sitemap_urls or [])[:500]:
+        try:
+            path = urlparse(u).path.lower()
+        except Exception:
+            continue
+        for cat, kws in _DOMAIN_SIGNAL_SLUGS.items():
+            if cat not in found and any(k in path for k in kws):
+                found[cat] = u
+        if len(found) == len(_DOMAIN_SIGNAL_SLUGS):
+            break
+    return found
+
+
+def _domain_context_section(url: str, sitemap_urls: list[str] | None) -> str:
+    """Sekcja promptu z kontekstem domeny: audytujemy JEDNĄ podstronę, ale domena
+    może mieć dedykowane podstrony (cennik/opinie/FAQ/blog) — nie zgłaszaj fałszywych braków."""
+    signals = _domain_signal_urls(sitemap_urls)  # sitemap jest domenowy — to ta sama domena
+    if not signals:
+        return ""
+    lines = "\n".join(f"- {k}: {v}" for k, v in signals.items())
+    return f"""
+<istniejace_dedykowane_podstrony_domeny>
+Audytujesz JEDNĄ podstronę, ale w sitemapie domeny istnieją dedykowane podstrony:
+{lines}
+ZASADA dla czynników typu cena/przedział cenowy, opinie/dowody społeczne, FAQ:
+- Oceniasz zawartość TEJ strony, ale jeśli TA strona nie zawiera danej informacji,
+  a domena ma dedykowaną podstronę (wyżej) → daj score 1 (nie 0), a w note napisz wprost,
+  np. "Brak ceny na tej podstronie; w domenie istnieje {signals.get('cennik', 'dedykowana podstrona')} —
+  najlepiej dodać przedział cenowy lub wyraźny link do cennika na tej stronie usługi."
+- W note NIGDY nie pisz "brak w domenie/na stronie firmy" — pisz "brak na tej podstronie".
+  Najlepszą praktyką pozostaje umieszczenie informacji na podstronie, której dotyczy.
+</istniejace_dedykowane_podstrony_domeny>
+"""
 
 
 def _page_factor_prompt(page_type: str, url: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None, sitemap_urls: list[str] | None = None) -> str:
@@ -4008,6 +4260,7 @@ Nie wymyślaj danych z GSC, analytics, backlinków ani zewnętrznego SERP-u.
 </czynniki_z_patentow_google>
 """ if patent_prompt else ""
     html_summary = _build_html_prompt_summary(html_checks)
+    domain_ctx_section = _domain_context_section(url, sitemap_urls)
     cluster_section = ""
     if sitemap_urls and "pillar_or_cluster_page_structure_signals" in factors:
         from urllib.parse import urlparse as _up
@@ -4071,6 +4324,7 @@ WAŻNE DLA PATENTÓW: czynniki patentowe oceniaj jako sprawdzalne proxy treści/
 </html_schema_i_sygnaly_techniczne>
 
 {patent_section}
+{domain_ctx_section}
 {cluster_section}
 <treść>
 {content}
@@ -4089,14 +4343,37 @@ def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: 
     return _extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=5000))
 
 
-def generate_fan_out(page_url: str, page_title: str, content: str) -> dict:
+def generate_fan_out(page_url: str, page_title: str, content: str, sitemap_urls: list[str] | None = None) -> dict:
+    other_urls_section = ""
+    if sitemap_urls:
+        from urllib.parse import urlparse as _up
+        page_path = _up(page_url).path.strip("/")
+        slugs = []
+        for u in sitemap_urls[:100]:
+            p = _up(u).path.strip("/")
+            if p and p != page_path:
+                slugs.append(f"- {u}")
+        if slugs:
+            other_urls_section = f"""
+<inne_podstrony_tej_domeny>
+Lista innych URL-i z tej domeny (z sitemapy) — audyt ich NIE sprawdzał, ale mogą zawierać odpowiedzi:
+{chr(10).join(slugs)}
+</inne_podstrony_tej_domeny>
+"""
+
     prompt = f"""Jesteś ekspertem AI SEO. Symulujesz query fan-out — zestaw pytań, które użytkownicy zadają ChatGPT/Perplexity w temacie tej konkretnej podstrony.
 
 <zadanie>
 1. Na podstawie WYŁĄCZNIE tej jednej podstrony wygeneruj 12 realistycznych pytań, które użytkownicy wpisują w ChatGPT/Perplexity szukając tematu tej strony.
    Różne intencje: informacyjne, transakcyjne, porównawcze, problem-solving.
-2. Oceń każde pytanie pod kątem pokrycia przez treść TEJ strony: "covered" | "partial" | "missing".
-3. Jeśli partial/missing — napisz konkretnie co trzeba dodać na tej stronie.
+2. Oceń każde pytanie pod kątem pokrycia przez treść TEJ JEDNEJ strony: "covered" | "partial" | "missing".
+   WAŻNE: "missing" znaczy TYLKO "brak na tej audytowanej podstronie" — NIE "brak w całej domenie".
+3. Jeśli partial/missing — w "gap_note" napisz konkretnie co dodać NA TEJ STRONIE. Formułuj per-podstrona
+   ("na tej podstronie brakuje..."), nigdy "firma nie podaje..." / "na stronie nie ma...".
+4. Jeśli w <inne_podstrony_tej_domeny> jest URL, który na to pytanie prawdopodobnie odpowiada
+   (np. /cennik dla pytań o ceny, /opinie dla pytań o opinie, artykuł blogowy dla pytań poradnikowych),
+   wpisz go w "elsewhere_url", a w gap_note zaproponuj streszczenie tej informacji + link na audytowanej stronie.
+   Jeśli takiego URL-a nie widać — "elsewhere_url": "".
 </zadanie>
 
 <audytowana_podstrona>
@@ -4107,17 +4384,17 @@ def generate_fan_out(page_url: str, page_title: str, content: str) -> dict:
 <treść_podstrony>
 {content}
 </treść_podstrony>
-
+{other_urls_section}
 Zwróć TYLKO JSON (po polsku). Wszystkie pytania muszą dotyczyć tematu strony {page_url}:
 {{
   "audited_url": "{page_url}",
   "queries": [
-    {{"query": "pytanie użytkownika", "coverage": "covered|partial|missing", "gap_note": "co dodać na tej stronie (pusty jeśli covered)"}}
+    {{"query": "pytanie użytkownika", "coverage": "covered|partial|missing", "gap_note": "co dodać na tej stronie (pusty jeśli covered)", "elsewhere_url": "URL z tej domeny z prawdopodobną odpowiedzią lub pusty"}}
   ]
 }}
 
 Dokładnie 12 pytań, różnorodne intencje, wszystkie tematycznie związane z tą podstroną."""
-    return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=3000))
+    return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=3500))
 
 
 def generate_ai_snippet_preview(url: str, title: str, content: str) -> dict:
@@ -4222,6 +4499,11 @@ def synthesize_findings(page_audits: list[dict], domain_tech: dict, domain_tech_
 </input>
 
 <zasady>
+- ZAKRES AUDYTU: sprawdziliśmy TYLKO podstrony z <audytowane_podstrony>. Braki (ceny, opinie, FAQ itd.)
+  komunikuj per-podstrona ("na podstronie X brakuje..."), NIGDY jako "firma/domena nie ma...".
+  Zanim nazwiesz coś brakiem, sprawdź <lista_istniejacych_tematow_z_sitemapy> — jeśli pasujący temat
+  istnieje (np. cennik, opinie), rekomenduj streszczenie/podlinkowanie go na właściwej podstronie
+  zamiast tworzenia od zera.
 - "top_recommendations": 6 działań UPORZĄDKOWANYCH wg IMPACT × EASE (najpierw szybkie wygrane z wysokim wpływem).
 - KAŻDA rekomendacja: pole "page_url" wskazujące konkretną podstronę (lub "domain" dla zmian globalnych jak robots/sitemap/llms.txt).
 - KAŻDA rekomendacja: pole "page_type" wskazujące typ (homepage/service/article/about/contact/category/domain).
@@ -4416,9 +4698,10 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         base_url = f"{parsed.scheme}://{parsed.netloc}"
 
         if picks:
-            # User-confirmed selection. Skip Gemini auto-pick.
+            # User-confirmed selection. Skip Gemini auto-pick, ale sitemapę i tak pobieramy
+            # (tanie 1-2 requesty) — daje kontekst domeny: klastry, cennik/opinie/FAQ, fan-out.
             yield event("progress", {"message": "Używam podstron wybranych przez użytkownika.", "pct": 10})
-            sitemap_urls: list[str] = []
+            sitemap_urls = fetch_sitemap_urls(base_url)
             discovery_source = "user-picked"
         else:
             yield event("progress", {"message": "Wykrywanie podstron (sitemap.xml → Firecrawl /map)...", "pct": 5})
@@ -4557,6 +4840,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
                 _fan_out_page["url"],
                 _fan_out_page["title"] or homepage_title,
                 _fan_out_page["markdown"][:12000],
+                sitemap_urls,
             )
         except Exception as e:
             fan_out = {"queries": [], "error": str(e)}
@@ -4598,6 +4882,28 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             })
 
         yield event("progress", {"message": "Synteza: priorytetyzowane rekomendacje per strona...", "pct": 90})
+
+        # Snippet AI (Perplexity) i postrzeganie marki (Gemini/Perplexity/GPT) nie zależą
+        # od syntezy — odpalamy równolegle w tle, wyniki zbieramy przed złożeniem raportu.
+        _tail_ex = ThreadPoolExecutor(max_workers=2)
+        _snippet_page = next(
+            (pd for pd in page_data if pd["page_type"] in ("homepage", "service")),
+            page_data[0],
+        )
+        _fut_snippet = _tail_ex.submit(
+            generate_ai_snippet_preview,
+            _snippet_page["url"],
+            _snippet_page["title"] or homepage_title,
+            _snippet_page["markdown"][:4000],
+        )
+
+        def _brand_task():
+            _domain = urlparse(url).netloc or url
+            bp = generate_brand_perception(_domain, homepage_title)
+            bg = analyze_brand_gaps(bp, _domain)
+            return bp, bg
+
+        _fut_brand = _tail_ex.submit(_brand_task)
 
         try:
             synth = synthesize_findings(page_audits, {"robots": robots, "sitemap": sitemap, "llms": llms}, domain_tech_scores, fan_out, url, homepage_title, sitemap_urls)
@@ -4671,29 +4977,6 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             },
         }
 
-        yield event("progress", {"message": "Generowanie podglądu snippeta AI (Perplexity sonar-pro)...", "pct": 93})
-        _snippet_page = next(
-            (pd for pd in page_data if pd["page_type"] in ("homepage", "service")),
-            page_data[0],
-        )
-        try:
-            ai_snippet = generate_ai_snippet_preview(
-                _snippet_page["url"],
-                _snippet_page["title"] or homepage_title,
-                _snippet_page["markdown"][:4000],
-            )
-        except Exception as e:
-            ai_snippet = {"available": False, "error": str(e)}
-
-        yield event("progress", {"message": "Jak Twoją firmę postrzega AI? (Gemini / Perplexity / ChatGPT)...", "pct": 94})
-        try:
-            _domain = urlparse(url).netloc or url
-            brand_perception = generate_brand_perception(_domain, homepage_title)
-            brand_gaps = analyze_brand_gaps(brand_perception, _domain)
-        except Exception as e:
-            brand_perception = {}
-            brand_gaps = {"available": False, "error": str(e)}
-
         yield event("progress", {"message": "Tryb Klient: tłumaczenie wyników na prosty język (osobne zapytanie)...", "pct": 95})
         try:
             client_mode = translate_for_client_mode(page_audits, synth, scores_obj, fan_out, homepage_title)
@@ -4706,6 +4989,18 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             overview = generate_strategic_overview(page_audits, synth, scores_obj, fan_out, homepage_title, client_mode)
         except Exception as e:
             overview = {"headline": "", "summary": f"Nie udało się wygenerować streszczenia: {e}", "priorities": []}
+
+        yield event("progress", {"message": "Zbieranie: snippet AI + postrzeganie marki (liczone równolegle)...", "pct": 98})
+        try:
+            ai_snippet = _fut_snippet.result(timeout=120)
+        except Exception as e:
+            ai_snippet = {"available": False, "error": str(e)}
+        try:
+            brand_perception, brand_gaps = _fut_brand.result(timeout=180)
+        except Exception as e:
+            brand_perception = {}
+            brand_gaps = {"available": False, "error": str(e)}
+        _tail_ex.shutdown(wait=False)
 
         result = {
             "url": url,
@@ -4734,19 +5029,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             "client_mode": client_mode,
             "overview": overview,
             "senuto_aio": load_senuto_aio(url),
-            "meta": {
-                "factor_meta": FACTOR_META,
-                "tech_factor_meta": TECH_FACTOR_META,
-                "domain_tech_meta": DOMAIN_TECH_META,
-                "category_labels": CATEGORY_LABELS,
-                "group_labels": UI_GROUP_LABELS,
-                "group_order": UI_GROUP_ORDER,
-                "group_weights": UI_GROUP_WEIGHTS,
-                "score_value_map": SCORE_VALUE_MAP,
-                "page_type_labels": PAGE_TYPE_LABELS,
-                "patent_factor_count": len(PATENT_FACTORS),
-                "patent_scored_factor_count": len(scored_patent_factor_ids()),
-            },
+            "meta": _result_meta(),
         }
         # Zapis raportu (do udostępniania linkiem i przywoływania domeny ponownie).
         try:
@@ -4975,6 +5258,43 @@ async def get_report(domain: str = "", url: str = ""):
     return {"found": True, "domain": _report_key(key_src), "result": result}
 
 
+@app.get("/reports")
+async def list_reports(token: str = ""):
+    """Lista zapisanych raportów (pamięć instancji + Firestore). Chronione LEADS_TOKEN.
+    Użycie: /llms-audit/reports?token=... — np. przed deployem, żeby wiedzieć co istnieje."""
+    if not LEADS_TOKEN or token != LEADS_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden — ustaw LEADS_TOKEN i podaj ?token=...")
+    with _REPORTS_LOCK:
+        mem = sorted(_REPORTS_MEMORY.keys())
+    fs = await run_in_threadpool(_list_reports_from_firestore)
+    return {
+        "memory": mem,
+        "firestore": fs,
+        "firestore_configured": bool(FIRESTORE_PROJECT),
+    }
+
+
+@app.post("/report/import")
+async def import_report(payload: dict, token: str = ""):
+    """Import/przywrócenie raportu (np. z backupu JSON przed aktualizacją appki).
+    Body: pełny wynik audytu (top-level `url` wymagany) albo {"result": {...}}.
+    Chronione LEADS_TOKEN. Zapis synchroniczny do pamięci + Firestore."""
+    if not LEADS_TOKEN or token != LEADS_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden — ustaw LEADS_TOKEN i podaj ?token=...")
+    result = payload.get("result") if isinstance(payload.get("result"), dict) else payload
+    if not isinstance(result, dict) or not result.get("url"):
+        raise HTTPException(status_code=400, detail="Oczekuję pełnego wyniku audytu z polem 'url'.")
+    key = _report_key(result.get("url", ""))
+    if not key:
+        raise HTTPException(status_code=400, detail="Nie udało się zbudować klucza domeny z 'url'.")
+    if "meta" not in result:
+        result["meta"] = _result_meta()
+    with _REPORTS_LOCK:
+        _REPORTS_MEMORY[key] = result
+    saved_fs = await run_in_threadpool(_save_report_to_firestore, key, result)
+    return {"status": "ok", "domain": key, "firestore": saved_fs}
+
+
 @app.get("/health")
 async def health():
     return {"status": "ok"}
@@ -4992,7 +5312,11 @@ async def capture_lead(lead: LeadRequest):
     if "@" not in email or "." not in email or len(email) > 200:
         raise HTTPException(status_code=400, detail="Invalid email")
 
-    returning = _is_returning_lead(email)
+    # UWAGA (Cloud Run): instancja jest zamrażana zaraz po zwróceniu odpowiedzi, więc
+    # NIE wolno wysyłać maili ani pisać do Firestore w wątkach "fire-and-forget" — nie
+    # zdążą się wykonać. Wszystkie efekty uboczne robimy synchronicznie w obrębie requestu
+    # (przez run_in_threadpool, żeby nie blokować pętli zdarzeń).
+    returning = await run_in_threadpool(_is_returning_lead, email)
     record = {
         "ts": datetime.utcnow().isoformat() + "Z",
         "email": email,
@@ -5013,10 +5337,12 @@ async def capture_lead(lead: LeadRequest):
                 f.write(json.dumps(record, ensure_ascii=False) + "\n")
         except Exception:
             pass
-    # 4. Firestore (best-effort, if FIRESTORE_PROJECT is set)
-    threading.Thread(target=_save_lead_to_firestore, args=(record,), daemon=True).start()
-    # 5. Powiadomienie do nas o leadzie (marcin@...) — zawsze, także przy powrocie.
-    threading.Thread(target=_send_lead_email, args=(record,), daemon=True).start()
+    # 4. Firestore — zapis leada (synchronicznie)
+    await run_in_threadpool(_save_lead_to_firestore, record)
+    # 5. Powiadomienie do nas o leadzie (marcin@...) — zawsze, także przy powrocie (synchronicznie).
+    notify_err = await run_in_threadpool(_send_lead_email, record)
+    if notify_err:
+        print(f"LEAD_NOTIFY_FAIL: {notify_err}", flush=True)
 
     if returning:
         # E-mail już w bazie — NIE wysyłamy kolejnego linku. Prosimy o kontakt.
@@ -5028,9 +5354,15 @@ async def capture_lead(lead: LeadRequest):
             ),
         }
 
-    # Nowy lead: zapamiętaj e-mail i wyślij użytkownikowi link do odblokowanego raportu.
+    # Nowy lead: wyślij użytkownikowi link do raportu, a potem zapamiętaj e-mail.
+    # Kolejność ważna: markujemy jako "widziany" DOPIERO po udanej wysyłce, żeby przy
+    # błędzie SMTP user nie został zablokowany bez raportu.
+    link_err = await run_in_threadpool(_send_report_link_email, record)
+    if link_err:
+        print(f"REPORT_LINK_FAIL: {link_err}", flush=True)
+        raise HTTPException(status_code=502, detail="Nie udało się wysłać maila z raportem. Spróbuj ponownie.")
     _remember_lead_email(email)
-    threading.Thread(target=_send_report_link_email, args=(record,), daemon=True).start()
+    await run_in_threadpool(_mark_lead_email_firestore, email)
     return {"status": "sent", "message": "Link do pełnego raportu wysłaliśmy na podany adres e-mail."}
 
 
@@ -5042,6 +5374,36 @@ async def list_leads(token: str = ""):
         raise HTTPException(status_code=403, detail="Forbidden — set LEADS_TOKEN and pass ?token=...")
     with _LEADS_LOCK:
         return {"leads": list(_LEADS_MEMORY), "count": len(_LEADS_MEMORY)}
+
+
+@app.get("/lead/test")
+async def lead_test(token: str = "", to: str = ""):
+    """Diagnostyka SMTP: wysyła testowego maila i zwraca dokładny błąd (jeśli wystąpi).
+    Chronione LEADS_TOKEN. Użycie: /llms-audit/lead/test?token=...&to=twoj@email.pl"""
+    if not LEADS_TOKEN or token != LEADS_TOKEN:
+        raise HTTPException(status_code=403, detail="Forbidden — ustaw LEADS_TOKEN i podaj ?token=...")
+    to_addr = (to or LEADS_EMAIL or "").strip()
+    cfg = {
+        "SMTP_HOST": SMTP_HOST,
+        "SMTP_PORT": SMTP_PORT,
+        "SMTP_USER_set": bool(SMTP_USER),
+        "SMTP_PASS_set": bool(SMTP_PASS),
+        "LEADS_EMAIL": LEADS_EMAIL,
+        "PUBLIC_BASE_URL": PUBLIC_BASE_URL,
+        "FIRESTORE_PROJECT_set": bool(FIRESTORE_PROJECT),
+        "test_to": to_addr,
+    }
+    if not (SMTP_USER and SMTP_PASS):
+        return {"ok": False, "error": "SMTP_USER/SMTP_PASS nieustawione", "config": cfg}
+
+    def _try():
+        _smtp_send(to_addr, "[Kopernik] Test SMTP", "To jest testowy e-mail z diagnostyki /lead/test.")
+
+    try:
+        await run_in_threadpool(_try)
+        return {"ok": True, "message": f"Wysłano testowego maila na {to_addr}.", "config": cfg}
+    except Exception as e:  # noqa: BLE001
+        return {"ok": False, "error": f"{type(e).__name__}: {e}", "config": cfg}
 
 
 # --- Serwowanie pod prefiksem /llms-audit (za Firebase Hosting) ---
