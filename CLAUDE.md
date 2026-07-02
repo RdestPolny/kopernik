@@ -102,9 +102,13 @@ Top-level klucze: `url, discovery_source, timestamp, homepage_title, homepage_me
 
 ## Model scoringu
 
-6 grup, wagi sumują się do 100 (`UI_GROUP_WEIGHTS`, main.py:978): `technical` 20, `performance` 10, `onpage` 10, `eeat` 25, `patents` 15, `ai_aeo` 20.
+6 grup, wagi sumują się do 100 (`UI_GROUP_WEIGHTS`): `technical` 20, `performance` 10, `onpage` 10, `eeat` 25, `patents` 15, `ai_aeo` 20.
 
-Priorytet akcji (`build_top_actions`, main.py:2493) = `severity × impact / effort` + korekta za liczbę wystąpień.
+Filozofia "asymetrii podstaw": trywialne/podstawowe czynniki (sitemap, robots, HTTPS, canonical, niezablokowane boty AI itd.) mają zaniżony impact w `LOW_IMPACT_FACTORS` (0.25–1.0 zamiast 2–3) — sama ich obecność prawie nie podnosi wyniku. Za to BRAK krytycznych czynników domenowych odejmuje punkty od wyniku głównego przez `CRITICAL_FACTOR_PENALTIES` (stosowane w `audit_stream` do `dashboard.overall`; `raw_overall` przechowuje wartość sprzed kar). `llms_txt_present` celowo zachowuje impact 3 (rzadki wyróżnik). Skala score czynnika: `SCORE_VALUE_MAP` {0: 0, 1: 0.35, 2: 1.0}.
+
+Priorytet akcji (`build_top_actions`) = `severity × impact / effort` + korekta za liczbę wystąpień.
+
+UWAGA przy zmianach wag: zapisane raporty (Firestore) i `fixed_reports/` mają wyniki policzone starym modelem — nie porównuj 1:1 ze świeżymi audytami po strojeniu.
 
 ## Typowy przepływ audytu
 

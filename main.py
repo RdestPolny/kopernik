@@ -954,7 +954,9 @@ CONTENT_CATEGORY_WEIGHTS = {
     "tech": 1.0,
 }
 
-# Per-factor point penalties applied to overall score when critical factors are absent.
+# Per-factor point penalties odejmowane od WYNIKU GŁÓWNEGO (dashboard overall),
+# gdy krytyczny czynnik domenowy ma score 0. Filozofia scoringu: podstawy dają mało
+# punktów "na plus" (patrz LOW_IMPACT_FACTORS), ale ich BRAK boli konkretnie.
 CRITICAL_FACTOR_PENALTIES = {
     "llms_txt_present": 8,
     "gptbot_not_blocked": 7,
@@ -1008,6 +1010,28 @@ LOW_IMPACT_FACTORS = {
     "map_or_embedded_location": 0.5,
     "pagination_or_load_more_sensible": 0.5,
     "filters_or_facets_if_applicable": 0.5,
+    # Podstawy per-page, które przechodzi niemal każdy CMS — sama obecność to nie zasługa.
+    "meta_description": 0.5,
+    "canonical_tag": 0.5,
+    "h1_single": 0.5,
+    # Podstawy DOMENOWE: posiadanie sitemapy/robots/HTTPS to standard, nie przewaga.
+    # Nagroda minimalna — ale ich BRAK jest karany przez CRITICAL_FACTOR_PENALTIES
+    # odejmowane od wyniku głównego (asymetria: mało na plus, dużo na minus).
+    "robots_txt_accessible": 0.5,
+    "sitemap_present": 0.5,
+    "sitemap_in_robots": 0.25,
+    "https_enabled": 0.5,
+    "hsts_enabled": 0.25,
+    "compression_enabled": 0.25,
+    "crawl_delay_ok": 0.25,
+    "hreflang_used": 0.25,
+    # Niezablokowane boty AI: ~100% pass-rate (mało kto blokuje) -> mała nagroda,
+    # ale zablokowanie = kara punktowa z CRITICAL_FACTOR_PENALTIES.
+    "gptbot_not_blocked": 1.0,
+    "claudebot_not_blocked": 1.0,
+    "perplexitybot_not_blocked": 1.0,
+    "google_extended_not_blocked": 1.0,
+    # llms_txt_present celowo NIE jest tu — to rzadki, realny wyróżnik (impact 3).
 }
 
 PERFORMANCE_FACTOR_META = {
@@ -4524,7 +4548,15 @@ Zwróć TYLKO JSON (po polsku):
     return _extract_json(_gemini_call(prompt, temperature=0.3, max_tokens=2500))
 
 
-def translate_for_client_mode(page_audits: list[dict], synthesis: dict, scores: dict, fan_out: dict, site_title: str) -> dict:
+def _client_scope_note(sitemap_urls: list[str] | None) -> str:
+    """Krótka nota do promptu trybu klienta o dedykowanych podstronach z sitemapy."""
+    signals = _domain_signal_urls(sitemap_urls)
+    if not signals:
+        return ""
+    return "; w serwisie istnieją dedykowane podstrony: " + ", ".join(f"{k} ({v})" for k, v in signals.items())
+
+
+def translate_for_client_mode(page_audits: list[dict], synthesis: dict, scores: dict, fan_out: dict, site_title: str, sitemap_urls: list[str] | None = None) -> dict:
     """Osobne zapytanie — tłumaczy techniczny audyt na język klienta-laika (bez żargonu)."""
     critical: list[str] = []
     for pa in page_audits:
@@ -4562,6 +4594,7 @@ Brakujące pytania klientów (fan-out):
 </kontekst>
 
 <zasady_tlumaczenia>
+ZAKRES: audyt sprawdził tylko podstrony wymienione w krytycznych brakach (per URL){_client_scope_note(sitemap_urls)}. Braki komunikuj per KONKRETNA sprawdzona podstrona ("na Twojej stronie usługi brakuje...", "na sprawdzanych stronach nie widać..."), NIGDY "Twoja firma nie podaje..." ani "na stronie nie ma..." w znaczeniu całej domeny. Jeśli dedykowana podstrona (cennik/opinie) istnieje w serwisie, mów o jej niewidoczności/braku podlinkowania na stronie usługi, nie o braku informacji w ogóle.
 ZERO żargonu. NIE używaj słów: RAG, E-E-A-T, crawler, LLM, schema, entity, canonical, meta, markup, fan-out, topical authority, indeksowanie, ekstraktywność.
 ZAMIAST: "schema" → "oznaczenia które pomagają AI zrozumieć stronę"; "E-E-A-T" → "oznaki że jesteś ekspertem"; "crawler/LLM" → "AI takie jak ChatGPT i Perplexity"; "fan-out" → "pytania które klienci zadają AI".
 Mów językiem korzyści: "więcej klientów z AI", "AI będzie Cię polecać", "stracisz klientów którzy pytają ChatGPT".
@@ -4581,7 +4614,7 @@ Zwróć TYLKO JSON:
     return _extract_json(_gemini_call(prompt, temperature=0.4, max_tokens=2500))
 
 
-def generate_strategic_overview(page_audits: list[dict], synthesis: dict, scores: dict, fan_out: dict, site_title: str, client_mode_obj: dict | None = None) -> dict:
+def generate_strategic_overview(page_audits: list[dict], synthesis: dict, scores: dict, fan_out: dict, site_title: str, client_mode_obj: dict | None = None, sitemap_urls: list[str] | None = None) -> dict:
     """Strategiczne streszczenie wykonawcze (executive summary) + 5 priorytetów biznesowych.
     Inny poziom abstrakcji niż 'Najpilniejsze akcje' (factor-level) — myśli kierunkami biznesowymi."""
     overall = scores.get("overall", 0)
@@ -4599,7 +4632,27 @@ def generate_strategic_overview(page_audits: list[dict], synthesis: dict, scores
 
     group_summary = ", ".join(f"{k}:{v}" for k, v in group_scores.items()) or "(brak)"
 
+    audited_list = "\n".join(
+        f"- {pa.get('page_type_label') or pa.get('page_type', '?')}: {pa.get('url', '')}" for pa in page_audits
+    ) or "(brak)"
+    _signals = _domain_signal_urls(sitemap_urls)
+    signals_txt = "\n".join(f"- {k}: {v}" for k, v in _signals.items()) or "(nie wykryto)"
+
     prompt = f"""Jesteś analitykiem AI SEO przygotowującym DIAGNOSTYCZNE streszczenie audytu dla zarządu.
+
+<zakres_audytu>
+Audyt sprawdził WYŁĄCZNIE te podstrony (nie całą domenę):
+{audited_list}
+Dedykowane podstrony wykryte w sitemapie domeny (NIE były audytowane, ale ISTNIEJĄ):
+{signals_txt}
+
+REGUŁA JĘZYKA BRAKÓW (obowiązuje w OBU wersjach, we wszystkich polach):
+- Braki opisuj per sprawdzone podstrony: "na analizowanych podstronach brak...", "strona usługi nie pokazuje...".
+- NIGDY nie twierdź "firma nie podaje X", "na stronie nie ma X", "brak X w domenie" — audyt tego nie wie.
+- Jeśli dedykowana podstrona istnieje w sitemapie (np. cennik/opinie wyżej), problem formułuj jako
+  "cennik istnieje w serwisie, ale nie jest widoczny ani podlinkowany na analizowanej stronie usługi" —
+  a nie jako brak informacji w ogóle.
+</zakres_audytu>
 
 <kontekst>
 Strona: {site_title}
@@ -4630,6 +4683,7 @@ KLUCZOWE — nagłówek tej listy brzmi "Największe problemy", więc title_sale
 ŹLE (cel/rozwiązanie): "Pokazanie sukcesów Twojej firmy", "Budowanie wizerunku eksperta", "Ułatwienie botom AI zrozumienia oferty".
 DOBRZE (brak/problem): "Brak ekspozycji opinii i realizacji", "Brak dowodów eksperckości dla AI", "Oferta nieczytelna dla AI", "Brak otwartego dostępu dla botów AI".
 Zaczynaj title_sales od słów typu "Brak…", "Niejasne…", "Słabe…", "Niewidoczne…" — to ma być nazwa problemu prostym językiem, nie żargon techniczny. Dopiero outcome_sales (pole "→") mówi językiem korzyści, co firma zyska po naprawie.
+PAMIĘTAJ o REGULE JĘZYKA BRAKÓW z <zakres_audytu>: problem nazywaj per sprawdzona podstrona, np. "Ceny niewidoczne na stronie usługi" (nie "Brak informacji o kosztach"), "Opinie niewyeksponowane na analizowanych stronach" (nie "Brak opinii").
 
 Priorytety w obu wersjach to TE SAME 5 obszarów, w tej samej kolejności (od najpilniejszego) — różni się tylko ton.
 </zadanie>
@@ -4956,7 +5010,15 @@ def audit_stream(url: str, picks: list[dict] | None = None):
             pa.pop("html_checks", None)
         dashboard = build_dashboard(factor_index, page_audits)
         category_scores = {group["id"]: group["score"] if group["score"] is not None else 0 for group in dashboard["groups"]}
-        overall = dashboard["overall"]
+        # Kary za krytyczne braki domenowe (brak HTTPS, zablokowane boty AI, brak llms.txt...)
+        # obniżają WYNIK GŁÓWNY. Wcześniej trafiały tylko do legacy_overall, przez co
+        # raport nie karał realnie za ważne błędy.
+        raw_overall = dashboard["overall"]
+        overall = max(0, raw_overall - penalties)
+        dashboard["overall"] = overall
+        dashboard["raw_overall"] = raw_overall
+        if dashboard.get("url_options"):
+            dashboard["url_options"][0]["score"] = overall
         scores_obj = {
             "overall": overall,
             "category": category_scores,
@@ -4979,14 +5041,14 @@ def audit_stream(url: str, picks: list[dict] | None = None):
 
         yield event("progress", {"message": "Tryb Klient: tłumaczenie wyników na prosty język (osobne zapytanie)...", "pct": 95})
         try:
-            client_mode = translate_for_client_mode(page_audits, synth, scores_obj, fan_out, homepage_title)
+            client_mode = translate_for_client_mode(page_audits, synth, scores_obj, fan_out, homepage_title, sitemap_urls)
             client_mode["client_factor_explanations"] = CLIENT_FACTOR_EXPLANATIONS
         except Exception as e:
             client_mode = {"client_verdict": f"Tłumaczenie nieudane: {e}", "client_recommendations": [], "client_content_gaps": [], "client_next_step": "", "client_factor_explanations": CLIENT_FACTOR_EXPLANATIONS}
 
         yield event("progress", {"message": "Strategiczne streszczenie wykonawcze (Gemini)...", "pct": 97})
         try:
-            overview = generate_strategic_overview(page_audits, synth, scores_obj, fan_out, homepage_title, client_mode)
+            overview = generate_strategic_overview(page_audits, synth, scores_obj, fan_out, homepage_title, client_mode, sitemap_urls)
         except Exception as e:
             overview = {"headline": "", "summary": f"Nie udało się wygenerować streszczenia: {e}", "priorities": []}
 

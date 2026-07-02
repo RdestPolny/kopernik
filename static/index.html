@@ -255,6 +255,7 @@ button{font:inherit;cursor:pointer}
 .overview-prio-title{font-family:var(--sans);font-weight:600;font-size:1rem;line-height:1.35;color:#fff;margin:0 0 6px}
 .overview-prio-rationale{font-size:0.86rem;line-height:1.55;color:rgba(255,255,255,0.78);margin:0 0 6px}
 .overview-prio-outcome{font-size:0.82rem;line-height:1.5;color:var(--gold-2);margin:0}
+.overview-scope-note{font-size:0.74rem;line-height:1.5;color:rgba(255,255,255,0.55);margin:-6px 0 14px}
 @media(max-width:900px){.overview{grid-template-columns:1fr;gap:28px;padding:28px 24px}.overview-right{border-left:none;border-top:1px solid rgba(255,255,255,0.12);padding-left:0;padding-top:24px}}
 @media(max-width:600px){.overview{padding:24px 20px}.overview-headline{font-size:1.25rem}}
 
@@ -1585,6 +1586,7 @@ function renderOverview(r) {
       ${priorities.length ? `
         <div class="overview-right">
           <div class="overview-prio-head">Największe problemy</div>
+          <div class="overview-scope-note">Diagnoza dotyczy audytowanych podstron — „brak" oznacza, że nie znaleźliśmy danego elementu na sprawdzanych stronach, a nie że nie istnieje w całym serwisie.</div>
           <ol class="overview-prio-list">
             ${priorities.map(p => `
               <li class="overview-prio-item">
@@ -1950,7 +1952,7 @@ function renderExtras(r) {
     <div class="extras">
       <section class="extra">
         <div class="extra-head"><span class="extra-num">07</span><h2>Luki treści</h2></div>
-        <p class="extra-blurb">Brakujące tematy w zasięgu topical authority — co warto dopisać, by domykać klastry tematyczne.</p>
+        <p class="extra-blurb">Brakujące tematy w zasięgu topical authority — co warto dopisać, by domykać klastry tematyczne. Analiza opiera się na <b>audytowanych podstronach i sitemapie</b> — „brak" oznacza brak na sprawdzanych stronach, nie w całym serwisie.</p>
         <div class="gap-list">${renderGaps(r, currentMode)}</div>
       </section>
       <section class="extra">
