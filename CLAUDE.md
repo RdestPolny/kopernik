@@ -104,7 +104,9 @@ Top-level klucze: `url, discovery_source, timestamp, homepage_title, homepage_me
 
 6 grup, wagi sumują się do 100 (`UI_GROUP_WEIGHTS`): `technical` 20, `performance` 10, `onpage` 10, `eeat` 25, `patents` 15, `ai_aeo` 20.
 
-Filozofia "asymetrii podstaw": trywialne/podstawowe czynniki (sitemap, robots, HTTPS, canonical, niezablokowane boty AI itd.) mają zaniżony impact w `LOW_IMPACT_FACTORS` (0.25–1.0 zamiast 2–3) — sama ich obecność prawie nie podnosi wyniku. Za to BRAK krytycznych czynników domenowych odejmuje punkty od wyniku głównego przez `CRITICAL_FACTOR_PENALTIES` (stosowane w `audit_stream` do `dashboard.overall`; `raw_overall` przechowuje wartość sprzed kar). `llms_txt_present` celowo zachowuje impact 3 (rzadki wyróżnik). Skala score czynnika: `SCORE_VALUE_MAP` {0: 0, 1: 0.35, 2: 1.0}.
+Wynik główny = `0.85 × ważone grupy + 0.15 × pokrycie fan-out − CRITICAL_FACTOR_PENALTIES` (`FAN_OUT_BLEND_WEIGHT`, stosowane w `audit_stream`; `dashboard.raw_overall` przechowuje wartość sprzed blendu i kar).
+
+Filozofia "asymetrii podstaw": trywialne/podstawowe czynniki (sitemap, robots, HTTPS, canonical, niezablokowane boty AI itd.) mają zaniżony impact w `LOW_IMPACT_FACTORS` (0.25–1.0 zamiast 2–3) — sama ich obecność prawie nie podnosi wyniku. Za to BRAK krytycznych czynników domenowych odejmuje punkty od wyniku głównego przez `CRITICAL_FACTOR_PENALTIES`. `llms_txt_present` celowo zachowuje impact 3 (rzadki wyróżnik). Skala score czynnika: `SCORE_VALUE_MAP` {0: 0, 1: 0.30, 2: 1.0}. Prompt oceny czynników zawiera kalibrację surowości ("2" tylko z twardym dowodem). Pełny review czynników i wag: `docs/scoring-review.md`.
 
 Priorytet akcji (`build_top_actions`) = `severity × impact / effort` + korekta za liczbę wystąpień.
 

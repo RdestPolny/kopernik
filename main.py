@@ -976,6 +976,10 @@ UI_GROUP_LABELS = {
     "patents": "Patenty Google",
     "ai_aeo": "AI / AEO",
 }
+# Udział pokrycia fan-out (realnych pytań użytkowników AI) w wyniku głównym.
+# overall = (1 - w) * ważone_grupy + w * fan_out_pct - kary.
+FAN_OUT_BLEND_WEIGHT = 0.15
+
 # Weights chosen for AI SEO priorities: authority + AI extractability > foundations > perf.
 UI_GROUP_WEIGHTS = {
     "technical": 20,
@@ -1775,7 +1779,7 @@ PERFORMANCE_FACTOR_WHY = {
     "tbt_mobile_ok": "Czas blokowania głównego wątku przez JS. Wpływa na interaktywność.",
     "fcp_mobile_ok": "Czas do pierwszego renderu — pierwsze wrażenie użytkownika.",
 }
-SCORE_VALUE_MAP = {0: 0.0, 1: 0.35, 2: 1.0}
+SCORE_VALUE_MAP = {0: 0.0, 1: 0.30, 2: 1.0}
 
 SCHEMA_FACTOR_IDS = {
     "appropriate_schema_for_content_type",
@@ -4318,6 +4322,13 @@ Oceń dokładnie {len(factors)} czynników ZGODNIE z typem strony. Skala:
 - 1 = częściowy/średni/wymaga poprawy
 - 2 = dobry/pełny/wzorowo
 
+<kalibracja_surowości>
+Oceniasz NA TLE NAJLEPSZYCH stron w niszy, nie na tle przeciętnych.
+- 2 dawaj TYLKO przy twardym dowodzie wzorcowego wykonania (konkretny cytat/element w treści). Wahasz się między 1 a 2 → daj 1.
+- 1 = element istnieje, ale jest niepełny lub przeciętny. Wahasz się między 0 a 1 i nie masz konkretnego dowodu → daj 0.
+- Na typowej, poprawnej stronie firmowej WIĘKSZOŚĆ czynników powinna wypaść na 1. Oceny 2 dla większości czynników = nieskalibrowana ocena.
+</kalibracja_surowości>
+
 WAŻNE: Oceniasz czynniki DOPASOWANE do typu strony. NIE penalizuj braku dat publikacji na stronie sprzedażowej, NIE penalizuj braku testimoniali na artykule blogowym. Kontekst decyduje.
 WAŻNE DLA PATENTÓW: czynniki patentowe oceniaj jako sprawdzalne proxy treści/HTML. Jeśli patentowy czynnik wymaga danych niedostępnych w audycie, oceń tylko to, co wynika ze strony i napisz w note, jakie dane byłyby potrzebne do pełnej weryfikacji.
 </zadanie>
@@ -5014,7 +5025,12 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         # obniżają WYNIK GŁÓWNY. Wcześniej trafiały tylko do legacy_overall, przez co
         # raport nie karał realnie za ważne błędy.
         raw_overall = dashboard["overall"]
-        overall = max(0, raw_overall - penalties)
+        # Wynik główny = 85% ważonych grup czynników + 15% pokrycia fan-out (realne
+        # pokrycie pytań użytkowników AI — najtwardszy i zwykle najniższy sygnał;
+        # wcześniej wchodził tylko do nieużywanego legacy_overall, co zawyżało wyniki),
+        # minus kary za krytyczne braki domenowe.
+        blended = round(raw_overall * (1 - FAN_OUT_BLEND_WEIGHT) + fan_pct * FAN_OUT_BLEND_WEIGHT) if fan_out.get("queries") else raw_overall
+        overall = max(0, blended - penalties)
         dashboard["overall"] = overall
         dashboard["raw_overall"] = raw_overall
         if dashboard.get("url_options"):
