@@ -395,6 +395,12 @@ button{font:inherit;cursor:pointer}
 .extra-eyebrow{font-family:var(--mono);font-size:0.68rem;text-transform:uppercase;letter-spacing:0.14em;color:var(--gold);font-weight:600;margin-bottom:6px}
 .bp-section-title-main{font-size:1.4rem;margin:0 0 6px}
 .bp-section-blurb{color:var(--muted);font-size:0.9rem;margin:0;max-width:62ch}
+.bp-variant-toggle{display:inline-flex;border:1px solid var(--rule);border-radius:5px;overflow:hidden;margin-top:14px}
+.bp-variant-toggle button{font-family:var(--mono);font-size:0.72rem;text-transform:uppercase;letter-spacing:0.06em;padding:7px 14px;border:none;background:#fff;color:var(--muted);cursor:pointer}
+.bp-variant-toggle button+button{border-left:1px solid var(--rule)}
+.bp-variant-toggle button.active{background:#1e3351;color:#fff}
+.bp-variant-toggle button:hover:not(.active){background:#f5f5f0}
+.bp-variant-note{color:var(--muted);font-size:0.78rem;margin:8px 0 0;max-width:62ch;font-style:italic}
 
 /* === Brand Perception === */
 .bp-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-bottom:28px}
@@ -972,6 +978,7 @@ const SCORE_VALUE_MAP_CLIENT = {0: 0, 1: 0.35, 2: 1};
 
 let currentScope = 'all';
 let currentCategory = 'all';
+let bpVariant = 'web'; // 'web' (z internetem) | 'training' (tylko dane treningowe) — przełącznik sekcji "Jak Cię widzą LLM-y"
 let heroRadarChart = null;
 
 function groupOrder(r) {
@@ -1984,8 +1991,23 @@ function renderBrandPerception(r) {
     chatgpt:    { name: 'ChatGPT',    color: '#10a37f', logo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/ChatGPT_logo.svg/120px-ChatGPT_logo.svg.png', sourceLabel: 'dane treningowe', sourceClass: 'train' },
   };
 
+  // Czy w ogóle jest sens pokazywać przełącznik — tylko jeśli którykolwiek model
+  // ma realnie dwa różne warianty (Perplexity zawsze ma tylko "web").
+  const hasTrainingVariant = Object.values(bp).some(m => m && m.training && !m.training.not_applicable);
+  const variant = hasTrainingVariant ? bpVariant : 'web';
+
   const cards = Object.entries(MODEL_META).map(([key, meta]) => {
-    const d = bp[key] || {};
+    const variants = bp[key] || {};
+    const d = variants[variant] || variants.web || {};
+    if (d.not_applicable) {
+      return `<div class="bp-card">
+        <div class="bp-card-header">
+          <img class="bp-logo" src="${meta.logo}" alt="${meta.name}" referrerpolicy="no-referrer">
+          <span class="bp-model-name">${meta.name}</span>
+        </div>
+        <div class="bp-unavail">Nie dotyczy — ${esc(d.error || 'brak wariantu bez wyszukiwania.')}</div>
+      </div>`;
+    }
     if (!d.available) {
       const err = d.error && d.error.includes('not set') ? 'Klucz API niedostępny.' : (d.error ? esc(d.error.slice(0, 120)) : 'Niedostępny');
       return `<div class="bp-card">
@@ -2067,6 +2089,11 @@ function renderBrandPerception(r) {
         <div class="extra-eyebrow">Percepcja marki</div>
         <h2 class="bp-section-title-main">Jak Twoją firmę postrzega AI?</h2>
         <p class="bp-section-blurb">Każdy model odpowiadał bez podpowiadania mu treści strony — to co naprawdę wie z własnego indeksu.</p>
+        ${hasTrainingVariant ? `<div class="bp-variant-toggle" role="group" aria-label="Wariant odpowiedzi">
+          <button type="button" data-bp-variant="web" class="${variant === 'web' ? 'active' : ''}">Z internetem</button>
+          <button type="button" data-bp-variant="training" class="${variant === 'training' ? 'active' : ''}">Tylko dane treningowe</button>
+        </div>
+        <p class="bp-variant-note">${variant === 'training' ? 'Perplexity nie ma trybu bez wyszukiwania (to model RAG z założenia) — jej karta pokazuje adnotację "nie dotyczy" zamiast treści.' : 'Domyślny widok — modele mają dostęp do wyszukiwania (tam, gdzie to możliwe).'}</p>` : ''}
       </div>
       <div class="bp-grid">${cards}</div>
       ${analysisHtml}
@@ -2104,6 +2131,12 @@ function handleAuditClick(e) {
     currentScope = urlBtn.dataset.scope;
     const state = computeScopeState(currentResult, currentScope);
     drawHeroRadar(state.groups, state.overall);
+    refreshAuditView();
+    return;
+  }
+  const bpVariantBtn = e.target.closest('button[data-bp-variant]');
+  if (bpVariantBtn) {
+    bpVariant = bpVariantBtn.dataset.bpVariant;
     refreshAuditView();
     return;
   }

@@ -3549,6 +3549,9 @@ GPT_MODEL = os.getenv("GPT_MODEL", "gpt-4o-search-preview")
 GPT_FALLBACK_MODELS = [m.strip() for m in os.getenv(
     "GPT_FALLBACK_MODELS", "gpt-4o-mini-search-preview,gpt-4o,gpt-4o-mini"
 ).split(",") if m.strip()]
+# Zwykły (bez wyszukiwania) model użyty do wariantu "tylko dane treningowe" w
+# przełączniku "z internetem / bez internetu" — patrz generate_brand_perception().
+GPT_TRAINING_MODEL = os.getenv("GPT_TRAINING_MODEL", "gpt-4o")
 
 
 def _is_search_model(model: str) -> bool:
@@ -3617,6 +3620,47 @@ def _openai_call(prompt: str, model: str = "", max_tokens: int = 500) -> tuple[s
     raise last_err or RuntimeError("OpenAI: nieznany błąd wywołania.")
 
 
+def _gemini_brand_call(prompt: str, temperature: float = 0.1, max_tokens: int = 400) -> dict:
+    """Wywołanie Gemini z narzędziem `google_search` (grounding) dla sekcji
+    "jak Cię widzą LLM-y". Bez tego narzędzia Gemini odpowiada wyłącznie z danych
+    treningowych (sprzed cutoffu modelu) i nie "widzi" firm, które pojawiły się
+    albo zmieniły się od tego czasu — w przeciwieństwie do Perplexity (zawsze
+    z wyszukiwaniem) i domyślnego modelu ChatGPT (*-search-preview).
+
+    Włączenie `tools: [{"google_search": {}}]` nie wymaga zmiany modelu — obecny
+    GEMINI_MODEL (patrz stała wyżej) wspiera grounding, jeśli to model z rodziny
+    Gemini 2.0+ / 3.x. Model sam decyduje, czy wyszukiwanie jest potrzebne, więc
+    `grounded` mówi, czy faktycznie z niego skorzystał (obecność
+    `groundingMetadata.webSearchQueries` w odpowiedzi) — jeśli nie, oznaczamy
+    wynik jako "training_data" tak jak wcześniej, zamiast fałszywie podpisywać go
+    jako web search.
+    """
+    r = requests.post(
+        GEMINI_URL,
+        params={"key": GEMINI_KEY},
+        headers={"Content-Type": "application/json"},
+        json={
+            "contents": [{"parts": [{"text": prompt}]}],
+            "generationConfig": {"temperature": temperature, "maxOutputTokens": max_tokens},
+            "tools": [{"google_search": {}}],
+        },
+        timeout=90,
+    )
+    r.raise_for_status()
+    data = r.json()
+    candidate = (data.get("candidates") or [{}])[0]
+    text = ((candidate.get("content") or {}).get("parts") or [{}])[0].get("text", "")
+    grounding = candidate.get("groundingMetadata") or {}
+    seen: set = set()
+    citations = []
+    for chunk in grounding.get("groundingChunks", []):
+        uri = (chunk.get("web") or {}).get("uri")
+        if uri and uri not in seen:
+            seen.add(uri)
+            citations.append(uri)
+    return {"text": text, "citations": citations, "grounded": bool(grounding.get("webSearchQueries"))}
+
+
 def _perplexity_brand_call(prompt: str, max_tokens: int = 600) -> dict:
     r = requests.post(
         "https://api.perplexity.ai/chat/completions",
@@ -3636,11 +3680,28 @@ def _perplexity_brand_call(prompt: str, max_tokens: int = 600) -> dict:
     }
 
 
+PERPLEXITY_NO_SEARCH_NOTE = (
+    'Perplexity zawsze wyszukuje w sieci (to model RAG z założenia) — '
+    'nie istnieje wariant "tylko dane treningowe" do porównania.'
+)
+
+
 def generate_brand_perception(domain: str, title: str) -> dict:
     """Ask Gemini, Perplexity and GPT what they know about this brand.
 
     Deliberately does NOT pass page content — we want to see what each model
-    independently knows (from training data or live web search), not what we tell it.
+    independently knows, not what we tell it.
+
+    Dla Gemini i ChatGPT pobieramy OBA warianty równolegle — "web" (z żywym
+    wyszukiwaniem) i "training" (tylko dane treningowe modelu, bez internetu) —
+    żeby frontend mógł pokazać przełącznik "z internetem / bez internetu" i
+    porównanie 1:1. Perplexity nie ma trybu bez wyszukiwania (patrz
+    PERPLEXITY_NO_SEARCH_NOTE), więc jej wariant "training" jest oznaczony jako
+    not_applicable zamiast być udawany innym modelem.
+
+    Kształt wyniku: {model: {"web": {...}, "training": {...}}} dla każdego z
+    "gemini"/"perplexity"/"chatgpt". Każdy wariant ma co najmniej `available`
+    i (jeśli available) `text`, `source`; opcjonalnie `citations`, `model`.
     """
     prompt = (
         f"Czym zajmuje się firma działająca pod adresem {domain}? "
@@ -3648,47 +3709,84 @@ def generate_brand_perception(domain: str, title: str) -> dict:
         f"Odpowiedz szczerze — jeśli nie masz informacji o tej konkretnej firmie, napisz to wprost. "
         f"Odpowiedź powinna mieć 3–5 zdań."
     )
-    results: dict = {}
+    results: dict = {"gemini": {}, "perplexity": {}, "chatgpt": {}}
 
-    def _ask_gemini() -> None:
+    def _ask_gemini_web() -> None:
+        try:
+            data = _gemini_brand_call(prompt, temperature=0.1, max_tokens=400)
+            results["gemini"]["web"] = {
+                "text": data["text"],
+                "citations": data["citations"],
+                "available": True,
+                "source": "web_search" if data["grounded"] else "training_data",
+            }
+        except Exception as e:
+            results["gemini"]["web"] = {"available": False, "error": str(e)}
+
+    def _ask_gemini_training() -> None:
         try:
             text = _gemini_call(prompt, temperature=0.1, max_tokens=400)
-            results["gemini"] = {"text": text, "available": True, "source": "training_data"}
+            results["gemini"]["training"] = {"text": text, "available": True, "source": "training_data"}
         except Exception as e:
-            results["gemini"] = {"available": False, "error": str(e)}
+            results["gemini"]["training"] = {"available": False, "error": str(e)}
 
     def _ask_perplexity() -> None:
+        no_search_variant = {"available": False, "not_applicable": True, "error": PERPLEXITY_NO_SEARCH_NOTE}
         if not PERPLEXITY_KEY:
-            results["perplexity"] = {"available": False, "error": "PERPLEXITY_KEY not set"}
+            results["perplexity"] = {
+                "web": {"available": False, "error": "PERPLEXITY_KEY not set"},
+                "training": no_search_variant,
+            }
             return
         try:
             data = _perplexity_brand_call(prompt)
             results["perplexity"] = {
-                "text": data["text"],
-                "citations": data["citations"],
-                "available": True,
-                "source": "web_search",
+                "web": {
+                    "text": data["text"],
+                    "citations": data["citations"],
+                    "available": True,
+                    "source": "web_search",
+                },
+                "training": no_search_variant,
             }
         except Exception as e:
-            results["perplexity"] = {"available": False, "error": str(e)}
+            results["perplexity"] = {"web": {"available": False, "error": str(e)}, "training": no_search_variant}
 
-    def _ask_gpt() -> None:
+    def _ask_gpt_web() -> None:
         if not GPT_KEY:
-            results["chatgpt"] = {"available": False, "error": "GPT_KEY not set"}
+            results["chatgpt"]["web"] = {"available": False, "error": "GPT_KEY not set"}
             return
         try:
             text, used_model = _openai_call(prompt)
-            results["chatgpt"] = {
+            results["chatgpt"]["web"] = {
                 "text": text,
                 "available": True,
                 "source": "web_search" if _is_search_model(used_model) else "training_data",
                 "model": used_model,
             }
         except Exception as e:
-            results["chatgpt"] = {"available": False, "error": str(e)}
+            results["chatgpt"]["web"] = {"available": False, "error": str(e)}
 
-    with ThreadPoolExecutor(max_workers=3) as executor:
-        futs = [executor.submit(_ask_gemini), executor.submit(_ask_perplexity), executor.submit(_ask_gpt)]
+    def _ask_gpt_training() -> None:
+        if not GPT_KEY:
+            results["chatgpt"]["training"] = {"available": False, "error": "GPT_KEY not set"}
+            return
+        try:
+            # Wymuś zwykły (nie -search-preview) model, niezależnie od GPT_MODEL/GPT_FALLBACK_MODELS,
+            # żeby ten wariant faktycznie reprezentował "bez internetu".
+            text, used_model = _openai_call(prompt, model=GPT_TRAINING_MODEL)
+            results["chatgpt"]["training"] = {
+                "text": text, "available": True, "source": "training_data", "model": used_model,
+            }
+        except Exception as e:
+            results["chatgpt"]["training"] = {"available": False, "error": str(e)}
+
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futs = [
+            executor.submit(_ask_gemini_web), executor.submit(_ask_gemini_training),
+            executor.submit(_ask_perplexity),
+            executor.submit(_ask_gpt_web), executor.submit(_ask_gpt_training),
+        ]
         for f in as_completed(futs):
             _ = f.result()  # surface exceptions to log
 
@@ -3696,10 +3794,11 @@ def generate_brand_perception(domain: str, title: str) -> dict:
 
 
 def analyze_brand_gaps(perception: dict, domain: str) -> dict:
-    """Use Gemini to compare the three model responses and surface discrepancies."""
+    """Use Gemini to compare the three models' "web" variant responses (the more
+    complete, internet-grounded one where available) and surface discrepancies."""
     texts = []
     for model_name in ["gemini", "perplexity", "chatgpt"]:
-        d = perception.get(model_name, {})
+        d = (perception.get(model_name) or {}).get("web", {})
         if d.get("available") and d.get("text"):
             texts.append(f"{model_name.upper()}: {d['text']}")
     if not texts:
