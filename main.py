@@ -4327,6 +4327,7 @@ Oceniasz NA TLE NAJLEPSZYCH stron w niszy, nie na tle przeciętnych.
 - 2 dawaj TYLKO przy twardym dowodzie wzorcowego wykonania (konkretny cytat/element w treści). Wahasz się między 1 a 2 → daj 1.
 - 1 = element istnieje, ale jest niepełny lub przeciętny. Wahasz się między 0 a 1 i nie masz konkretnego dowodu → daj 0.
 - Na typowej, poprawnej stronie firmowej WIĘKSZOŚĆ czynników powinna wypaść na 1. Oceny 2 dla większości czynników = nieskalibrowana ocena.
+- TWARDY LIMIT: ocenę 2 przyznaj maksymalnie ~1/3 czynników — wyłącznie tym z najmocniejszym dowodem. Nadmiarowe dwójki i tak zostaną programowo obniżone do 1.
 </kalibracja_surowości>
 
 WAŻNE: Oceniasz czynniki DOPASOWANE do typu strony. NIE penalizuj braku dat publikacji na stronie sprzedażowej, NIE penalizuj braku testimoniali na artykule blogowym. Kontekst decyduje.
@@ -4373,9 +4374,33 @@ Zwróć TYLKO poprawny JSON (bez markdown):
 }}"""
 
 
+# Maksymalny odsetek czynników, które mogą dostać ocenę 2 w analizie LLM jednej strony.
+# Bezpiecznik przeciw inflacji: LLM-y mimo kalibracji w prompcie bywają zbyt hojne.
+MAX_TWOS_RATIO = float(os.getenv("MAX_TWOS_RATIO", "0.35"))
+
+
+def _enforce_score_calibration(factors: dict) -> dict:
+    """Programowy bezpiecznik kalibracji ocen LLM: jeśli '2' dostało więcej niż
+    MAX_TWOS_RATIO czynników, nadmiarowe dwójki obniżamy do 1 — zaczynając od tych
+    z najsłabszym dowodem (najkrótszą notą; prompt wymaga cytatu/konkretu w nocie,
+    więc krótka nota = słaby dowód). Obniżone oceny dostają flagę 'calibrated'."""
+    items = [(k, v) for k, v in factors.items() if isinstance(v, dict) and "score" in v]
+    if not items:
+        return factors
+    twos = [(k, v) for k, v in items if v.get("score") == 2]
+    max_twos = max(1, int(len(items) * MAX_TWOS_RATIO))
+    if len(twos) <= max_twos:
+        return factors
+    twos.sort(key=lambda kv: len((kv[1].get("note") or "").strip()))
+    for _, v in twos[: len(twos) - max_twos]:
+        v["score"] = 1
+        v["calibrated"] = True
+    return factors
+
+
 def analyze_page(url: str, page_type: str, title: str, meta_desc: str, content: str, html_checks: dict | None = None, sitemap_urls: list[str] | None = None) -> dict:
     prompt = _page_factor_prompt(page_type, url, title, meta_desc, content, html_checks, sitemap_urls)
-    return _extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=5000))
+    return _enforce_score_calibration(_extract_json(_gemini_call(prompt, temperature=0.15, max_tokens=5000)))
 
 
 def generate_fan_out(page_url: str, page_title: str, content: str, sitemap_urls: list[str] | None = None) -> dict:
