@@ -87,7 +87,7 @@ Wszystko poniżej żyje na `app`, publicznie dostępne pod `/llms-audit/...`.
 | `GET /audit/stream?url=&picks=` | Generator SSE — pełny audyt krok po kroku (używany wewnętrznie przez `/audit/start`) |
 | `GET /audit/start?url=&picks=` | Startuje audyt w wątku w tle, zwraca `job_id` natychmiast |
 | `GET /audit/result?job_id=&fields=` | Poll: status joba / wynik. `fields` (lista po przecinku) filtruje sekcje wyniku |
-| `GET /report?domain=&url=` | Pobiera zapisany/predefiniowany raport dla domeny |
+| `GET /report?domain=&url=&fields=` | Pobiera zapisany/predefiniowany raport dla domeny. `fields` (lista top-level po przecinku, np. `scores,dashboard,domain_technical,synthesis,senuto_aio,fan_out`) zwraca lekki, **niezależny od instancji** (Firestore/fixed) wycinek — do masowych audytów, gdzie pełny raport (>90 KB) nie mieści się w limicie klienta. Pewny nawet gdy job zniknął z pamięci instancji (inaczej niż `/audit/result`) |
 | `GET /reports?token=` | Lista zapisanych raportów (pamięć instancji + Firestore), chronione `LEADS_TOKEN` — np. przed deployem |
 | `POST /report/import?token=` | Import/przywrócenie raportu z backupu JSON (pamięć + synchroniczny Firestore), chronione `LEADS_TOKEN` |
 | `GET /health` | Health check |

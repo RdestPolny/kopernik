@@ -5899,19 +5899,32 @@ async def audit_result(job_id: str, fields: str = ""):
 
 
 @app.get("/report")
-async def get_report(domain: str = "", url: str = ""):
+async def get_report(domain: str = "", url: str = "", fields: str = ""):
     """Zwraca wcześniej zapisany raport dla danej domeny (do udostępniania linkiem
-    i przywoływania ponownie). Zwraca {found: bool, result?: dict}."""
+    i przywoływania ponownie). Zwraca {found: bool, result?: dict}.
+
+    Opcjonalny `fields` (klucze top-level po przecinku, np.
+    'url,scores,dashboard,domain_technical,synthesis,senuto_aio,fan_out') ogranicza
+    zwracany 'result' do wybranych sekcji. To lekki, niezależny od instancji odczyt
+    z Firestore/fixed — kluczowy przy masowych audytach przez API, gdzie klient ma
+    limit rozmiaru odpowiedzi, a pełny raport (factor_index + page_audits) bywa >90 KB."""
     key_src = domain or url
     if not key_src:
         raise HTTPException(status_code=400, detail="Podaj parametr 'domain' lub 'url'")
+
+    def _slim(result: dict) -> dict:
+        if fields and isinstance(result, dict):
+            keys = [k.strip() for k in fields.split(",") if k.strip()]
+            return {k: result.get(k) for k in keys}
+        return result
+
     fixed = fixed_report_for(key_src)
     if fixed is not None:
-        return {"found": True, "domain": _report_key(key_src), "result": fixed}
+        return {"found": True, "domain": _report_key(key_src), "result": _slim(fixed)}
     result = load_report(key_src)
     if result is None:
         return {"found": False, "domain": _report_key(key_src)}
-    return {"found": True, "domain": _report_key(key_src), "result": result}
+    return {"found": True, "domain": _report_key(key_src), "result": _slim(result)}
 
 
 @app.get("/reports")
