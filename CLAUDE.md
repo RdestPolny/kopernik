@@ -17,6 +17,7 @@ Kopernik to appka do audytu "AI SEO" (widoczność strony w ChatGPT/Perplexity/G
 | `seo-patent-kb/` (~16 MB) | OFFLINE pipeline generujący `factors.jsonl` z PDF-ów patentowych (OCR, ekstrakcja evidence → factors) | Tylko przy regeneracji czynników od zera z patentów. Nie czytaj `figures/`, `extracted_text/`, `.cache/` bez potrzeby — to duże pliki binarne/OCR |
 | `fixed_reports/<domena>.json` | Gotowy, predefiniowany wynik audytu — omija cały pipeline dla danej domeny. Dziś tylko `strategiczni.pl` (wynik 91) | Debug "dlaczego zmiana w kodzie nie wpłynęła na audyt strategiczni.pl" — bo to statyczny plik, nie live audyt |
 | `scripts/gen_fixed_report_strategiczni.py` | Generator pliku wyżej; importuje `main.py` jako moduł, żeby użyć prawdziwych funkcji scoringowych + ręcznie dopisane treści LLM-owych sekcji | Aktualizacja predefiniowanego raportu strategiczni.pl |
+| `scripts/batch_audit.py` | Równoległy klient batch (ThreadPoolExecutor) do masowych audytów (np. 70 domen na raz) przez `GET /audit/start` + polling `GET /audit/result` — bez `picks`, więc korzysta z auto-pick z main.py. Resume (pomija istniejące pliki wyniku), backoff na 429/5xx, `summary.csv` na końcu | Masowy audyt wielu domen jednym poleceniem, zamiast ręcznie przez UI |
 | `senuto_aio/<domena>.json` | Cache widoczności w AI Overviews (Senuto), uzupełniany ręcznie przez operatora (skill `kopernik` / MCP Senuto), łączony z danymi z żywego API Senuto | Sekcja `senuto_aio` w wyniku audytu |
 | `docs/audyt-do-oferty.md` | Opis (PL) pipeline'u: eksport JSON z appki + dane Senuto (MCP) + skill `seoai-offer-local` → oferta dla klienta | Łączenie audytu z generowaniem oferty sprzedażowej |
 | `audit.py` (653 linie) | Samodzielny, STARY prototyp CLI (`python audit.py <url>`). NIE jest importowany przez `main.py`, nie działa w produkcji | Tylko jako historyczny punkt odniesienia |
@@ -56,8 +57,8 @@ Numery linii mogą się przesunąć wraz z kolejnymi commitami — jeśli się n
 | 1802–2052 | Helpery scoringu: `_clamp_score`, `_ui_group_for_factor`, `_impact_effort_for_factor`, `_generic_detail`, `_enrich_factor_metadata` |
 | 2053–2309 | Generowanie notatek PL per czynnik: `_tech_specific_note`, `_domain_tech_specific_note` |
 | 2310–2569 | Budowa wyniku: `build_factor_index`, `calculate_scope_scores`, `build_top_actions` (priorytet = severity×impact/effort), `build_dashboard` |
-| 2570–2683 | Discovery URL-i: `fetch_sitemap_urls`, `_parse_sitemap_xml`, `fetch_homepage_nav_links` |
-| 2684–2938 | Wybór i klasyfikacja podstron do audytu: `select_and_classify_urls`, `propose_page_candidates` |
+| ~2600–2870 | Discovery URL-i (uszczelnione, wielometodowe): `fetch_sitemap_entries`/`fetch_sitemap_urls` (robots.txt `Sitemap:` ×N → lista popularnych ścieżek → sitemap index rekurencyjny z priorytetem WP page/post-sitemap → gzip/txt), `_extract_nav_links_from_html`, `fetch_homepage_nav_links`, `fetch_firecrawl_homepage_links` (ostateczny fallback: Firecrawl scrape JS) |
+| ~2870–3165 | Wybór i klasyfikacja podstron: `select_and_classify_urls`/`propose_page_candidates` (flow manualny, UI `/audit/candidates`) oraz **auto-pick kuloodporny** (flow automatyczny, bez `picks`): `score_and_classify_candidates` → `llm_verify_picks` (referee Gemini, fallback `_heuristic_pick_from_scored`) → `_ensure_about_page` → `_validate_picks` (HEAD/GET) → `auto_select_pages` (orkiestrator, wołany z `audit_stream`) |
 | 2939–2976 | Scraping przez Firecrawl (równoległy, `scrape_pages_parallel`) |
 | 2977–3178 | Sprawdzenia techniczne: robots.txt, sitemap, llms.txt, nagłówki HTTP, PageSpeed Insights (Core Web Vitals) |
 | 3178–3415 | Analiza HTML przez BeautifulSoup: meta, nagłówki, JSON-LD schema, obrazy/alt, semantic html5, `rag_signals` |
@@ -98,7 +99,9 @@ To jest ten sam "async job API" opisany w skillu `kopernik` (pobieranie audytu p
 
 ## Kształt wyniku audytu (`result` w `audit_stream` / `/audit/result`)
 
-Top-level klucze: `url, discovery_source, timestamp, homepage_title, homepage_meta_desc, scores, dashboard, factor_index, page_audits, domain_technical{scores,score_pct,robots,sitemap,llms_txt,http_headers,pagespeed}, fan_out, synthesis, ai_snippet_preview, brand_perception, brand_gaps, client_mode, overview, senuto_aio, meta{factor_meta,tech_factor_meta,domain_tech_meta,category_labels,group_labels,group_order,group_weights,score_value_map,page_type_labels,patent_factor_count,patent_scored_factor_count}`.
+Top-level klucze: `url, discovery_source, discovery_debug, timestamp, homepage_title, homepage_meta_desc, scores, dashboard, factor_index, page_audits, domain_technical{scores,score_pct,robots,sitemap,llms_txt,http_headers,pagespeed}, fan_out, synthesis, ai_snippet_preview, brand_perception, brand_gaps, client_mode, overview, senuto_aio, meta{factor_meta,tech_factor_meta,domain_tech_meta,category_labels,group_labels,group_order,group_weights,score_value_map,page_type_labels,patent_factor_count,patent_scored_factor_count}`.
+
+`discovery_debug` (nowe, diagnostyczne, tylko w ścieżce automatycznej bez `picks`; `fixed_report`/`--picks` z UI mają uboższą wersję): `{sitemap_source, methods_tried, picks_source: "llm_referee"|"heuristic"|"user", candidate_count, validated: {url: bool}}` — do debugowania masowych audytów (dlaczego dana domena dostała słabe/dziwne podstrony).
 
 ## Model scoringu
 
@@ -117,7 +120,7 @@ UWAGA przy zmianach wag: zapisane raporty (Firestore) i `fixed_reports/` mają w
 1. `GET /audit/candidates` — użytkownik podaje URL, appka proponuje podstrony (albo od razu zwraca `fixed_report`)
 2. `GET /audit/start` — start joba w tle → `job_id`
 3. Frontend polluje `GET /audit/result?job_id=` do `status: done`
-4. Wewnątrz `audit_stream()`: discovery → scrape (Firecrawl) → analiza HTML (BS4) + PageSpeed → scoring techniczny → analiza treści (Gemini) → fan-out/snippet/brand (Gemini/OpenAI/Perplexity) → `synthesize_findings` → `generate_strategic_overview` → zapis (`save_report`: in-memory + Firestore best-effort)
+4. Wewnątrz `audit_stream()`: discovery (kuloodporny auto-pick przez `auto_select_pages` gdy brak `picks` — patrz gotchas) → scrape (Firecrawl) → analiza HTML (BS4) + PageSpeed → scoring techniczny → analiza treści (Gemini) → fan-out/snippet/brand (Gemini/OpenAI/Perplexity) → `synthesize_findings` → `generate_strategic_overview` → zapis (`save_report`: in-memory + Firestore best-effort)
 5. Frontend renderuje wynik częściowo (teaser); pełny raport odblokowuje `POST /lead` (e-mail)
 
 ## Zmienne środowiskowe
@@ -147,12 +150,17 @@ UWAGA przy zmianach wag: zapisane raporty (Firestore) i `fixed_reports/` mają w
 - **`CLIENT_FACTOR_EXPLANATIONS` jest już częścią `main.py`** (linia 794) — `add_explanations.py` to zarchiwizowany generator jednorazowy, nie trzeba go uruchamiać ponownie.
 - **`google-patent-seo-skill/references/factors.jsonl` to zależność runtime**, nie tylko dokumentacja skilla — zmiana tego pliku zmienia realny scoring grupy "patents" w appce.
 - Remote gita zawiera osadzony token dostępu w URL (`git remote -v`) — warto zrotować token i przejść na SSH/credential helper zamiast trzymać go w URL remote'a.
+- **Auto-pick podstron (bez `picks`) jest kuloodporny z założenia** — myślany pod masowe audyty (np. `scripts/batch_audit.py` na 70 domen), gdzie nikt nie zweryfikuje wyboru ręcznie. Kolejność fallbacków: `score_and_classify_candidates` (heurystyczny ranking) → `llm_verify_picks` (1 call Gemini, referee) → przy błędzie/timeout/hallucynacji URL-a **zawsze** czysta heurystyka (`_heuristic_pick_from_scored`) → `_validate_picks` (HEAD/GET) podmienia martwe URL-e na kolejnego kandydata z rankingu. Flow manualny z UI (`/audit/candidates` → `picks`) jest nietknięty i nadal korzysta z `propose_page_candidates`/Gemini bez referee.
+- **`fetch_sitemap_entries`/`fetch_sitemap_urls` próbują wielu ścieżek i obu wariantów www./non-www** zanim uznają, że sitemapy nie ma — dopiero wtedy audyt spada do Firecrawl `/map`, potem do nav linków (`requests`), a na końcu do Firecrawl scrape homepage (renderuje JS; jedyny fallback działający na czystych SPA).
 
 ## Częste zadania → gdzie edytować
 
-- Zmiana treści maila do leada → `_report_link_email_html` (main.py:3768)
-- Zmiana wag scoringu → `UI_GROUP_WEIGHTS` (main.py:978)
+- Zmiana treści maila do leada → `_report_link_email_html` (main.py, `grep -n "_report_link_email_html"`)
+- Zmiana wag scoringu → `UI_GROUP_WEIGHTS` (main.py, `grep -n "UI_GROUP_WEIGHTS"`)
 - Nowy czynnik grupy "patents" → `google-patent-seo-skill/references/factors.jsonl` (albo od zera z PDF-a: `seo-patent-kb/scripts/build_kb.py`)
 - Nowa domena z predefiniowanym raportem → wzoruj się na `scripts/gen_fixed_report_strategiczni.py`, wynik do `fixed_reports/<domena>.json`
+- Nowe wzorce slugów PL/EN dla klasyfikacji podstron (service/about/article) → `PAGE_TYPE_PATTERNS`, `PORTFOLIO_SLUGS` (main.py, `grep -n "PAGE_TYPE_PATTERNS ="`)
+- Dostrojenie auto-pick (scoring/referee/walidacja) → `score_and_classify_candidates`, `llm_verify_picks`, `_validate_picks`, `auto_select_pages` (main.py, sekcja "AUTO-PICK")
+- Masowy audyt wielu domen → `scripts/batch_audit.py --input domeny.txt`
 - Zmiana UI/hero/wykresu/formularza → `static/index.html` (całość frontendu w jednym pliku)
 - Nowy route API → `main.py`, sekcja ROUTES (linia ~4880+); pamiętaj, że musi wisieć na `app`, nie na `root`

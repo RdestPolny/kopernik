@@ -78,6 +78,22 @@ _LEAD_EMAILS_SEEN: set[str] = set()
 AI_BOTS = ["GPTBot", "PerplexityBot", "OAI-SearchBot", "ClaudeBot", "anthropic-ai", "Google-Extended"]
 MAX_AUDIT_PAGES = 5
 SITEMAP_CAP = 300
+# Ścieżki sitemap próbowane po kolei, gdy robots.txt nie wskazuje żadnej (kuloodporne
+# auto-discovery dla masowych audytów bez ludzkiej weryfikacji — patrz sekcja URL DISCOVERY).
+SITEMAP_PATHS = [
+    "/sitemap.xml", "/sitemap_index.xml", "/sitemap-index.xml", "/sitemapindex.xml",
+    "/wp-sitemap.xml", "/sitemap/sitemap.xml", "/sitemap1.xml",
+    "/page-sitemap.xml", "/post-sitemap.xml", "/sitemap.txt",
+    "/sitemap.xml.gz", "/sitemap_index.xml.gz",
+]
+SITEMAP_MAX_DEPTH = 2  # limit rekurencji przy zagnieżdżonych sitemap index
+SITEMAP_DISCOVERY_CAP = 2000  # limit łączny URL-i zbieranych podczas rozwijania sitemap index
+_DISCOVERY_UA = "Mozilla/5.0 (compatible; KopernikAudit/1.0; +https://strategiczni.pl)"
+_DISCOVERY_TIMEOUT = 8
+_MULTI_PART_TLDS = {
+    "co.uk", "org.uk", "ac.uk", "gov.uk", "com.pl", "net.pl", "org.pl",
+    "com.au", "co.jp", "co.nz", "com.br", "co.il", "com.ua",
+}
 MAX_CONTENT_CHARS = 7000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 PATENT_FACTORS_PATH = os.path.join(BASE_DIR, "google-patent-seo-skill", "references", "factors.jsonl")
@@ -307,7 +323,7 @@ class AuditRequest(BaseModel):
 PAGE_TYPE_PATTERNS = {
     "contact": ["/kontakt", "/contact"],
     "about": [
-        "/o-nas", "/o-firmie", "/o_nas", "/about", "/about-us", "/aboutus",
+        "/o-nas", "/onas", "/o-firmie", "/o_nas", "/about", "/about-us", "/aboutus",
         "/zespol", "/zespół", "/team", "/our-team", "/nasz-zespol",
         "/kim-jestesmy", "/poznaj-nas", "/historia", "/nasza-historia",
         "/misja", "/wartosci", "/wartości", "/ludzie", "/eksperci",
@@ -316,16 +332,22 @@ PAGE_TYPE_PATTERNS = {
     "article": [
         "/blog/", "/artykul/", "/artykuly/", "/article/", "/articles/",
         "/post/", "/posts/", "/news/", "/aktualnosci/", "/aktualności/",
-        "/poradnik/", "/poradniki/", "/wiedza/", "/insights/",
+        "/porady/", "/poradnik/", "/poradniki/", "/wiedza/", "/insights/",
         "/case-study/", "/case-studies/", "/baza-wiedzy/", "/blog-post/",
     ],
     "service": [
-        "/uslugi/", "/usługi/", "/usluga/", "/usługa/", "/oferta/", "/services/",
-        "/service/", "/produkt/", "/product/", "/produkty/", "/products/",
+        "/uslugi/", "/usługi/", "/usluga/", "/usługa/", "/zakres-uslug/", "/oferta/",
+        "/services/", "/service/", "/what-we-do/", "/produkt/", "/product/",
+        "/produkty/", "/products/", "/leczenie/", "/zabiegi/",
         "/cennik", "/pricing", "/rozwiazania/", "/solutions/", "/co-robimy/",
     ],
     "category": ["/kategoria/", "/category/", "/tag/", "/tags/", "/archive/", "/archiwum/"],
 }
+
+# Slugi wskazujące realizacje/case studies/portfolio — nie mają własnego page_type
+# (brak dedykowanego zestawu czynników), ale liczą się jako mocny sygnał "wartościowa
+# podstrona" przy scoringu kandydatów (score_and_classify_candidates).
+PORTFOLIO_SLUGS = ["/realizacje/", "/realizacja/", "/portfolio/", "/case-studies/", "/case-study/"]
 
 # Sub-paths that are listing/index pages, NOT individual articles. We avoid
 # classifying these as 'article' even though they live under e.g. /blog.
@@ -2594,51 +2616,253 @@ _enrich_factor_metadata()
 
 
 # --- URL DISCOVERY ---
+#
+# Kuloodporny pipeline (dla masowych audytów bez ludzkiej weryfikacji podstron):
+#   robots.txt (Sitemap: ×N) → lista popularnych ścieżek sitemap → Firecrawl /map
+#   → requests + <nav>/<header> → Firecrawl scrape homepage (JS) jako ostatni fallback.
+# Każdy krok jest best-effort; porażka nigdy nie podnosi wyjątku, tylko zwraca [].
 
-def fetch_sitemap_urls(base_url: str) -> list[str]:
-    urls: list[str] = []
-    for path in ["/sitemap.xml", "/sitemap_index.xml"]:
+def _registrable_domain(netloc: str) -> str:
+    """Przybliżony eTLD+1 (bez zależności typu tldextract) — wystarczający do odrzucania
+    URL-i spoza domeny podczas discovery na skalę 70 różnych domen."""
+    host = (netloc or "").lower().split(":")[0]
+    if host.startswith("www."):
+        host = host[4:]
+    parts = [p for p in host.split(".") if p]
+    if len(parts) <= 2:
+        return host
+    last_two = ".".join(parts[-2:])
+    last_three = ".".join(parts[-3:])
+    return last_three if last_two in _MULTI_PART_TLDS else last_two
+
+
+def _same_registrable_domain(url: str, base_url: str) -> bool:
+    try:
+        return _registrable_domain(urlparse(url).netloc) == _registrable_domain(urlparse(base_url).netloc)
+    except Exception:
+        return False
+
+
+def _base_url_variants(base_url: str) -> list[str]:
+    """base_url + wariant www./non-www — sitemapa bywa osiągalna tylko na jednym z nich."""
+    pu = urlparse(base_url)
+    host = pu.netloc
+    alt_host = host[4:] if host.startswith("www.") else f"www.{host}"
+    variants = [base_url]
+    alt = f"{pu.scheme}://{alt_host}"
+    if alt != base_url:
+        variants.append(alt)
+    return variants
+
+
+def _http_get(url: str, timeout: int = _DISCOVERY_TIMEOUT, headers: dict | None = None):
+    try:
+        h = {"User-Agent": _DISCOVERY_UA}
+        if headers:
+            h.update(headers)
+        return requests.get(url, timeout=timeout, allow_redirects=True, headers=h)
+    except Exception:
+        return None
+
+
+def _maybe_gunzip(content: bytes, url: str, content_type: str) -> bytes:
+    if url.lower().endswith(".gz") or "gzip" in (content_type or "").lower():
         try:
-            r = requests.get(urljoin(base_url, path), timeout=15, allow_redirects=True)
-            if r.status_code != 200 or len(r.content) < 50:
-                continue
-            urls.extend(_parse_sitemap_xml(r.text, base_url))
-            if urls:
-                break
+            return gzip.decompress(content)
         except Exception:
-            continue
-    seen = set()
+            return content
+    return content
+
+
+def _sitemaps_from_robots(base_url: str) -> list[str]:
+    """Wszystkie dyrektywy `Sitemap:` z robots.txt (może być kilka)."""
+    r = _http_get(urljoin(base_url, "/robots.txt"))
+    if not r or r.status_code != 200 or not r.text:
+        return []
+    out: list[str] = []
+    for line in r.text.splitlines():
+        line = line.strip()
+        if line.lower().startswith("sitemap:"):
+            sm = line.split(":", 1)[1].strip()
+            if sm:
+                out.append(sm)
+    return out
+
+
+def _parse_sitemap_entries(content: bytes, base_url: str, depth: int = 0, cap: int = SITEMAP_DISCOVERY_CAP) -> list[dict]:
+    """Parsuje jeden dokument sitemap: XML urlset/sitemapindex albo sitemapę tekstową
+    (jeden URL na linię). Rekursywnie rozwija sitemap index (limit SITEMAP_MAX_DEPTH).
+    Zwraca [{"url":..., "lastmod": str|None}, ...]."""
+    try:
+        text = content.decode("utf-8", errors="ignore")
+    except Exception:
+        return []
+    stripped = text.strip()
+    if not stripped:
+        return []
+
+    if not stripped.startswith("<"):
+        # Sitemap tekstowa (np. /sitemap.txt) — jeden URL na linię.
+        out = []
+        for line in stripped.splitlines():
+            line = line.strip()
+            if line.startswith("http"):
+                out.append({"url": line, "lastmod": None})
+            if len(out) >= cap:
+                break
+        return out
+
+    try:
+        root = ET.fromstring(text)
+    except ET.ParseError:
+        return []
+
+    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
+    sitemap_locs = [el.text.strip() for el in root.findall(".//sm:sitemap/sm:loc", ns) if el.text]
+
+    if sitemap_locs:
+        # Sitemap index — rekurencja z limitem głębokości.
+        if depth >= SITEMAP_MAX_DEPTH:
+            return []
+
+        def _priority(u: str) -> int:
+            ul = u.lower()
+            if "page-sitemap" in ul or "post-sitemap" in ul:
+                return 0  # WP: priorytetyzuj treściowe sitemapy nad media/kategorie
+            if any(k in ul for k in ("category", "tag", "author", "media", "image")):
+                return 2
+            return 1
+
+        sitemap_locs.sort(key=_priority)
+        out: list[dict] = []
+        for loc in sitemap_locs:
+            if len(out) >= cap:
+                break
+            r = _http_get(loc)
+            if not r or r.status_code != 200 or len(r.content) < 20:
+                continue
+            body = _maybe_gunzip(r.content, loc, r.headers.get("Content-Type", ""))
+            out.extend(_parse_sitemap_entries(body, base_url, depth + 1, cap - len(out)))
+        return out[:cap]
+
     out = []
-    for u in urls:
-        if u not in seen:
-            seen.add(u)
-            out.append(u)
-        if len(out) >= SITEMAP_CAP:
+    for u_el in root.findall(".//sm:url", ns):
+        loc_el = u_el.find("sm:loc", ns)
+        if loc_el is None or not loc_el.text:
+            continue
+        lastmod_el = u_el.find("sm:lastmod", ns)
+        out.append({
+            "url": loc_el.text.strip(),
+            "lastmod": lastmod_el.text.strip() if lastmod_el is not None and lastmod_el.text else None,
+        })
+        if len(out) >= cap:
             break
     return out
 
 
-def _parse_sitemap_xml(xml_text: str, base_url: str) -> list[str]:
-    urls: list[str] = []
+def _fetch_and_parse_sitemap_url(sm_url: str) -> list[dict]:
+    r = _http_get(sm_url)
+    if not r or r.status_code != 200 or len(r.content) < 20:
+        return []
+    body = _maybe_gunzip(r.content, sm_url, r.headers.get("Content-Type", ""))
     try:
-        root = ET.fromstring(xml_text)
-    except ET.ParseError:
-        return urls
-    ns = {"sm": "http://www.sitemaps.org/schemas/sitemap/0.9"}
-    for sm in root.findall(".//sm:sitemap/sm:loc", ns):
-        if sm.text:
-            try:
-                r = requests.get(sm.text.strip(), timeout=15)
-                if r.status_code == 200:
-                    urls.extend(_parse_sitemap_xml(r.text, base_url))
-            except Exception:
-                continue
-            if len(urls) >= SITEMAP_CAP:
-                return urls
-    for loc in root.findall(".//sm:url/sm:loc", ns):
-        if loc.text:
-            urls.append(loc.text.strip())
-    return urls
+        return _parse_sitemap_entries(body, sm_url)
+    except Exception:
+        return []
+
+
+def _fetch_sitemap_entries_with_source(base_url: str) -> tuple[list[dict], str, list[str]]:
+    """Próbuje robots.txt → listę popularnych ścieżek, na obu wariantach www./non-www.
+    Przerywa na pierwszym sukcesie z >=1 URL-em. Zwraca (entries, source, methods_tried)."""
+    methods_tried: list[str] = []
+    for bu in _base_url_variants(base_url):
+        robots_sitemaps = _sitemaps_from_robots(bu)
+        methods_tried.append(f"robots.txt@{urlparse(bu).netloc} ({len(robots_sitemaps)} sitemap directive(s))")
+        for sm_url in robots_sitemaps:
+            entries = _fetch_and_parse_sitemap_url(sm_url)
+            if entries:
+                return entries, f"robots:{sm_url}", methods_tried
+        for path in SITEMAP_PATHS:
+            candidate = urljoin(bu, path)
+            methods_tried.append(candidate)
+            entries = _fetch_and_parse_sitemap_url(candidate)
+            if entries:
+                return entries, candidate, methods_tried
+    return [], "none", methods_tried
+
+
+def fetch_sitemap_entries(base_url: str, debug: dict | None = None) -> list[dict]:
+    """Jak fetch_sitemap_urls, ale zwraca też lastmod (do scoringu kandydatów) i,
+    opcjonalnie, wypełnia `debug` polami sitemap_source/methods_tried."""
+    entries, source, tried = _fetch_sitemap_entries_with_source(base_url)
+    seen: set[str] = set()
+    out: list[dict] = []
+    for e in entries:
+        u = e.get("url")
+        if not u or u in seen or not _same_registrable_domain(u, base_url):
+            continue
+        seen.add(u)
+        out.append(e)
+        if len(out) >= SITEMAP_CAP:
+            break
+    if debug is not None:
+        debug["sitemap_source"] = source
+        debug["methods_tried"] = tried
+    return out
+
+
+def fetch_sitemap_urls(base_url: str, debug: dict | None = None) -> list[str]:
+    return [e["url"] for e in fetch_sitemap_entries(base_url, debug)]
+
+
+def _extract_nav_links_from_html(html: str, homepage_url: str, base_url: str, limit: int = 40, include_body_fallback: bool = False) -> list[dict]:
+    """Wspólna logika ekstrakcji linków z <nav>/<header>/menu-classed elementów, używana
+    zarówno przez fetch_homepage_nav_links (requests) jak i fetch_firecrawl_homepage_links
+    (Firecrawl, renderuje JS — ostateczny fallback gdy strona jest SPA bez sitemap)."""
+    try:
+        soup = BeautifulSoup(html, "html.parser")
+    except Exception:
+        return []
+
+    domain = urlparse(base_url).netloc
+    seen: set[str] = set()
+    out: list[dict] = []
+
+    containers = soup.find_all(["nav", "header", "footer"])
+    for el in soup.find_all(attrs={"class": True}):
+        cls = " ".join(el.get("class") or []).lower()
+        if any(k in cls for k in ("menu", "navigation", "nav-", "navbar", "main-nav", "primary-menu")):
+            containers.append(el)
+
+    def _harvest(elements) -> None:
+        for cont in elements:
+            for a in cont.find_all("a", href=True):
+                href = (a.get("href") or "").strip()
+                if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
+                    continue
+                full = urljoin(homepage_url, href)
+                pu = urlparse(full)
+                if pu.netloc and pu.netloc != domain:
+                    continue
+                if not pu.path or pu.path in ("/", ""):
+                    continue
+                if re.search(r"\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|xml|pdf)(\?|$)", full, re.I):
+                    continue
+                clean = f"{pu.scheme or 'https'}://{pu.netloc or domain}{pu.path.rstrip('/')}"
+                if clean in seen:
+                    continue
+                seen.add(clean)
+                label = (a.get_text(strip=True) or "")[:80]
+                out.append({"url": clean, "label": label})
+                if len(out) >= limit:
+                    return
+
+    _harvest(containers)
+    if not out and include_body_fallback and soup.body:
+        # Ostateczny fallback: brak <nav>/<header> rozpoznawalnych elementów (częste w SPA) —
+        # bierz linki wewnętrzne z całej treści strony głównej.
+        _harvest([soup.body])
+    return out
 
 
 def fetch_homepage_nav_links(homepage_url: str, base_url: str) -> list[dict]:
@@ -2648,50 +2872,27 @@ def fetch_homepage_nav_links(homepage_url: str, base_url: str) -> list[dict]:
     Used to bias Gemini's candidate selection toward what the site itself promotes.
     """
     try:
-        r = requests.get(
-            homepage_url,
-            timeout=15,
-            allow_redirects=True,
-            headers={"User-Agent": "Mozilla/5.0 (compatible; KopernikAudit/1.0)"},
-        )
+        r = requests.get(homepage_url, timeout=15, allow_redirects=True, headers={"User-Agent": _DISCOVERY_UA})
         if r.status_code != 200 or not r.text:
             return []
-        soup = BeautifulSoup(r.text, "html.parser")
     except Exception:
         return []
+    return _extract_nav_links_from_html(r.text, homepage_url, base_url)
 
-    domain = urlparse(base_url).netloc
-    seen: set[str] = set()
-    out: list[dict] = []
 
-    containers = soup.find_all(["nav", "header"])
-    for el in soup.find_all(attrs={"class": True}):
-        cls = " ".join(el.get("class") or []).lower()
-        if any(k in cls for k in ("menu", "navigation", "nav-", "navbar", "main-nav", "primary-menu")):
-            containers.append(el)
-
-    for cont in containers:
-        for a in cont.find_all("a", href=True):
-            href = (a.get("href") or "").strip()
-            if not href or href.startswith(("#", "mailto:", "tel:", "javascript:")):
-                continue
-            full = urljoin(homepage_url, href)
-            pu = urlparse(full)
-            if pu.netloc and pu.netloc != domain:
-                continue
-            if not pu.path or pu.path in ("/", ""):
-                continue
-            if re.search(r"\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|xml|pdf)(\?|$)", full, re.I):
-                continue
-            clean = f"{pu.scheme or 'https'}://{pu.netloc or domain}{pu.path.rstrip('/')}"
-            if clean in seen:
-                continue
-            seen.add(clean)
-            label = (a.get_text(strip=True) or "")[:80]
-            out.append({"url": clean, "label": label})
-            if len(out) >= 40:
-                return out
-    return out
+def fetch_firecrawl_homepage_links(homepage_url: str, base_url: str) -> list[dict]:
+    """Ostateczny fallback discovery: scrape homepage przez Firecrawl (renderuje JS) i
+    wyciągnij linki z <nav>/<header>/<footer> oraz — jeśli tych brak — z treści strony.
+    Używane tylko gdy sitemap, Firecrawl /map i zwykły fetch nav linków zawiodły
+    (np. czysto JS-owe SPA menu niewidoczne dla requests.get)."""
+    try:
+        data = scrape_with_firecrawl(homepage_url)
+    except Exception:
+        return []
+    html = data.get("html") or data.get("rawHtml") or ""
+    if not html:
+        return []
+    return _extract_nav_links_from_html(html, homepage_url, base_url, include_body_fallback=True)
 
 
 def fetch_firecrawl_map(base_url: str) -> list[str]:
@@ -2960,6 +3161,230 @@ def _heuristic_pick_and_classify(urls: list[str], base_url: str) -> list[dict]:
         if buckets[bucket_name]:
             out.append({"url": buckets[bucket_name][0], "page_type": bucket_name, "reason": "heurystyka URL"})
     return out[: MAX_AUDIT_PAGES - 1]
+
+
+# --- AUTO-PICK: kuloodporny wybór podstron bez ludzkiej weryfikacji (masowe audyty) ---
+#
+# Flow: score_and_classify_candidates() rankinguje WSZYSTKICH kandydatów (sitemap + nav) →
+# llm_verify_picks() (referee, 1 call Gemini) wybiera finalną listę → przy błędzie/timeout
+# fallback na _heuristic_pick_from_scored() → _ensure_about_page() gwarantuje E-E-A-T →
+# _validate_picks() odrzuca martwe URL-e i podmienia je na kolejnego kandydata z rankingu.
+# Całość spina auto_select_pages(), wołane z audit_stream() tylko gdy brak `picks` z UI.
+
+def _canonicalize_url(u: str) -> str:
+    """Kanonikalizacja do deduplikacji: bez trailing slash, query i fragmentu."""
+    pu = urlparse(u)
+    path = pu.path.rstrip("/") or "/"
+    return f"{pu.scheme}://{pu.netloc}{path}"
+
+
+def _url_depth(u: str) -> int:
+    return len([p for p in urlparse(u).path.split("/") if p])
+
+
+_CANDIDATE_TYPE_BASE_SCORE = {"service": 3.0, "article": 2.5, "about": 2.0, "contact": 1.0, "category": 0.4, "other": 0.3}
+
+
+def score_and_classify_candidates(all_urls: list[str], homepage_url: str, base_url: str, nav_links: list[dict] | None = None, lastmod_map: dict | None = None) -> list[dict]:
+    """Rankinguje surowe URL-e (sitemap + nav) do puli kandydatów na auto-pick.
+
+    Score = dopasowanie sluga (typ) + bonus za płytki URL + bonus za obecność w nav +
+    bonus za lastmod (świeżość, jeśli znana z sitemapy). Deduplikacja po kanonikalizacji.
+    Zwraca listę posortowaną malejąco po score: [{url, page_type, score, in_nav, lastmod}].
+    """
+    nav_urls = {_canonicalize_url(n["url"]) for n in (nav_links or []) if n.get("url")}
+    lastmod_map = lastmod_map or {}
+    seen: dict[str, dict] = {}
+    for u in all_urls:
+        if not u:
+            continue
+        pu = urlparse(u)
+        if pu.netloc and not _same_registrable_domain(u, base_url):
+            continue
+        if re.search(r"\.(jpg|jpeg|png|gif|webp|svg|ico|css|js|xml|woff2?|ttf|mp4|zip|pdf)(\?|$)", u, re.I):
+            continue
+        if not pu.path or pu.path in ("", "/"):
+            continue
+        if _is_article_listing(pu.path):
+            continue  # listing, nie artykuł — nigdy nie jest dobrym kandydatem samo w sobie
+        canon = _canonicalize_url(u)
+        if canon in seen:
+            continue
+        pt = classify_page_type_heuristic(u, base_url)
+        if pt in (None, "homepage"):
+            pt = "other"
+        score = _CANDIDATE_TYPE_BASE_SCORE.get(pt, 0.3)
+        if any(slug in pu.path.lower() for slug in PORTFOLIO_SLUGS):
+            score += 0.8  # realizacje/case studies/portfolio — sygnał wartościowej podstrony
+        depth = _url_depth(u)
+        score += max(0, 3 - depth) * 0.3  # płycej = lepiej (ale malejący bonus)
+        in_nav = canon in nav_urls
+        if in_nav:
+            score += 1.5
+        lastmod = lastmod_map.get(u) or lastmod_map.get(canon)
+        if lastmod:
+            score += 0.5
+        seen[canon] = {"url": u, "page_type": pt, "score": round(score, 3), "in_nav": in_nav, "lastmod": lastmod}
+    return sorted(seen.values(), key=lambda c: c["score"], reverse=True)
+
+
+def llm_verify_picks(candidates: list[dict], domain: str, want: int | None = None) -> list[dict] | None:
+    """Referee: 1 call do Gemini, weryfikuje/dopina finalny wybór podstron z puli już
+    wyliczonych kandydatów (score_and_classify_candidates). Twardy timeout dziedziczony
+    z _gemini_call (90s). Zwraca None przy JAKIMKOLWIEK błędzie/timeout/nie-JSON —
+    caller MUSI wtedy użyć czystego heurystycznego wyboru (_heuristic_pick_from_scored)."""
+    want = want or (MAX_AUDIT_PAGES - 1)
+    if not candidates:
+        return None
+    top = candidates[:40]
+    lines = []
+    for c in top:
+        extra = []
+        if c.get("in_nav"):
+            extra.append("w nav")
+        if c.get("lastmod"):
+            extra.append(f"lastmod {c['lastmod']}")
+        extra_s = f" [{', '.join(extra)}]" if extra else ""
+        lines.append(f"- {c['url']} (typ_heurystyczny: {c['page_type']}, score: {c['score']}){extra_s}")
+
+    prompt = f"""Jesteś referee automatycznego wyboru podstron do audytu SEO domeny {domain}.
+Dostajesz kandydatów z heurystycznym typem i wynikiem rankingowym (już policzonym).
+Zweryfikuj ranking i wybierz DOKŁADNIE {want} finalnych URL-i do audytu, każdy z innego
+segmentu witryny, wg priorytetów:
+
+<priorytety_wyboru>
+1. NAJWYŻSZY — service (oferta/usługa/produkt/cennik). Maks. 2.
+2. WYSOKI — article (KONKRETNY wpis blogowy/poradnik z pełnym slugiem, nie listing). Maks. 2.
+3. ŚREDNI — about (o nas/zespół/firma). Dokładnie 1, jeśli dostępny.
+4. NISKI — contact, tylko jeśli brakuje lepszych kandydatów.
+</priorytety_wyboru>
+
+Jeśli zabraknie kandydata jednego typu, uzupełnij brakujący slot kolejnym najlepszym
+kandydatem innego typu (np. drugim service). Nie wymyślaj URL-i spoza listy.
+
+<kandydaci>
+{chr(10).join(lines)}
+</kandydaci>
+
+Zwróć TYLKO JSON (bez markdown): {{"selected": [{{"url": "https://...", "page_type": "service|article|about|contact|category|other", "reason": "krótkie uzasadnienie po polsku"}}]}}
+Dokładnie {want} pozycji, bez duplikatów, tylko URL-e z listy kandydatów."""
+
+    try:
+        text = _gemini_call(prompt, temperature=0.1, max_tokens=1200)
+        parsed = _extract_json(text)
+    except Exception as e:
+        logger.info("llm_verify_picks: Gemini call/parse nieudany (%s) — fallback na heurystykę", e)
+        return None
+
+    cand_map = {c["url"]: c for c in candidates}
+    picked: list[dict] = []
+    seen_urls: set[str] = set()
+    for item in (parsed.get("selected") or []):
+        u = item.get("url") if isinstance(item, dict) else None
+        if not u or u not in cand_map or u in seen_urls:
+            continue
+        pt = item.get("page_type") or cand_map[u]["page_type"]
+        if pt not in PAGE_TYPE_FACTORS:
+            pt = cand_map[u]["page_type"] if cand_map[u]["page_type"] in PAGE_TYPE_FACTORS else "other"
+        picked.append({"url": u, "page_type": pt, "reason": item.get("reason", "") or "llm_referee"})
+        seen_urls.add(u)
+        if len(picked) >= want:
+            break
+    if not picked:
+        logger.info("llm_verify_picks: pusta/niepoprawna selekcja — fallback na heurystykę")
+        return None
+    return picked
+
+
+def _heuristic_pick_from_scored(candidates: list[dict], want: int | None = None) -> list[dict]:
+    """Czysto heurystyczny fallback, gdy referee LLM zawiedzie: bierze najlepiej
+    ocenionego kandydata z każdego priorytetowego segmentu, w kolejności."""
+    want = want or (MAX_AUDIT_PAGES - 1)
+    by_type: dict[str, list[dict]] = {}
+    for c in candidates:
+        by_type.setdefault(c["page_type"], []).append(c)
+    order = ["service", "article", "about", "service", "article", "contact", "other", "category"]
+    picked: list[dict] = []
+    used_urls: set[str] = set()
+    for pt in order:
+        for c in by_type.get(pt, []):
+            if c["url"] in used_urls:
+                continue
+            picked.append({"url": c["url"], "page_type": pt, "reason": "heurystyka (fallback)"})
+            used_urls.add(c["url"])
+            break
+        if len(picked) >= want:
+            break
+    if len(picked) < want:
+        for c in candidates:
+            if c["url"] in used_urls:
+                continue
+            picked.append({"url": c["url"], "page_type": c["page_type"], "reason": "heurystyka (fallback, uzupełnienie)"})
+            used_urls.add(c["url"])
+            if len(picked) >= want:
+                break
+    return picked[:want]
+
+
+def _quick_url_ok(url: str, base_url: str) -> bool:
+    """Szybka walidacja przed audytem: HEAD (fallback GET), 200 i ta sama domena."""
+    if not _same_registrable_domain(url, base_url):
+        return False
+    headers = {"User-Agent": _DISCOVERY_UA}
+    try:
+        r = requests.head(url, timeout=6, allow_redirects=True, headers=headers)
+        if r.status_code in (405, 501) or r.status_code >= 400:
+            r = requests.get(url, timeout=6, allow_redirects=True, headers=headers, stream=True)
+        return 200 <= r.status_code < 300
+    except Exception:
+        try:
+            r = requests.get(url, timeout=6, allow_redirects=True, headers=headers)
+            return 200 <= r.status_code < 300
+        except Exception:
+            return False
+
+
+def _validate_picks(picks: list[dict], ranked_candidates: list[dict], base_url: str) -> tuple[list[dict], dict]:
+    """Waliduje każdy pick (200 + domena); przy porażce podmienia na kolejnego
+    najlepszego niewykorzystanego kandydata tego samego typu (albo dowolnego).
+    Zwraca (finalne_picki, {url: bool} — mapa walidacji, w tym zamienników)."""
+    validated: dict[str, bool] = {}
+    used = {p["url"] for p in picks}
+    pool = [c for c in ranked_candidates if c["url"] not in used]
+    out: list[dict] = []
+    for p in picks:
+        if _quick_url_ok(p["url"], base_url):
+            validated[p["url"]] = True
+            out.append(p)
+            continue
+        validated[p["url"]] = False
+        replacement = next((c for c in pool if c["page_type"] == p["page_type"]), None) or (pool[0] if pool else None)
+        if replacement:
+            pool.remove(replacement)
+            if _quick_url_ok(replacement["url"], base_url):
+                validated[replacement["url"]] = True
+                out.append({"url": replacement["url"], "page_type": replacement["page_type"], "reason": f"zamiennik po nieudanej walidacji {p['url']}"})
+            else:
+                validated[replacement["url"]] = False
+    return out, validated
+
+
+def auto_select_pages(all_urls: list[str], homepage_url: str, base_url: str, nav_links: list[dict], lastmod_map: dict | None = None) -> tuple[list[dict], dict]:
+    """Pełny kuloodporny auto-pick: scoring → LLM referee (fallback heurystyka) →
+    gwarancja strony 'o nas' → walidacja HTTP. Zwraca (picks, {picks_source, candidate_count, validated})."""
+    ranked = score_and_classify_candidates(all_urls, homepage_url, base_url, nav_links, lastmod_map)
+    picks_source = "none"
+    picks: list[dict] = []
+    if ranked:
+        llm_picks = llm_verify_picks(ranked, urlparse(base_url).netloc)
+        if llm_picks:
+            picks, picks_source = llm_picks, "llm_referee"
+        else:
+            picks, picks_source = _heuristic_pick_from_scored(ranked), "heuristic"
+        picks = _ensure_about_page(picks, [c["url"] for c in ranked], base_url)
+    picks, validated = _validate_picks(picks, ranked, base_url)
+    logger.info("auto_select_pages(%s): picks_source=%s candidates=%d final_picks=%d", urlparse(base_url).netloc, picks_source, len(ranked), len(picks))
+    return picks, {"picks_source": picks_source, "candidate_count": len(ranked), "validated": validated}
 
 
 # --- SCRAPING ---
@@ -4886,19 +5311,43 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         parsed = urlparse(url)
         base_url = f"{parsed.scheme}://{parsed.netloc}"
 
+        discovery_debug: dict = {"sitemap_source": None, "methods_tried": [], "picks_source": None, "validated": {}}
+
         if picks:
-            # User-confirmed selection. Skip Gemini auto-pick, ale sitemapę i tak pobieramy
+            # User-confirmed selection. Skip auto-pick, ale sitemapę i tak pobieramy
             # (tanie 1-2 requesty) — daje kontekst domeny: klastry, cennik/opinie/FAQ, fan-out.
             yield event("progress", {"message": "Używam podstron wybranych przez użytkownika.", "pct": 10})
-            sitemap_urls = fetch_sitemap_urls(base_url)
+            _disc_debug: dict = {}
+            sitemap_urls = fetch_sitemap_urls(base_url, debug=_disc_debug)
             discovery_source = "user-picked"
+            discovery_debug.update({
+                "sitemap_source": _disc_debug.get("sitemap_source"),
+                "methods_tried": _disc_debug.get("methods_tried", []),
+                "picks_source": "user",
+                "validated": {p.get("url", ""): True for p in picks},
+            })
         else:
-            yield event("progress", {"message": "Wykrywanie podstron (sitemap.xml → Firecrawl /map)...", "pct": 5})
-            sitemap_urls = fetch_sitemap_urls(base_url)
+            # Kuloodporny auto-discovery (masowe audyty bez ludzkiej weryfikacji):
+            # robots.txt (Sitemap: ×N) + popularne ścieżki → Firecrawl /map → nav linki
+            # (requests) → Firecrawl scrape homepage (JS) jako ostateczny fallback.
+            yield event("progress", {"message": "Wykrywanie podstron (sitemap → robots → Firecrawl /map → nav)...", "pct": 5})
+            _disc_debug = {}
+            sitemap_entries = fetch_sitemap_entries(base_url, debug=_disc_debug)
+            sitemap_urls = [e["url"] for e in sitemap_entries]
+            lastmod_map = {e["url"]: e["lastmod"] for e in sitemap_entries if e.get("lastmod")}
             discovery_source = "sitemap" if sitemap_urls else "firecrawl-map"
+            methods_tried = list(_disc_debug.get("methods_tried", []))
             if not sitemap_urls:
                 sitemap_urls = fetch_firecrawl_map(base_url)
-            yield event("progress", {"message": f"Znaleziono {len(sitemap_urls)} URL-i ({discovery_source}). Gemini klasyfikuje + wybiera reprezentację...", "pct": 12})
+                methods_tried.append("firecrawl-map")
+            nav_links = fetch_homepage_nav_links(url, base_url)
+            if not sitemap_urls and not nav_links:
+                discovery_source = "firecrawl-scrape-nav"
+                methods_tried.append("firecrawl-scrape-homepage")
+                nav_links = fetch_firecrawl_homepage_links(url, base_url)
+            discovery_debug["sitemap_source"] = _disc_debug.get("sitemap_source")
+            discovery_debug["methods_tried"] = methods_tried
+            yield event("progress", {"message": f"Znaleziono {len(sitemap_urls)} URL-i ({discovery_source}). Auto-wybór podstron (LLM referee + walidacja)...", "pct": 12})
 
         homepage_entry = {"url": url, "page_type": "homepage", "reason": "strona główna"}
         url_entries: list[dict] = [homepage_entry]
@@ -4916,8 +5365,12 @@ def audit_stream(url: str, picks: list[dict] | None = None):
                 if len(url_entries) >= MAX_AUDIT_PAGES:
                     break
         else:
-            selected = select_and_classify_urls(sitemap_urls, url, base_url) if sitemap_urls else []
-            for s in selected:
+            all_candidate_urls = list(dict.fromkeys([*[n["url"] for n in nav_links], *sitemap_urls]))
+            auto_picks, auto_debug = auto_select_pages(all_candidate_urls, url, base_url, nav_links, lastmod_map)
+            discovery_debug["picks_source"] = auto_debug["picks_source"]
+            discovery_debug["candidate_count"] = auto_debug["candidate_count"]
+            discovery_debug["validated"] = auto_debug["validated"]
+            for s in auto_picks:
                 if s["url"] not in seen:
                     url_entries.append(s)
                     seen.add(s["url"])
@@ -5207,6 +5660,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         result = {
             "url": url,
             "discovery_source": discovery_source,
+            "discovery_debug": discovery_debug,
             "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M"),
             "homepage_title": homepage_title,
             "homepage_meta_desc": homepage_data["meta_desc"],
