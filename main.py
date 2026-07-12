@@ -14,7 +14,7 @@ import time
 import uuid
 import xml.etree.ElementTree as ET
 from concurrent.futures import ThreadPoolExecutor, as_completed
-from datetime import datetime
+from datetime import datetime, timezone
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from email.utils import formataddr
@@ -22,11 +22,16 @@ from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
-from fastapi import FastAPI, HTTPException
+from fastapi import APIRouter, FastAPI, HTTPException, Query, Request
 from fastapi.concurrency import run_in_threadpool
-from fastapi.responses import HTMLResponse, StreamingResponse, RedirectResponse
+from fastapi.exception_handlers import (
+    http_exception_handler as default_http_exception_handler,
+    request_validation_exception_handler as default_validation_exception_handler,
+)
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 # Load a local .env if present (keeps secrets out of the codebase). Optional dependency:
 # the app still works when python-dotenv isn't installed and env vars are set directly.
@@ -309,13 +314,134 @@ def load_senuto_aio(url: str) -> dict | None:
         return merged
     return live or cached
 
+API_SCHEMA_VERSION = "1.0"
+SCORING_VERSION = "2026-07"
+KNOWLEDGE_BASE_VERSION = "2026-07"
 
-app = FastAPI(title="AI SEO Audit")
+app = FastAPI(
+    title="Kopernik Audit API",
+    version=API_SCHEMA_VERSION,
+    description="Versioned API for starting SEO audits and retrieving structured results.",
+)
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 
 class AuditRequest(BaseModel):
     url: str
+
+
+class AuditPagePick(BaseModel):
+    url: str = Field(min_length=1, max_length=2048)
+    page_type: str | None = Field(default=None, max_length=40)
+
+
+class AuditCreateRequest(BaseModel):
+    domain: str = Field(
+        min_length=1,
+        max_length=2048,
+        description="Domena lub adres URL do audytu, np. example.com.",
+        examples=["example.com"],
+    )
+    picks: list[AuditPagePick] | None = Field(
+        default=None,
+        max_length=MAX_AUDIT_PAGES,
+        description="Opcjonalna lista podstron. Brak listy uruchamia automatyczny wybór.",
+    )
+
+
+class ApiErrorDetail(BaseModel):
+    code: str
+    message: str
+    request_id: str | None = None
+    details: object | None = None
+
+
+class ApiErrorResponse(BaseModel):
+    error: ApiErrorDetail
+
+
+class AuditAcceptedResponse(BaseModel):
+    audit_id: str
+    status: str
+    created_at: str
+    url: str
+    schema_version: str = API_SCHEMA_VERSION
+
+
+class AuditStatusResponse(BaseModel):
+    audit_id: str
+    status: str
+    created_at: str
+    completed_at: str | None = None
+    progress: int | None = None
+    message: str | None = None
+    url: str
+    schema_version: str = API_SCHEMA_VERSION
+    scoring_version: str = SCORING_VERSION
+    knowledge_base_version: str = KNOWLEDGE_BASE_VERSION
+    error: ApiErrorDetail | None = None
+
+
+class AuditSectionResponse(BaseModel):
+    audit_id: str
+    schema_version: str = API_SCHEMA_VERSION
+    scoring_version: str = SCORING_VERSION
+    knowledge_base_version: str = KNOWLEDGE_BASE_VERSION
+    data: dict
+
+
+class PaginatedAuditSectionResponse(BaseModel):
+    audit_id: str
+    schema_version: str = API_SCHEMA_VERSION
+    page: int
+    page_size: int
+    total: int
+    pages: int
+    items: list[dict]
+
+
+def _is_v1_request(request: Request) -> bool:
+    path = request.url.path.rstrip("/")
+    return path.endswith("/v1") or "/v1/" in path
+
+
+def _v1_error(status_code: int, code: str, message: str, details=None) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "error": {
+                "code": code,
+                "message": message,
+                "request_id": uuid.uuid4().hex,
+                "details": details,
+            }
+        },
+    )
+
+
+@app.exception_handler(HTTPException)
+async def _http_exception_handler(request: Request, exc: HTTPException):
+    if not _is_v1_request(request):
+        return await default_http_exception_handler(request, exc)
+    if isinstance(exc.detail, dict):
+        code = str(exc.detail.get("code") or "http_error")
+        message = str(exc.detail.get("message") or "Request failed")
+        details = exc.detail.get("details")
+    else:
+        code = "http_error"
+        message = str(exc.detail)
+        details = None
+    return _v1_error(exc.status_code, code, message, details)
+
+
+@app.exception_handler(RequestValidationError)
+async def _validation_exception_handler(request: Request, exc: RequestValidationError):
+    if not _is_v1_request(request):
+        return await default_validation_exception_handler(request, exc)
+    return _v1_error(422, "validation_error", "Request validation failed", exc.errors())
+
+
+v1 = APIRouter(prefix="/v1", tags=["API v1"])
 
 
 # --- PAGE TYPE CLASSIFICATION ---
@@ -5898,6 +6024,193 @@ async def audit_result(job_id: str, fields: str = ""):
     return resp
 
 
+def _iso_timestamp(value: float | None) -> str | None:
+    if value is None:
+        return None
+    return datetime.fromtimestamp(value, timezone.utc).isoformat(timespec="seconds").replace("+00:00", "Z")
+
+
+def _public_audit_status(status_value: str) -> str:
+    return {"done": "completed", "error": "failed"}.get(status_value, status_value)
+
+
+def _v1_job_or_404(audit_id: str) -> dict:
+    job = _AUDIT_JOBS.get(audit_id)
+    if not job:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "audit_not_found", "message": "Audit not found"},
+        )
+    return job
+
+
+def _v1_completed_result(audit_id: str) -> dict:
+    job = _v1_job_or_404(audit_id)
+    if job.get("status") != "done":
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "code": "audit_not_completed",
+                "message": "Audit result is not available yet",
+                "details": {"status": _public_audit_status(job.get("status", "running"))},
+            },
+        )
+    result = job.get("result")
+    if not isinstance(result, dict):
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "audit_result_unavailable", "message": "Audit completed without a result"},
+        )
+    return result
+
+
+_V1_ERROR_RESPONSES = {
+    400: {"model": ApiErrorResponse},
+    404: {"model": ApiErrorResponse},
+    409: {"model": ApiErrorResponse},
+    422: {"model": ApiErrorResponse},
+}
+
+
+@v1.post(
+    "/audits",
+    response_model=AuditAcceptedResponse,
+    status_code=202,
+    summary="Start an audit",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_create_audit(payload: AuditCreateRequest):
+    normalized = normalize_input_url(payload.domain)
+    if not normalized:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "invalid_domain", "message": "Invalid domain or URL"},
+        )
+    picks = ""
+    if payload.picks:
+        picks = json.dumps([pick.model_dump(exclude_none=True) for pick in payload.picks])
+    started = await audit_start(normalized, picks)
+    audit_id = started["job_id"]
+    job = _AUDIT_JOBS[audit_id]
+    return {
+        "audit_id": audit_id,
+        "status": _public_audit_status(job["status"]),
+        "created_at": _iso_timestamp(job["created_at"]),
+        "url": normalized,
+        "schema_version": API_SCHEMA_VERSION,
+    }
+
+
+@v1.get(
+    "/audits/{audit_id}",
+    response_model=AuditStatusResponse,
+    summary="Get audit status",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_get_audit(audit_id: str):
+    job = _v1_job_or_404(audit_id)
+    error = None
+    if job.get("status") == "error":
+        error = {"code": "audit_failed", "message": str(job.get("error") or "Audit failed")}
+    return {
+        "audit_id": audit_id,
+        "status": _public_audit_status(job.get("status", "running")),
+        "created_at": _iso_timestamp(job.get("created_at")),
+        "completed_at": _iso_timestamp(job.get("finished_at")),
+        "progress": job.get("pct"),
+        "message": job.get("message"),
+        "url": job.get("url", ""),
+        "schema_version": API_SCHEMA_VERSION,
+        "scoring_version": SCORING_VERSION,
+        "knowledge_base_version": KNOWLEDGE_BASE_VERSION,
+        "error": error,
+    }
+
+
+@v1.get(
+    "/audits/{audit_id}/summary",
+    response_model=AuditSectionResponse,
+    summary="Get audit summary",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_get_audit_summary(audit_id: str):
+    result = _v1_completed_result(audit_id)
+    summary_keys = (
+        "url", "scores", "dashboard", "overview", "synthesis", "domain_technical",
+        "senuto_aio", "ai_snippet_preview", "brand_perception", "brand_gaps",
+    )
+    return {
+        "audit_id": audit_id,
+        "schema_version": API_SCHEMA_VERSION,
+        "scoring_version": SCORING_VERSION,
+        "knowledge_base_version": KNOWLEDGE_BASE_VERSION,
+        "data": {key: result.get(key) for key in summary_keys if key in result},
+    }
+
+
+def _paginated_section(audit_id: str, key: str, page: int, page_size: int) -> dict:
+    result = _v1_completed_result(audit_id)
+    items = result.get(key) or []
+    if not isinstance(items, list):
+        items = []
+    total = len(items)
+    start = (page - 1) * page_size
+    return {
+        "audit_id": audit_id,
+        "schema_version": API_SCHEMA_VERSION,
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "pages": (total + page_size - 1) // page_size,
+        "items": items[start:start + page_size],
+    }
+
+
+@v1.get(
+    "/audits/{audit_id}/findings",
+    response_model=PaginatedAuditSectionResponse,
+    summary="List audit findings",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_get_audit_findings(
+    audit_id: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=50, ge=1, le=100),
+):
+    return _paginated_section(audit_id, "factor_index", page, page_size)
+
+
+@v1.get(
+    "/audits/{audit_id}/pages",
+    response_model=PaginatedAuditSectionResponse,
+    summary="List audited pages",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_get_audit_pages(
+    audit_id: str,
+    page: int = Query(default=1, ge=1),
+    page_size: int = Query(default=20, ge=1, le=100),
+):
+    return _paginated_section(audit_id, "page_audits", page, page_size)
+
+
+@v1.get("/capabilities", summary="Get API capabilities")
+async def v1_capabilities():
+    return {
+        "schema_version": API_SCHEMA_VERSION,
+        "scoring_version": SCORING_VERSION,
+        "knowledge_base_version": KNOWLEDGE_BASE_VERSION,
+        "max_audit_pages": MAX_AUDIT_PAGES,
+        "features": {
+            "automatic_page_selection": True,
+            "custom_page_selection": True,
+            "summary": True,
+            "paginated_findings": True,
+            "paginated_pages": True,
+        },
+    }
+
+
 @app.get("/report")
 async def get_report(domain: str = "", url: str = "", fields: str = ""):
     """Zwraca wcześniej zapisany raport dla danej domeny (do udostępniania linkiem
@@ -6074,6 +6387,9 @@ async def lead_test(token: str = "", to: str = ""):
     except Exception as e:  # noqa: BLE001
         return {"ok": False, "error": f"{type(e).__name__}: {e}", "config": cfg}
 
+
+# Rejestrujemy wersjonowane API dopiero po zdefiniowaniu wszystkich tras.
+app.include_router(v1)
 
 # --- Serwowanie pod prefiksem /llms-audit (za Firebase Hosting) ---
 # Cała dotychczasowa appka (trasy, /static) zostaje zamontowana pod /llms-audit,
