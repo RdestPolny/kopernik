@@ -4,6 +4,8 @@
 import base64
 import copy
 import gzip
+import hashlib
+import hmac
 import json
 import logging
 import os
@@ -22,7 +24,7 @@ from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
-from fastapi import APIRouter, FastAPI, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Security
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exception_handlers import (
     http_exception_handler as default_http_exception_handler,
@@ -31,6 +33,7 @@ from fastapi.exception_handlers import (
 from fastapi.exceptions import RequestValidationError
 from fastapi.responses import HTMLResponse, JSONResponse, StreamingResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from pydantic import BaseModel, Field
 
 # Load a local .env if present (keeps secrets out of the codebase). Optional dependency:
@@ -405,9 +408,16 @@ def _is_v1_request(request: Request) -> bool:
     return path.endswith("/v1") or "/v1/" in path
 
 
-def _v1_error(status_code: int, code: str, message: str, details=None) -> JSONResponse:
+def _v1_error(
+    status_code: int,
+    code: str,
+    message: str,
+    details=None,
+    headers: dict | None = None,
+) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
+        headers=headers,
         content={
             "error": {
                 "code": code,
@@ -431,7 +441,7 @@ async def _http_exception_handler(request: Request, exc: HTTPException):
         code = "http_error"
         message = str(exc.detail)
         details = None
-    return _v1_error(exc.status_code, code, message, details)
+    return _v1_error(exc.status_code, code, message, details, exc.headers)
 
 
 @app.exception_handler(RequestValidationError)
@@ -442,6 +452,181 @@ async def _validation_exception_handler(request: Request, exc: RequestValidation
 
 
 v1 = APIRouter(prefix="/v1", tags=["API v1"])
+
+API_KEY_RECORDS_JSON = os.getenv("KOPERNIK_API_KEY_RECORDS", "")
+API_KEY_CACHE_TTL = int(os.getenv("KOPERNIK_API_KEY_CACHE_TTL", "15"))
+_API_KEY_CACHE: dict[str, tuple[float, dict | None]] = {}
+_API_KEY_CACHE_LOCK = threading.Lock()
+_BEARER = HTTPBearer(auto_error=False, description="Kopernik API key (kop_live_… or kop_test_…)")
+_API_KEY_PATTERN = re.compile(r"^kop_(live|test)_([A-Za-z0-9]{8,32})_([A-Za-z0-9_-]{32,})$")
+
+
+class ApiPrincipal(BaseModel):
+    organization_id: str
+    key_id: str
+    environment: str
+    scopes: list[str]
+
+
+class ApiIdentityResponse(BaseModel):
+    organization_id: str
+    key_id: str
+    environment: str
+    scopes: list[str]
+
+
+def _local_api_key_records() -> dict[str, dict]:
+    """Load hash-only API key records supplied for local/dev deployments."""
+    if not API_KEY_RECORDS_JSON:
+        return {}
+    try:
+        records = json.loads(API_KEY_RECORDS_JSON)
+        if isinstance(records, dict):
+            records = list(records.values())
+        return {
+            str(record["key_id"]): record
+            for record in records
+            if isinstance(record, dict) and record.get("key_id") and record.get("key_hash")
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.error("Invalid KOPERNIK_API_KEY_RECORDS: %s", exc)
+        return {}
+
+
+def _firestore_scalar(field: dict):
+    if not isinstance(field, dict):
+        return None
+    for key in ("stringValue", "timestampValue", "booleanValue", "integerValue", "doubleValue"):
+        if key in field:
+            value = field[key]
+            if key == "integerValue":
+                try:
+                    return int(value)
+                except (TypeError, ValueError):
+                    return value
+            return value
+    if "arrayValue" in field:
+        return [_firestore_scalar(value) for value in field["arrayValue"].get("values", [])]
+    return None
+
+
+def _load_api_key_record(key_id: str) -> dict | None:
+    local = _local_api_key_records().get(key_id)
+    if local is not None:
+        return local
+    if not FIRESTORE_PROJECT:
+        return None
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"},
+            timeout=5,
+        )
+        tok_r.raise_for_status()
+        token = tok_r.json()["access_token"]
+        response = requests.get(
+            f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/api_keys/{key_id}",
+            headers={"Authorization": f"Bearer {token}"},
+            timeout=10,
+        )
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        fields = response.json().get("fields", {})
+        return {name: _firestore_scalar(value) for name, value in fields.items()}
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("API key lookup failed for %s: %s", key_id, exc)
+        return None
+
+
+def _cached_api_key_record(key_id: str) -> dict | None:
+    now = time.time()
+    with _API_KEY_CACHE_LOCK:
+        cached = _API_KEY_CACHE.get(key_id)
+        if cached and cached[0] > now:
+            return cached[1]
+    record = _load_api_key_record(key_id)
+    with _API_KEY_CACHE_LOCK:
+        _API_KEY_CACHE[key_id] = (now + max(0, API_KEY_CACHE_TTL), record)
+    return record
+
+
+def _record_is_expired(record: dict) -> bool:
+    expires_at = record.get("expires_at")
+    if not expires_at:
+        return False
+    try:
+        parsed = datetime.fromisoformat(str(expires_at).replace("Z", "+00:00"))
+        if parsed.tzinfo is None:
+            parsed = parsed.replace(tzinfo=timezone.utc)
+        return parsed <= datetime.now(timezone.utc)
+    except (TypeError, ValueError):
+        return True
+
+
+async def get_api_principal(
+    credentials: HTTPAuthorizationCredentials | None = Security(_BEARER),
+) -> ApiPrincipal:
+    if credentials is None or credentials.scheme.lower() != "bearer":
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "missing_api_key", "message": "Authorization bearer token is required"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    match = _API_KEY_PATTERN.fullmatch(credentials.credentials)
+    if not match:
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "invalid_api_key", "message": "Invalid API key"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    environment, key_id, _secret = match.groups()
+    record = await run_in_threadpool(_cached_api_key_record, key_id)
+    expected_hash = str((record or {}).get("key_hash") or "")
+    actual_hash = hashlib.sha256(credentials.credentials.encode("utf-8")).hexdigest()
+    if (
+        not record
+        or not expected_hash
+        or not hmac.compare_digest(expected_hash, actual_hash)
+        or bool(record.get("revoked"))
+        or _record_is_expired(record)
+        or str(record.get("environment") or environment) != environment
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "invalid_api_key", "message": "Invalid API key"},
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    organization_id = str(record.get("organization_id") or "")
+    if not organization_id:
+        raise HTTPException(
+            status_code=401,
+            detail={"code": "invalid_api_key", "message": "Invalid API key"},
+        )
+    scopes = record.get("scopes") or []
+    if isinstance(scopes, str):
+        scopes = [scope.strip() for scope in scopes.split(",") if scope.strip()]
+    return ApiPrincipal(
+        organization_id=organization_id,
+        key_id=key_id,
+        environment=environment,
+        scopes=list(scopes),
+    )
+
+
+def require_scope(scope: str):
+    async def dependency(principal: ApiPrincipal = Depends(get_api_principal)) -> ApiPrincipal:
+        if scope not in principal.scopes and "*" not in principal.scopes:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "code": "insufficient_scope",
+                    "message": f"Required scope: {scope}",
+                },
+            )
+        return principal
+
+    return dependency
 
 
 # --- PAGE TYPE CLASSIFICATION ---
@@ -4804,10 +4989,12 @@ def _load_report_from_firestore(key: str) -> dict | None:
         return None
 
 
-def save_report(result: dict) -> str:
+def save_report(result: dict, organization_id: str | None = None) -> str:
     """Zapisuje raport pod kluczem domeny (pamięć + SYNCHRONICZNIE Firestore).
     Zwraca klucz (do linku udostępniania)."""
-    key = _report_key(result.get("url", ""))
+    domain_key = _report_key(result.get("url", ""))
+    org_key = _report_key(organization_id or "")
+    key = f"{org_key}--{domain_key}" if org_key else domain_key
     if not key:
         return ""
     with _REPORTS_LOCK:
@@ -5422,7 +5609,11 @@ def combined_page_score(factor_pct: int, tech_pct: int) -> int:
 
 # --- SSE AUDIT STREAM ---
 
-def audit_stream(url: str, picks: list[dict] | None = None):
+def audit_stream(
+    url: str,
+    picks: list[dict] | None = None,
+    organization_id: str | None = None,
+):
     def event(step: str, data: dict):
         return f"data: {json.dumps({'step': step, **data})}\n\n"
 
@@ -5815,7 +6006,7 @@ def audit_stream(url: str, picks: list[dict] | None = None):
         }
         # Zapis raportu (do udostępniania linkiem i przywoływania domeny ponownie).
         try:
-            save_report(result)
+            save_report(result, organization_id=organization_id)
         except Exception as e:  # noqa: BLE001
             logging.info("save_report skipped: %s", e)
         yield event("done", {"result": result, "pct": 100})
@@ -5918,11 +6109,16 @@ def _prune_audit_jobs():
                 _AUDIT_JOBS.pop(jid, None)
 
 
-def _consume_audit_job(job_id: str, url: str, picks: list[dict] | None):
+def _consume_audit_job(
+    job_id: str,
+    url: str,
+    picks: list[dict] | None,
+    organization_id: str | None = None,
+):
     """Konsumuje generator audit_stream w wątku i aktualizuje stan joba."""
     job = _AUDIT_JOBS[job_id]
     try:
-        for chunk in audit_stream(url, picks):
+        for chunk in audit_stream(url, picks, organization_id=organization_id):
             line = chunk.strip()
             if not line.startswith("data:"):
                 continue
@@ -5950,7 +6146,7 @@ def _consume_audit_job(job_id: str, url: str, picks: list[dict] | None):
 
 
 @app.get("/audit/start")
-async def audit_start(url: str, picks: str = ""):
+async def audit_start(url: str, picks: str = "", organization_id: str | None = None):
     """Startuje audyt w tle. Zwraca {job_id} natychmiast (bez czekania)."""
     url = normalize_input_url(url)
     if not url:
@@ -5976,6 +6172,7 @@ async def audit_start(url: str, picks: str = ""):
             "result": fixed,
             "error": None,
             "url": url,
+            "organization_id": organization_id,
             "created_at": now,
             "finished_at": now,
         }
@@ -5987,10 +6184,13 @@ async def audit_start(url: str, picks: str = ""):
         "result": None,
         "error": None,
         "url": url,
+        "organization_id": organization_id,
         "created_at": time.time(),
     }
     threading.Thread(
-        target=_consume_audit_job, args=(job_id, url, parsed_picks), daemon=True
+        target=_consume_audit_job,
+        args=(job_id, url, parsed_picks, organization_id),
+        daemon=True,
     ).start()
     return {"job_id": job_id, "status": "running", "url": url}
 
@@ -6034,9 +6234,9 @@ def _public_audit_status(status_value: str) -> str:
     return {"done": "completed", "error": "failed"}.get(status_value, status_value)
 
 
-def _v1_job_or_404(audit_id: str) -> dict:
+def _v1_job_or_404(audit_id: str, principal: ApiPrincipal) -> dict:
     job = _AUDIT_JOBS.get(audit_id)
-    if not job:
+    if not job or job.get("organization_id") != principal.organization_id:
         raise HTTPException(
             status_code=404,
             detail={"code": "audit_not_found", "message": "Audit not found"},
@@ -6044,8 +6244,8 @@ def _v1_job_or_404(audit_id: str) -> dict:
     return job
 
 
-def _v1_completed_result(audit_id: str) -> dict:
-    job = _v1_job_or_404(audit_id)
+def _v1_completed_result(audit_id: str, principal: ApiPrincipal) -> dict:
+    job = _v1_job_or_404(audit_id, principal)
     if job.get("status") != "done":
         raise HTTPException(
             status_code=409,
@@ -6066,6 +6266,8 @@ def _v1_completed_result(audit_id: str) -> dict:
 
 _V1_ERROR_RESPONSES = {
     400: {"model": ApiErrorResponse},
+    401: {"model": ApiErrorResponse},
+    403: {"model": ApiErrorResponse},
     404: {"model": ApiErrorResponse},
     409: {"model": ApiErrorResponse},
     422: {"model": ApiErrorResponse},
@@ -6079,7 +6281,10 @@ _V1_ERROR_RESPONSES = {
     summary="Start an audit",
     responses=_V1_ERROR_RESPONSES,
 )
-async def v1_create_audit(payload: AuditCreateRequest):
+async def v1_create_audit(
+    payload: AuditCreateRequest,
+    principal: ApiPrincipal = Depends(require_scope("audits:create")),
+):
     normalized = normalize_input_url(payload.domain)
     if not normalized:
         raise HTTPException(
@@ -6089,7 +6294,7 @@ async def v1_create_audit(payload: AuditCreateRequest):
     picks = ""
     if payload.picks:
         picks = json.dumps([pick.model_dump(exclude_none=True) for pick in payload.picks])
-    started = await audit_start(normalized, picks)
+    started = await audit_start(normalized, picks, organization_id=principal.organization_id)
     audit_id = started["job_id"]
     job = _AUDIT_JOBS[audit_id]
     return {
@@ -6107,8 +6312,11 @@ async def v1_create_audit(payload: AuditCreateRequest):
     summary="Get audit status",
     responses=_V1_ERROR_RESPONSES,
 )
-async def v1_get_audit(audit_id: str):
-    job = _v1_job_or_404(audit_id)
+async def v1_get_audit(
+    audit_id: str,
+    principal: ApiPrincipal = Depends(require_scope("audits:read")),
+):
+    job = _v1_job_or_404(audit_id, principal)
     error = None
     if job.get("status") == "error":
         error = {"code": "audit_failed", "message": str(job.get("error") or "Audit failed")}
@@ -6133,8 +6341,11 @@ async def v1_get_audit(audit_id: str):
     summary="Get audit summary",
     responses=_V1_ERROR_RESPONSES,
 )
-async def v1_get_audit_summary(audit_id: str):
-    result = _v1_completed_result(audit_id)
+async def v1_get_audit_summary(
+    audit_id: str,
+    principal: ApiPrincipal = Depends(require_scope("audits:read")),
+):
+    result = _v1_completed_result(audit_id, principal)
     summary_keys = (
         "url", "scores", "dashboard", "overview", "synthesis", "domain_technical",
         "senuto_aio", "ai_snippet_preview", "brand_perception", "brand_gaps",
@@ -6148,8 +6359,10 @@ async def v1_get_audit_summary(audit_id: str):
     }
 
 
-def _paginated_section(audit_id: str, key: str, page: int, page_size: int) -> dict:
-    result = _v1_completed_result(audit_id)
+def _paginated_section(
+    audit_id: str, key: str, page: int, page_size: int, principal: ApiPrincipal
+) -> dict:
+    result = _v1_completed_result(audit_id, principal)
     items = result.get(key) or []
     if not isinstance(items, list):
         items = []
@@ -6176,8 +6389,9 @@ async def v1_get_audit_findings(
     audit_id: str,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=50, ge=1, le=100),
+    principal: ApiPrincipal = Depends(require_scope("audits:read")),
 ):
-    return _paginated_section(audit_id, "factor_index", page, page_size)
+    return _paginated_section(audit_id, "factor_index", page, page_size, principal)
 
 
 @v1.get(
@@ -6190,12 +6404,15 @@ async def v1_get_audit_pages(
     audit_id: str,
     page: int = Query(default=1, ge=1),
     page_size: int = Query(default=20, ge=1, le=100),
+    principal: ApiPrincipal = Depends(require_scope("audits:read")),
 ):
-    return _paginated_section(audit_id, "page_audits", page, page_size)
+    return _paginated_section(audit_id, "page_audits", page, page_size, principal)
 
 
 @v1.get("/capabilities", summary="Get API capabilities")
-async def v1_capabilities():
+async def v1_capabilities(
+    _principal: ApiPrincipal = Depends(get_api_principal),
+):
     return {
         "schema_version": API_SCHEMA_VERSION,
         "scoring_version": SCORING_VERSION,
@@ -6209,6 +6426,11 @@ async def v1_capabilities():
             "paginated_pages": True,
         },
     }
+
+
+@v1.get("/me", response_model=ApiIdentityResponse, summary="Get current API identity")
+async def v1_identity(principal: ApiPrincipal = Depends(get_api_principal)):
+    return principal
 
 
 @app.get("/report")

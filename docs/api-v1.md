@@ -4,10 +4,9 @@ API v1 provides a stable boundary around the existing audit engine. It supports
 starting an audit, checking its status and retrieving summary, finding and page
 sections separately.
 
-The API is currently a contract-first preview. Authentication, tenant isolation,
-durable jobs and usage limits are planned for the following implementation phases.
-It must not be offered as an unrestricted commercial API until those controls are
-in place.
+The API currently includes organization-scoped authentication. Durable jobs and
+usage limits are planned for the following implementation phases. It must not be
+offered as an unrestricted commercial API until those controls are in place.
 
 ## Base URL
 
@@ -23,11 +22,47 @@ Interactive OpenAPI documentation:
 https://strategiczni.ai/llms-audit/docs
 ```
 
+## Authentication
+
+Every `/v1` request requires an organization API key:
+
+```http
+Authorization: Bearer kop_live_...
+```
+
+Keys are stored as SHA-256 hashes and may have separate scopes. Audit creation
+requires `audits:create`; status and result endpoints require `audits:read`.
+An audit belonging to another organization is returned as `404`, so the API does
+not disclose whether its identifier exists.
+
+Current identity and scopes can be inspected with:
+
+```http
+GET /v1/me
+```
+
+Administrators manage organizations and keys with `scripts/manage_api_access.py`:
+
+```bash
+python scripts/manage_api_access.py --project PROJECT_ID create-organization \
+  --id customer-slug --name "Customer Name"
+
+python scripts/manage_api_access.py --project PROJECT_ID create-key \
+  --organization customer-slug --name "Production integration"
+
+python scripts/manage_api_access.py --project PROJECT_ID revoke-key --id KEY_ID
+```
+
+The complete key is displayed once. Firestore receives only its hash. Revocation
+is reflected by API instances after the configured key-cache TTL (15 seconds by
+default).
+
 ## Start an audit
 
 ```http
 POST /v1/audits
 Content-Type: application/json
+Authorization: Bearer kop_live_...
 
 {
   "domain": "example.com"
