@@ -94,6 +94,15 @@ Wszystko poniżej żyje na `app`, publicznie dostępne pod `/llms-audit/...`.
 | `POST /lead` | Zapis leada (formularz odblokowania raportu) → e-mail do operatora + e-mail z linkiem dla leada, Firestore |
 | `GET /leads?token=` | Lista leadów (chronione `LEADS_TOKEN`) |
 | `GET /lead/test?token=&to=` | Test wysyłki e-maila |
+| `POST /v1/audits` | Autoryzowany start pojedynczego audytu; obsługuje `Idempotency-Key` |
+| `GET /v1/audits/{id}` | Trwały status audytu, izolowany per organizacja |
+| `GET /v1/audits/{id}/summary` | Podsumowanie ukończonego audytu |
+| `GET /v1/audits/{id}/findings` | Paginowane ustalenia audytu |
+| `GET /v1/audits/{id}/pages` | Paginowane wyniki per URL |
+| `POST /v1/batches` | Kolejkuje do 100 domen bez limitu miesięcznego |
+| `GET /v1/batches/{id}` | Zbiorczy status paczki |
+| `GET /v1/usage` | Informacyjne zużycie organizacji |
+| `GET /v1/me`, `/v1/capabilities` | Tożsamość klucza i możliwości API |
 
 To jest ten sam "async job API" opisany w skillu `kopernik` (pobieranie audytu przez `/audit/start` + polling `/audit/result`).
 
@@ -133,7 +142,10 @@ UWAGA przy zmianach wag: zapisane raporty (Firestore) i `fixed_reports/` mają w
 | `PERPLEXITY_KEY`, `GPT_KEY` | Brand perception — dodatkowe silniki (opcjonalne) |
 | `SENUTO_BEARER_TOKEN` / `SENUTO_EMAIL`+`SENUTO_PASSWORD`, `SENUTO_COUNTRY_ID` | Live dane AIO z Senuto (opcjonalne, fallback do `senuto_aio/*.json`) |
 | `LEADS_TOKEN` | Chroni `/leads`, `/lead/test` |
-| `FIRESTORE_PROJECT` | Persystencja leadów/raportów (opcjonalne — appka działa bez tego, tylko in-memory) |
+| `FIRESTORE_PROJECT` | Persystencja leadów, raportów, kluczy, zadań i batchy; wymagana dla produkcyjnego `/v1` |
+| `AUDIT_MAX_CONCURRENT` | Liczba audytów wykonywanych równolegle; wszystkie pozostałe czekają w kolejce |
+| `AUDIT_JOBS_MEMORY_MAX`, `AUDIT_JOB_MEMORY_TTL` | Cache trwałych zadań API w instancji |
+| `KOPERNIK_API_KEY_CACHE_TTL` | Maksymalny czas propagacji unieważnienia klucza |
 | `SMTP_USER`, `SMTP_PASS`, `SMTP_HOST`, `SMTP_PORT` | Wysyłka maili do leadów/operatora |
 | `LEADS_EMAIL`, `CONTACT_*`, `BRAND_*`, `CLUTCH_PROFILE_URL` | Branding maili i stopki |
 | `PUBLIC_BASE_URL` | Bazowy URL appki (do linków w mailach), domyślnie `https://strategiczni.ai/llms-audit` |
@@ -149,7 +161,7 @@ UWAGA przy zmianach wag: zapisane raporty (Firestore) i `fixed_reports/` mają w
 - **Senuto: live + cache się łączą, nie nadpisują.** `load_senuto_aio()` bierze plik cache jako bazę i nadpisuje polami z live API tam, gdzie live faktycznie coś zwróciło.
 - **`CLIENT_FACTOR_EXPLANATIONS` jest już częścią `main.py`** (linia 794) — `add_explanations.py` to zarchiwizowany generator jednorazowy, nie trzeba go uruchamiać ponownie.
 - **`google-patent-seo-skill/references/factors.jsonl` to zależność runtime**, nie tylko dokumentacja skilla — zmiana tego pliku zmienia realny scoring grupy "patents" w appce.
-- Remote gita zawiera osadzony token dostępu w URL (`git remote -v`) — warto zrotować token i przejść na SSH/credential helper zamiast trzymać go w URL remote'a.
+- Remote gita nie może zawierać tokenu dostępu w URL; używamy credential helpera.
 - **Auto-pick podstron (bez `picks`) jest kuloodporny z założenia** — myślany pod masowe audyty (np. `scripts/batch_audit.py` na 70 domen), gdzie nikt nie zweryfikuje wyboru ręcznie. Kolejność fallbacków: `score_and_classify_candidates` (heurystyczny ranking) → `llm_verify_picks` (1 call Gemini, referee) → przy błędzie/timeout/hallucynacji URL-a **zawsze** czysta heurystyka (`_heuristic_pick_from_scored`) → `_validate_picks` (HEAD/GET) podmienia martwe URL-e na kolejnego kandydata z rankingu. Flow manualny z UI (`/audit/candidates` → `picks`) jest nietknięty i nadal korzysta z `propose_page_candidates`/Gemini bez referee.
 - **`fetch_sitemap_entries`/`fetch_sitemap_urls` próbują wielu ścieżek i obu wariantów www./non-www** zanim uznają, że sitemapy nie ma — dopiero wtedy audyt spada do Firecrawl `/map`, potem do nav linków (`requests`), a na końcu do Firecrawl scrape homepage (renderuje JS; jedyny fallback działający na czystych SPA).
 

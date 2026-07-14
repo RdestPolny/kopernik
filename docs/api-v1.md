@@ -32,6 +32,7 @@ Authorization: Bearer kop_live_...
 
 Keys are stored as SHA-256 hashes and may have separate scopes. Audit creation
 requires `audits:create`; status and result endpoints require `audits:read`.
+Usage reporting requires `usage:read`.
 An audit belonging to another organization is returned as `404`, so the API does
 not disclose whether its identifier exists.
 
@@ -100,8 +101,41 @@ An optional `picks` array can select up to five URLs explicitly:
 GET /v1/audits/{audit_id}
 ```
 
-Public statuses are `running`, `completed` and `failed`. The response also carries
+Public statuses are `queued`, `running`, `completed` and `failed`. The response also carries
 the schema, scoring and knowledge-base versions used to interpret the result.
+
+Use an `Idempotency-Key` header when retrying a request. Repeating the same request
+with the same key returns the original audit instead of starting another paid run.
+
+## Batch audits
+
+Up to 100 unique domains can be submitted in one request. There is no monthly API
+quota enforced by Kopernik. The service queues all submitted domains and processes
+a configurable number concurrently (four by default) to protect upstream services.
+
+```http
+POST /v1/batches
+Authorization: Bearer kop_live_...
+Idempotency-Key: customer-import-2026-07-14
+Content-Type: application/json
+
+{
+  "domains": ["example.com", "example.org"]
+}
+```
+
+Poll the returned batch identifier:
+
+```http
+GET /v1/batches/{batch_id}
+Authorization: Bearer kop_live_...
+```
+
+The batch response includes every `audit_id`, URL and current status. Fetch results
+for completed items through the standard summary, findings and pages endpoints.
+
+Job and batch metadata are persisted in Firestore. If an instance disappears, a
+stale job is eligible for automatic retry; API execution is therefore at-least-once.
 
 ## Retrieve result sections
 
@@ -121,6 +155,12 @@ GET /v1/capabilities
 
 This endpoint reports current contract, scoring and knowledge-base versions and
 the maximum number of audited pages.
+
+## Usage
+
+`GET /v1/usage` reports completed and failed audits, audited page count and average
+duration for the current organization. The endpoint is informational and does not
+apply a commercial quota.
 
 ## Errors
 

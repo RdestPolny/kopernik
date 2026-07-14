@@ -38,14 +38,14 @@ class ApiV1ContractTests(unittest.TestCase):
                 "key_hash": hashlib.sha256(self.api_key.encode()).hexdigest(),
                 "organization_id": "org-test",
                 "environment": "test",
-                "scopes": ["audits:create", "audits:read"],
+                "scopes": ["audits:create", "audits:read", "usage:read"],
                 "revoked": False,
             },
             "otherkey1": {
                 "key_hash": hashlib.sha256(self.other_api_key.encode()).hexdigest(),
                 "organization_id": "org-other",
                 "environment": "test",
-                "scopes": ["audits:create", "audits:read"],
+                "scopes": ["audits:create", "audits:read", "usage:read"],
                 "revoked": False,
             },
         }
@@ -59,6 +59,8 @@ class ApiV1ContractTests(unittest.TestCase):
             main._API_KEY_CACHE.clear()
         with main._AUDIT_JOBS_LOCK:
             main._AUDIT_JOBS.clear()
+        main._BATCHES.clear()
+        main._USAGE_MEMORY.clear()
 
     def tearDown(self):
         self.key_patch.stop()
@@ -79,6 +81,8 @@ class ApiV1ContractTests(unittest.TestCase):
         self.assertEqual(schema["info"]["version"], "1.0")
         self.assertIn("/v1/audits", schema["paths"])
         self.assertIn("/v1/audits/{audit_id}/findings", schema["paths"])
+        self.assertIn("/v1/batches", schema["paths"])
+        self.assertIn("/v1/usage", schema["paths"])
 
     def test_create_and_read_completed_audit(self):
         audit_id = self._create_completed_audit()
@@ -143,6 +147,8 @@ class ApiV1ContractTests(unittest.TestCase):
         response = self.client.get(f"/v1/audits/{audit_id}", headers=self.other_auth)
         self.assertEqual(response.status_code, 404)
         self.assertEqual(response.json()["error"]["code"], "audit_not_found")
+        legacy = self.client.get("/audit/result", params={"job_id": audit_id})
+        self.assertEqual(legacy.status_code, 404)
 
     def test_scope_is_enforced(self):
         self.records["testkey01"]["scopes"] = ["audits:read"]
@@ -173,10 +179,73 @@ class ApiV1ContractTests(unittest.TestCase):
             main._REPORTS_MEMORY.clear()
         with patch.object(main, "_save_report_to_firestore", return_value=True):
             key = main.save_report(FIXED_RESULT, organization_id="org-test")
-        self.assertEqual(key, "org-test--example.com")
+        self.assertTrue(key.startswith("__org__"))
         with main._REPORTS_LOCK:
-            self.assertIn("org-test--example.com", main._REPORTS_MEMORY)
+            self.assertIn(key, main._REPORTS_MEMORY)
             self.assertNotIn("example.com", main._REPORTS_MEMORY)
+        public = self.client.get("/report", params={"domain": key})
+        self.assertEqual(public.status_code, 404)
+
+    def test_private_network_target_is_rejected(self):
+        with patch("main.socket.getaddrinfo", return_value=[(2, 1, 6, "", ("127.0.0.1", 443))]):
+            response = self.client.post(
+                "/v1/audits", json={"domain": "internal.example"}, headers=self.auth
+            )
+        self.assertEqual(response.status_code, 400)
+        self.assertEqual(response.json()["error"]["code"], "invalid_target")
+
+    def test_batch_accepts_multiple_domains(self):
+        with patch.object(main, "fixed_report_for", return_value=FIXED_RESULT):
+            response = self.client.post(
+                "/v1/batches",
+                json={"domains": ["example.com", "example.org"]},
+                headers={**self.auth, "Idempotency-Key": "batch-test-001"},
+            )
+        self.assertEqual(response.status_code, 202, response.text)
+        body = response.json()
+        self.assertEqual(body["total"], 2)
+        self.assertEqual(body["completed"], 2)
+
+    def test_idempotency_returns_same_audit(self):
+        headers = {**self.auth, "Idempotency-Key": "audit-test-001"}
+        with patch.object(main, "fixed_report_for", return_value=FIXED_RESULT):
+            first = self.client.post("/v1/audits", json={"domain": "example.com"}, headers=headers)
+            second = self.client.post("/v1/audits", json={"domain": "example.com"}, headers=headers)
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(second.status_code, 202)
+        self.assertEqual(first.json()["audit_id"], second.json()["audit_id"])
+
+    def test_idempotency_rejects_different_domain(self):
+        headers = {**self.auth, "Idempotency-Key": "audit-conflict-001"}
+        with patch.object(main, "fixed_report_for", return_value=FIXED_RESULT):
+            first = self.client.post("/v1/audits", json={"domain": "example.com"}, headers=headers)
+            second = self.client.post("/v1/audits", json={"domain": "example.org"}, headers=headers)
+        self.assertEqual(first.status_code, 202)
+        self.assertEqual(second.status_code, 409)
+        self.assertEqual(second.json()["error"]["code"], "idempotency_conflict")
+
+    def test_job_can_be_restored_from_persistent_storage(self):
+        persisted = {
+            "organization_id": "org-test",
+            "url": "https://example.com",
+            "status": "done",
+            "pct": 100,
+            "message": "done",
+            "created_at": 1.0,
+            "finished_at": 2.0,
+            "updated_at": 2.0,
+            "result": FIXED_RESULT,
+        }
+        with patch.object(main, "_load_audit_job_firestore", return_value=persisted):
+            response = self.client.get("/v1/audits/persisted-job", headers=self.auth)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["status"], "completed")
+
+    def test_usage_reports_completed_audits_without_enforcing_quota(self):
+        self._create_completed_audit()
+        response = self.client.get("/v1/usage", headers=self.auth)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.json()["completed"], 1)
 
 
 if __name__ == "__main__":

@@ -6,11 +6,13 @@ import copy
 import gzip
 import hashlib
 import hmac
+import ipaddress
 import json
 import logging
 import os
 import re
 import smtplib
+import socket
 import threading
 import time
 import uuid
@@ -24,7 +26,7 @@ from urllib.parse import urlparse, urljoin
 
 import requests
 from bs4 import BeautifulSoup
-from fastapi import APIRouter, Depends, FastAPI, HTTPException, Query, Request, Security
+from fastapi import APIRouter, Depends, FastAPI, Header, HTTPException, Query, Request, Security
 from fastapi.concurrency import run_in_threadpool
 from fastapi.exception_handlers import (
     http_exception_handler as default_http_exception_handler,
@@ -350,6 +352,37 @@ class AuditCreateRequest(BaseModel):
         max_length=MAX_AUDIT_PAGES,
         description="Opcjonalna lista podstron. Brak listy uruchamia automatyczny wybór.",
     )
+
+
+class AuditBatchCreateRequest(BaseModel):
+    domains: list[str] = Field(min_length=1, max_length=100)
+
+
+class AuditBatchItem(BaseModel):
+    audit_id: str
+    url: str
+    status: str
+
+
+class AuditBatchResponse(BaseModel):
+    batch_id: str
+    status: str
+    total: int
+    queued: int
+    running: int
+    completed: int
+    failed: int
+    audits: list[AuditBatchItem]
+    schema_version: str = API_SCHEMA_VERSION
+
+
+class UsageResponse(BaseModel):
+    organization_id: str
+    total_audits: int
+    completed: int
+    failed: int
+    total_pages: int
+    average_duration_seconds: float
 
 
 class ApiErrorDetail(BaseModel):
@@ -709,6 +742,50 @@ def normalize_input_url(raw: str) -> str:
         return f"{pu.scheme}://{pu.netloc}{pu.path or ''}".rstrip("/") or f"{pu.scheme}://{pu.netloc}"
     except Exception:
         return ""
+
+
+def _validate_public_http_url(url: str) -> str:
+    """Reject local/private targets before any server-side request."""
+    normalized = normalize_input_url(url)
+    if not normalized:
+        raise ValueError("Invalid URL or domain")
+    parsed = urlparse(normalized)
+    if parsed.scheme not in ("http", "https") or not parsed.hostname:
+        raise ValueError("Only public HTTP and HTTPS URLs are allowed")
+    if parsed.username or parsed.password:
+        raise ValueError("Credentials in URLs are not allowed")
+    if parsed.port and parsed.port not in (80, 443):
+        raise ValueError("Only ports 80 and 443 are allowed")
+    hostname = parsed.hostname.rstrip(".").lower()
+    if hostname in {"localhost", "localhost.localdomain"} or hostname.endswith(".local"):
+        raise ValueError("Local network targets are not allowed")
+    try:
+        default_port = 443 if parsed.scheme == "https" else 80
+        addresses = {item[4][0] for item in socket.getaddrinfo(hostname, parsed.port or default_port)}
+    except socket.gaierror as exc:
+        raise ValueError("Domain could not be resolved") from exc
+    if not addresses:
+        raise ValueError("Domain could not be resolved")
+    for address in addresses:
+        ip = ipaddress.ip_address(address.split("%", 1)[0])
+        if not ip.is_global:
+            raise ValueError("Private or reserved network targets are not allowed")
+    return normalized
+
+
+def _safe_http_request(method: str, url: str, *, max_redirects: int = 5, **kwargs):
+    """Perform an HTTP request while validating every redirect target."""
+    current = _validate_public_http_url(url)
+    kwargs.pop("allow_redirects", None)
+    for _ in range(max_redirects + 1):
+        response = requests.request(method, current, allow_redirects=False, **kwargs)
+        if response.status_code not in (301, 302, 303, 307, 308):
+            return response
+        location = response.headers.get("location")
+        if not location:
+            return response
+        current = _validate_public_http_url(urljoin(current, location))
+    raise ValueError("Too many redirects")
 
 
 PAGE_TYPE_LABELS = {
@@ -2971,7 +3048,7 @@ def _http_get(url: str, timeout: int = _DISCOVERY_TIMEOUT, headers: dict | None 
         h = {"User-Agent": _DISCOVERY_UA}
         if headers:
             h.update(headers)
-        return requests.get(url, timeout=timeout, allow_redirects=True, headers=h)
+        return _safe_http_request("GET", url, timeout=timeout, headers=h)
     except Exception:
         return None
 
@@ -3183,7 +3260,7 @@ def fetch_homepage_nav_links(homepage_url: str, base_url: str) -> list[dict]:
     Used to bias Gemini's candidate selection toward what the site itself promotes.
     """
     try:
-        r = requests.get(homepage_url, timeout=15, allow_redirects=True, headers={"User-Agent": _DISCOVERY_UA})
+        r = _safe_http_request("GET", homepage_url, timeout=15, headers={"User-Agent": _DISCOVERY_UA})
         if r.status_code != 200 or not r.text:
             return []
     except Exception:
@@ -3643,13 +3720,13 @@ def _quick_url_ok(url: str, base_url: str) -> bool:
         return False
     headers = {"User-Agent": _DISCOVERY_UA}
     try:
-        r = requests.head(url, timeout=6, allow_redirects=True, headers=headers)
+        r = _safe_http_request("HEAD", url, timeout=6, headers=headers)
         if r.status_code in (405, 501) or r.status_code >= 400:
-            r = requests.get(url, timeout=6, allow_redirects=True, headers=headers, stream=True)
+            r = _safe_http_request("GET", url, timeout=6, headers=headers, stream=True)
         return 200 <= r.status_code < 300
     except Exception:
         try:
-            r = requests.get(url, timeout=6, allow_redirects=True, headers=headers)
+            r = _safe_http_request("GET", url, timeout=6, headers=headers)
             return 200 <= r.status_code < 300
         except Exception:
             return False
@@ -3741,7 +3818,7 @@ def scrape_pages_parallel(urls: list[str]) -> dict[str, dict]:
 def check_robots_txt(base_url: str) -> dict:
     result = {"accessible": False, "bots": {}, "sitemap_in_robots": False, "crawl_delay": None}
     try:
-        r = requests.get(urljoin(base_url, "/robots.txt"), timeout=15)
+        r = _safe_http_request("GET", urljoin(base_url, "/robots.txt"), timeout=15)
         if r.status_code == 200:
             result["accessible"] = True
             text = r.text
@@ -3781,7 +3858,7 @@ def _parse_bot_access(robots_text: str, bot_name: str) -> dict:
 def check_sitemap(base_url: str) -> dict:
     for path in ["/sitemap.xml", "/sitemap_index.xml"]:
         try:
-            r = requests.get(urljoin(base_url, path), timeout=15, allow_redirects=True)
+            r = _safe_http_request("GET", urljoin(base_url, path), timeout=15)
             if r.status_code == 200 and len(r.content) > 100:
                 return {"exists": True, "url": urljoin(base_url, path), "size_kb": round(len(r.content) / 1024, 1)}
         except Exception:
@@ -3792,7 +3869,7 @@ def check_sitemap(base_url: str) -> dict:
 def check_llms_txt(base_url: str) -> dict:
     for path in ["/llms.txt", "/llms-full.txt"]:
         try:
-            r = requests.get(urljoin(base_url, path), timeout=10)
+            r = _safe_http_request("GET", urljoin(base_url, path), timeout=10)
             if r.status_code == 200 and len(r.text.strip()) > 20:
                 return {"exists": True, "path": path, "size_kb": round(len(r.content) / 1024, 1)}
         except Exception:
@@ -3803,7 +3880,7 @@ def check_llms_txt(base_url: str) -> dict:
 def check_http_headers(base_url: str) -> dict:
     result: dict = {"hsts": False, "compression": None, "cache_control": None, "x_robots_tag": None}
     try:
-        r = requests.head(base_url, timeout=10, allow_redirects=True)
+        r = _safe_http_request("HEAD", base_url, timeout=10)
         headers = {k.lower(): v for k, v in r.headers.items()}
         result["hsts"] = "strict-transport-security" in headers
         enc = headers.get("content-encoding", "")
@@ -4871,6 +4948,11 @@ def _report_key(domain_or_url: str) -> str:
     return re.sub(r"[^a-z0-9.-]", "_", s)[:200]
 
 
+def _organization_report_key(organization_id: str, domain_or_url: str) -> str:
+    org_hash = hashlib.sha256(organization_id.encode("utf-8")).hexdigest()[:20]
+    return f"__org__{org_hash}__{_report_key(domain_or_url)}"
+
+
 def _save_report_to_firestore(key: str, payload: dict) -> bool:
     """Synchroniczny zapis raportu do Firestore z retry. Zwraca True przy sukcesie.
 
@@ -4992,9 +5074,10 @@ def _load_report_from_firestore(key: str) -> dict | None:
 def save_report(result: dict, organization_id: str | None = None) -> str:
     """Zapisuje raport pod kluczem domeny (pamięć + SYNCHRONICZNIE Firestore).
     Zwraca klucz (do linku udostępniania)."""
-    domain_key = _report_key(result.get("url", ""))
-    org_key = _report_key(organization_id or "")
-    key = f"{org_key}--{domain_key}" if org_key else domain_key
+    key = (
+        _organization_report_key(organization_id, result.get("url", ""))
+        if organization_id else _report_key(result.get("url", ""))
+    )
     if not key:
         return ""
     with _REPORTS_LOCK:
@@ -5012,8 +5095,11 @@ def save_report(result: dict, organization_id: str | None = None) -> str:
     return key
 
 
-def load_report(domain_or_url: str) -> dict | None:
-    key = _report_key(domain_or_url)
+def load_report(domain_or_url: str, organization_id: str | None = None) -> dict | None:
+    key = (
+        _organization_report_key(organization_id, domain_or_url)
+        if organization_id else _report_key(domain_or_url)
+    )
     if not key:
         return None
     with _REPORTS_LOCK:
@@ -6028,6 +6114,10 @@ async def audit_candidates(url: str):
     url = normalize_input_url(url)
     if not url:
         raise HTTPException(status_code=400, detail="Invalid URL or domain")
+    try:
+        url = await run_in_threadpool(_validate_public_http_url, url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     parsed = urlparse(url)
     base_url = f"{parsed.scheme}://{parsed.netloc}"
     # Predefiniowany raport — kandydatów budujemy z gotowego wyniku (natychmiast).
@@ -6069,6 +6159,10 @@ async def audit_endpoint(url: str, picks: str = ""):
     url = normalize_input_url(url)
     if not url:
         raise HTTPException(status_code=400, detail="Invalid URL or domain")
+    try:
+        url = await run_in_threadpool(_validate_public_http_url, url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     parsed_picks: list[dict] | None = None
     if picks:
         try:
@@ -6077,8 +6171,21 @@ async def audit_endpoint(url: str, picks: str = ""):
                 parsed_picks = None
         except Exception:
             parsed_picks = None
+    if parsed_picks:
+        safe_picks = []
+        for pick in parsed_picks[:MAX_AUDIT_PAGES]:
+            if not isinstance(pick, dict) or not pick.get("url"):
+                continue
+            try:
+                pick_url = await run_in_threadpool(_validate_public_http_url, str(pick["url"]))
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=f"Invalid picked URL: {exc}") from exc
+            if not _same_registrable_domain(pick_url, url):
+                raise HTTPException(status_code=400, detail="Picked URLs must belong to the audited domain")
+            safe_picks.append({**pick, "url": pick_url})
+        parsed_picks = safe_picks or None
     return StreamingResponse(
-        audit_stream(url, parsed_picks),
+        _legacy_audit_stream(url, parsed_picks),
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
@@ -6089,8 +6196,214 @@ async def audit_endpoint(url: str, picks: str = ""):
 #     potem polling GET /audit/result?job_id=... aż status == "done"/"error". ---
 _AUDIT_JOBS: dict[str, dict] = {}
 _AUDIT_JOBS_LOCK = threading.Lock()
-_AUDIT_JOBS_MAX = 100
-_AUDIT_JOB_TTL = 3600  # sekundy — po tym czasie zakończony job może zostać usunięty
+_AUDIT_JOBS_MAX = int(os.getenv("AUDIT_JOBS_MEMORY_MAX", "1000"))
+_AUDIT_JOB_TTL = int(os.getenv("AUDIT_JOB_MEMORY_TTL", "86400"))
+AUDIT_MAX_CONCURRENT = int(os.getenv("AUDIT_MAX_CONCURRENT", "4"))
+LEGACY_MAX_ACTIVE = int(os.getenv("LEGACY_MAX_ACTIVE", "2"))
+_AUDIT_SEMAPHORE = threading.BoundedSemaphore(max(1, AUDIT_MAX_CONCURRENT))
+_BATCHES: dict[str, dict] = {}
+_USAGE_MEMORY: list[dict] = []
+
+
+def _legacy_audit_stream(url: str, picks: list[dict] | None = None):
+    with _AUDIT_SEMAPHORE:
+        yield from audit_stream(url, picks)
+
+
+def _job_firestore_fields(job: dict) -> dict:
+    job["updated_at"] = time.time()
+    result = {
+        "organization_id": job.get("organization_id") or "",
+        "url": job.get("url") or "",
+        "status": job.get("status") or "queued",
+        "pct": str(job.get("pct") or 0),
+        "message": job.get("message") or "",
+        "error": job.get("error") or "",
+        "created_at": str(job.get("created_at") or time.time()),
+        "updated_at": str(job["updated_at"]),
+        "finished_at": str(job.get("finished_at") or ""),
+        "picks_json": json.dumps(job.get("picks") or [], ensure_ascii=False),
+        "pages": str(len((job.get("result") or {}).get("page_audits") or [])),
+    }
+    if job.get("result_key"):
+        result["result_key"] = job["result_key"]
+    return result
+
+
+def _save_audit_job_firestore(job_id: str, job: dict) -> bool:
+    if not FIRESTORE_PROJECT:
+        return False
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"}, timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        fields = {key: {"stringValue": str(value)} for key, value in _job_firestore_fields(job).items()}
+        response = requests.patch(
+            f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/audit_jobs/{job_id}",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"fields": fields}, timeout=15,
+        )
+        return response.status_code == 200
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Audit job persistence failed for %s: %s", job_id, exc)
+        return False
+
+
+def _load_audit_job_firestore(job_id: str) -> dict | None:
+    if not FIRESTORE_PROJECT:
+        return None
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"}, timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        response = requests.get(
+            f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/audit_jobs/{job_id}",
+            headers={"Authorization": f"Bearer {token}"}, timeout=15,
+        )
+        if response.status_code != 200:
+            return None
+        raw = {
+            key: (value or {}).get("stringValue", "")
+            for key, value in response.json().get("fields", {}).items()
+        }
+        job = {
+            "organization_id": raw.get("organization_id", ""),
+            "url": raw.get("url", ""),
+            "status": raw.get("status", "queued"),
+            "pct": int(raw.get("pct") or 0),
+            "message": raw.get("message", ""),
+            "error": raw.get("error") or None,
+            "created_at": float(raw.get("created_at") or time.time()),
+            "updated_at": float(raw.get("updated_at") or 0),
+            "finished_at": float(raw["finished_at"]) if raw.get("finished_at") else None,
+            "picks": json.loads(raw.get("picks_json") or "[]"),
+            "result_key": raw.get("result_key") or None,
+            "pages": int(raw.get("pages") or 0),
+            "result": None,
+        }
+        if job["status"] == "done" and job["url"]:
+            job["result"] = load_report(job["url"], organization_id=job["organization_id"])
+            if job["result"] is None:
+                job["result"] = fixed_report_for(job["url"])
+        return job
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Audit job load failed for %s: %s", job_id, exc)
+        return None
+
+
+def _usage_events_firestore(organization_id: str) -> list[dict]:
+    if not FIRESTORE_PROJECT:
+        return []
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"}, timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        events = []
+        page_token = ""
+        for _ in range(10):
+            params = {"pageSize": 300}
+            if page_token:
+                params["pageToken"] = page_token
+            response = requests.get(
+                f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/audit_jobs",
+                headers={"Authorization": f"Bearer {token}"}, params=params, timeout=20,
+            )
+            if response.status_code != 200:
+                break
+            payload = response.json()
+            for document in payload.get("documents", []):
+                fields = document.get("fields", {})
+                value = lambda name: fields.get(name, {}).get("stringValue", "")
+                if value("organization_id") != organization_id:
+                    continue
+                created = float(value("created_at") or 0)
+                finished = float(value("finished_at") or 0)
+                events.append({
+                    "status": value("status"),
+                    "created_at": created,
+                    "finished_at": finished,
+                    "duration_seconds": max(0, finished - created) if finished else 0,
+                    "pages": int(value("pages") or 0),
+                })
+            page_token = payload.get("nextPageToken", "")
+            if not page_token:
+                break
+        return events
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Usage read failed for %s: %s", organization_id, exc)
+        return []
+
+
+def _record_usage(job_id: str, job: dict) -> None:
+    event = {
+        "audit_id": job_id,
+        "organization_id": job.get("organization_id"),
+        "url": job.get("url"),
+        "status": job.get("status"),
+        "created_at": job.get("created_at"),
+        "finished_at": job.get("finished_at"),
+        "duration_seconds": round((job.get("finished_at") or time.time()) - job.get("created_at", time.time()), 1),
+        "pages": len((job.get("result") or {}).get("page_audits") or []),
+    }
+    _USAGE_MEMORY.append(event)
+    if len(_USAGE_MEMORY) > 5000:
+        del _USAGE_MEMORY[:1000]
+
+
+def _save_batch_firestore(batch_id: str, batch: dict) -> bool:
+    if not FIRESTORE_PROJECT:
+        return False
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"}, timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        response = requests.patch(
+            f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/audit_batches/{batch_id}",
+            headers={"Authorization": f"Bearer {token}", "Content-Type": "application/json"},
+            json={"fields": {
+                "organization_id": {"stringValue": batch["organization_id"]},
+                "audit_ids_json": {"stringValue": json.dumps(batch["audit_ids"])},
+                "created_at": {"stringValue": str(batch["created_at"])},
+            }}, timeout=15,
+        )
+        return response.status_code == 200
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Audit batch persistence failed for %s: %s", batch_id, exc)
+        return False
+
+
+def _load_batch_firestore(batch_id: str) -> dict | None:
+    if not FIRESTORE_PROJECT:
+        return None
+    try:
+        tok_r = requests.get(
+            "http://metadata.google.internal/computeMetadata/v1/instance/service-accounts/default/token",
+            headers={"Metadata-Flavor": "Google"}, timeout=5,
+        )
+        token = tok_r.json()["access_token"]
+        response = requests.get(
+            f"https://firestore.googleapis.com/v1/projects/{FIRESTORE_PROJECT}/databases/(default)/documents/audit_batches/{batch_id}",
+            headers={"Authorization": f"Bearer {token}"}, timeout=15,
+        )
+        if response.status_code != 200:
+            return None
+        fields = response.json().get("fields", {})
+        return {
+            "organization_id": fields.get("organization_id", {}).get("stringValue", ""),
+            "audit_ids": json.loads(fields.get("audit_ids_json", {}).get("stringValue", "[]")),
+            "created_at": float(fields.get("created_at", {}).get("stringValue", "0") or 0),
+        }
+    except Exception as exc:  # noqa: BLE001
+        logger.warning("Audit batch load failed for %s: %s", batch_id, exc)
+        return None
 
 
 def _prune_audit_jobs():
@@ -6117,40 +6430,60 @@ def _consume_audit_job(
 ):
     """Konsumuje generator audit_stream w wątku i aktualizuje stan joba."""
     job = _AUDIT_JOBS[job_id]
-    try:
-        for chunk in audit_stream(url, picks, organization_id=organization_id):
-            line = chunk.strip()
-            if not line.startswith("data:"):
-                continue
-            try:
-                payload = json.loads(line[len("data:"):].strip())
-            except Exception:
-                continue
-            step = payload.get("step")
-            if step == "progress":
-                job["pct"] = payload.get("pct")
-                job["message"] = payload.get("message", "")
-            elif step == "done":
-                job["result"] = payload.get("result")
-                job["pct"] = 100
-            elif step == "error":
-                job["error"] = payload.get("message", "Błąd audytu")
-        if not job.get("error") and job.get("result") is None:
-            job["error"] = "Audyt zakończony bez wyniku."
-        job["status"] = "error" if job.get("error") else "done"
-    except Exception as e:  # noqa: BLE001
-        job["error"] = str(e)
-        job["status"] = "error"
-    finally:
-        job["finished_at"] = time.time()
+    with _AUDIT_SEMAPHORE:
+        job["status"] = "running"
+        job["message"] = "Start audytu..."
+        _save_audit_job_firestore(job_id, job)
+        try:
+            for chunk in audit_stream(url, picks, organization_id=organization_id):
+                line = chunk.strip()
+                if not line.startswith("data:"):
+                    continue
+                try:
+                    payload = json.loads(line[len("data:"):].strip())
+                except Exception:
+                    continue
+                step = payload.get("step")
+                if step == "progress":
+                    job["pct"] = payload.get("pct")
+                    job["message"] = payload.get("message", "")
+                    _save_audit_job_firestore(job_id, job)
+                elif step == "done":
+                    job["result"] = payload.get("result")
+                    job["pct"] = 100
+                elif step == "error":
+                    job["error"] = payload.get("message", "Błąd audytu")
+            if not job.get("error") and job.get("result") is None:
+                job["error"] = "Audyt zakończony bez wyniku."
+            job["status"] = "error" if job.get("error") else "done"
+        except Exception as e:  # noqa: BLE001
+            job["error"] = str(e)
+            job["status"] = "error"
+        finally:
+            job["finished_at"] = time.time()
+            if job.get("result"):
+                job["result_key"] = (
+                    _organization_report_key(organization_id, job.get("url", ""))
+                    if organization_id else _report_key(job.get("url", ""))
+                )
+            _save_audit_job_firestore(job_id, job)
+            _record_usage(job_id, job)
 
 
-@app.get("/audit/start")
-async def audit_start(url: str, picks: str = "", organization_id: str | None = None):
+async def _start_audit(
+    url: str,
+    picks: str = "",
+    organization_id: str | None = None,
+    requested_job_id: str | None = None,
+):
     """Startuje audyt w tle. Zwraca {job_id} natychmiast (bez czekania)."""
     url = normalize_input_url(url)
     if not url:
         raise HTTPException(status_code=400, detail="Invalid URL or domain")
+    try:
+        url = await run_in_threadpool(_validate_public_http_url, url)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
     parsed_picks: list[dict] | None = None
     if picks:
         try:
@@ -6159,8 +6492,35 @@ async def audit_start(url: str, picks: str = "", organization_id: str | None = N
                 parsed_picks = None
         except Exception:
             parsed_picks = None
+    if parsed_picks:
+        safe_picks = []
+        for pick in parsed_picks[:MAX_AUDIT_PAGES]:
+            if not isinstance(pick, dict) or not pick.get("url"):
+                continue
+            try:
+                pick_url = await run_in_threadpool(_validate_public_http_url, str(pick["url"]))
+            except ValueError as exc:
+                raise HTTPException(status_code=400, detail=f"Invalid picked URL: {exc}") from exc
+            if not _same_registrable_domain(pick_url, url):
+                raise HTTPException(status_code=400, detail="Picked URLs must belong to the audited domain")
+            safe_picks.append({**pick, "url": pick_url})
+        parsed_picks = safe_picks or None
     _prune_audit_jobs()
-    job_id = uuid.uuid4().hex
+    if organization_id is None:
+        active_legacy = sum(
+            1 for job in _AUDIT_JOBS.values()
+            if not job.get("organization_id") and job.get("status") in ("queued", "running")
+        )
+        if active_legacy >= LEGACY_MAX_ACTIVE:
+            raise HTTPException(status_code=429, detail="Public audit queue is busy. Try again later.")
+    job_id = requested_job_id or uuid.uuid4().hex
+    existing = _AUDIT_JOBS.get(job_id) or _load_audit_job_firestore(job_id)
+    if existing is not None:
+        if organization_id and existing.get("organization_id") != organization_id:
+            raise HTTPException(status_code=409, detail="Idempotency key conflict")
+        with _AUDIT_JOBS_LOCK:
+            _AUDIT_JOBS[job_id] = existing
+        return {"job_id": job_id, "status": existing.get("status", "queued"), "url": existing.get("url", url)}
     # Predefiniowany raport — zwracamy gotowy wynik natychmiast (job od razu 'done').
     fixed = fixed_report_for(url)
     if fixed is not None:
@@ -6173,26 +6533,36 @@ async def audit_start(url: str, picks: str = "", organization_id: str | None = N
             "error": None,
             "url": url,
             "organization_id": organization_id,
+            "picks": parsed_picks or [],
             "created_at": now,
             "finished_at": now,
         }
+        _save_audit_job_firestore(job_id, _AUDIT_JOBS[job_id])
+        _record_usage(job_id, _AUDIT_JOBS[job_id])
         return {"job_id": job_id, "status": "running", "url": url}
     _AUDIT_JOBS[job_id] = {
-        "status": "running",
+        "status": "queued",
         "pct": 0,
-        "message": "Start audytu...",
+        "message": "Audyt oczekuje w kolejce...",
         "result": None,
         "error": None,
         "url": url,
         "organization_id": organization_id,
+        "picks": parsed_picks or [],
         "created_at": time.time(),
     }
+    _save_audit_job_firestore(job_id, _AUDIT_JOBS[job_id])
     threading.Thread(
         target=_consume_audit_job,
         args=(job_id, url, parsed_picks, organization_id),
         daemon=True,
     ).start()
     return {"job_id": job_id, "status": "running", "url": url}
+
+
+@app.get("/audit/start")
+async def audit_start(url: str, picks: str = ""):
+    return await _start_audit(url, picks)
 
 
 @app.get("/audit/result")
@@ -6204,7 +6574,7 @@ async def audit_result(job_id: str, fields: str = ""):
     ma limit rozmiaru odpowiedzi.
     """
     job = _AUDIT_JOBS.get(job_id)
-    if not job:
+    if not job or job.get("organization_id"):
         raise HTTPException(status_code=404, detail="Unknown job_id")
     resp = {
         "job_id": job_id,
@@ -6236,11 +6606,29 @@ def _public_audit_status(status_value: str) -> str:
 
 def _v1_job_or_404(audit_id: str, principal: ApiPrincipal) -> dict:
     job = _AUDIT_JOBS.get(audit_id)
+    if job is None:
+        job = _load_audit_job_firestore(audit_id)
+        if job is not None:
+            with _AUDIT_JOBS_LOCK:
+                _AUDIT_JOBS[audit_id] = job
     if not job or job.get("organization_id") != principal.organization_id:
         raise HTTPException(
             status_code=404,
             detail={"code": "audit_not_found", "message": "Audit not found"},
         )
+    if (
+        job.get("status") in ("queued", "running")
+        and time.time() - job.get("updated_at", job.get("created_at", 0)) > 900
+        and not job.get("recovery_started")
+    ):
+        job["recovery_started"] = True
+        job["status"] = "queued"
+        job["message"] = "Wznowienie audytu po przerwaniu instancji..."
+        threading.Thread(
+            target=_consume_audit_job,
+            args=(audit_id, job.get("url", ""), job.get("picks") or None, job.get("organization_id")),
+            daemon=True,
+        ).start()
     return job
 
 
@@ -6284,6 +6672,7 @@ _V1_ERROR_RESPONSES = {
 async def v1_create_audit(
     payload: AuditCreateRequest,
     principal: ApiPrincipal = Depends(require_scope("audits:create")),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
 ):
     normalized = normalize_input_url(payload.domain)
     if not normalized:
@@ -6291,10 +6680,37 @@ async def v1_create_audit(
             status_code=400,
             detail={"code": "invalid_domain", "message": "Invalid domain or URL"},
         )
+    try:
+        normalized = await run_in_threadpool(_validate_public_http_url, normalized)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "invalid_target", "message": str(exc)},
+        ) from exc
     picks = ""
     if payload.picks:
         picks = json.dumps([pick.model_dump(exclude_none=True) for pick in payload.picks])
-    started = await audit_start(normalized, picks, organization_id=principal.organization_id)
+    requested_job_id = None
+    if idempotency_key:
+        if not 8 <= len(idempotency_key) <= 128:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "invalid_idempotency_key", "message": "Idempotency-Key must contain 8–128 characters"},
+            )
+        requested_job_id = uuid.uuid5(
+            uuid.NAMESPACE_URL, f"kopernik:{principal.organization_id}:{idempotency_key}"
+        ).hex
+    started = await _start_audit(
+        normalized,
+        picks,
+        organization_id=principal.organization_id,
+        requested_job_id=requested_job_id,
+    )
+    if started.get("url") != normalized:
+        raise HTTPException(
+            status_code=409,
+            detail={"code": "idempotency_conflict", "message": "Idempotency-Key was already used with another domain"},
+        )
     audit_id = started["job_id"]
     job = _AUDIT_JOBS[audit_id]
     return {
@@ -6304,6 +6720,109 @@ async def v1_create_audit(
         "url": normalized,
         "schema_version": API_SCHEMA_VERSION,
     }
+
+
+def _batch_response(batch_id: str, batch: dict, principal: ApiPrincipal) -> dict:
+    if batch.get("organization_id") != principal.organization_id:
+        raise HTTPException(
+            status_code=404,
+            detail={"code": "batch_not_found", "message": "Batch not found"},
+        )
+    items = []
+    counts = {"queued": 0, "running": 0, "completed": 0, "failed": 0}
+    for audit_id in batch.get("audit_ids", []):
+        job = _v1_job_or_404(audit_id, principal)
+        public_status = _public_audit_status(job.get("status", "queued"))
+        counts[public_status] = counts.get(public_status, 0) + 1
+        items.append({"audit_id": audit_id, "url": job.get("url", ""), "status": public_status})
+    total = len(items)
+    if counts["failed"] and counts["completed"] + counts["failed"] == total:
+        status_value = "completed_with_errors"
+    elif counts["completed"] == total:
+        status_value = "completed"
+    elif counts["running"]:
+        status_value = "running"
+    else:
+        status_value = "queued"
+    return {
+        "batch_id": batch_id,
+        "status": status_value,
+        "total": total,
+        **counts,
+        "audits": items,
+        "schema_version": API_SCHEMA_VERSION,
+    }
+
+
+@v1.post(
+    "/batches",
+    response_model=AuditBatchResponse,
+    status_code=202,
+    summary="Start a batch of up to 100 audits",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_create_batch(
+    payload: AuditBatchCreateRequest,
+    principal: ApiPrincipal = Depends(require_scope("audits:create")),
+    idempotency_key: str | None = Header(default=None, alias="Idempotency-Key"),
+):
+    unique_domains = list(dict.fromkeys(domain.strip() for domain in payload.domains if domain.strip()))
+    if not unique_domains:
+        raise HTTPException(status_code=400, detail={"code": "empty_batch", "message": "No domains supplied"})
+    if idempotency_key and not 8 <= len(idempotency_key) <= 128:
+        raise HTTPException(
+            status_code=400,
+            detail={"code": "invalid_idempotency_key", "message": "Idempotency-Key must contain 8–128 characters"},
+        )
+    seed = idempotency_key or uuid.uuid4().hex
+    batch_id = uuid.uuid5(uuid.NAMESPACE_URL, f"kopernik-batch:{principal.organization_id}:{seed}").hex
+    existing = _BATCHES.get(batch_id) or await run_in_threadpool(_load_batch_firestore, batch_id)
+    if existing:
+        _BATCHES[batch_id] = existing
+        return _batch_response(batch_id, existing, principal)
+
+    audit_ids = []
+    for index, domain in enumerate(unique_domains):
+        normalized = normalize_input_url(domain)
+        if not normalized:
+            raise HTTPException(
+                status_code=400,
+                detail={"code": "invalid_domain", "message": f"Invalid domain or URL: {domain}"},
+            )
+        audit_id = uuid.uuid5(
+            uuid.NAMESPACE_URL, f"{batch_id}:{index}:{normalized}"
+        ).hex
+        started = await _start_audit(
+            normalized,
+            organization_id=principal.organization_id,
+            requested_job_id=audit_id,
+        )
+        audit_ids.append(started["job_id"])
+    batch = {
+        "organization_id": principal.organization_id,
+        "audit_ids": audit_ids,
+        "created_at": time.time(),
+    }
+    _BATCHES[batch_id] = batch
+    await run_in_threadpool(_save_batch_firestore, batch_id, batch)
+    return _batch_response(batch_id, batch, principal)
+
+
+@v1.get(
+    "/batches/{batch_id}",
+    response_model=AuditBatchResponse,
+    summary="Get batch status",
+    responses=_V1_ERROR_RESPONSES,
+)
+async def v1_get_batch(
+    batch_id: str,
+    principal: ApiPrincipal = Depends(require_scope("audits:read")),
+):
+    batch = _BATCHES.get(batch_id) or await run_in_threadpool(_load_batch_firestore, batch_id)
+    if not batch:
+        raise HTTPException(status_code=404, detail={"code": "batch_not_found", "message": "Batch not found"})
+    _BATCHES[batch_id] = batch
+    return _batch_response(batch_id, batch, principal)
 
 
 @v1.get(
@@ -6424,6 +6943,10 @@ async def v1_capabilities(
             "summary": True,
             "paginated_findings": True,
             "paginated_pages": True,
+            "batch_audits": True,
+            "batch_max_domains": 100,
+            "idempotency": True,
+            "usage_reporting": True,
         },
     }
 
@@ -6431,6 +6954,27 @@ async def v1_capabilities(
 @v1.get("/me", response_model=ApiIdentityResponse, summary="Get current API identity")
 async def v1_identity(principal: ApiPrincipal = Depends(get_api_principal)):
     return principal
+
+
+@v1.get("/usage", response_model=UsageResponse, summary="Get organization audit usage")
+async def v1_usage(principal: ApiPrincipal = Depends(require_scope("usage:read"))):
+    events = await run_in_threadpool(_usage_events_firestore, principal.organization_id)
+    if not events:
+        events = [
+            event for event in _USAGE_MEMORY
+            if event.get("organization_id") == principal.organization_id
+        ]
+    completed = sum(1 for event in events if event.get("status") == "done")
+    failed = sum(1 for event in events if event.get("status") == "error")
+    durations = [float(event.get("duration_seconds") or 0) for event in events if event.get("finished_at")]
+    return {
+        "organization_id": principal.organization_id,
+        "total_audits": len(events),
+        "completed": completed,
+        "failed": failed,
+        "total_pages": sum(int(event.get("pages") or 0) for event in events),
+        "average_duration_seconds": round(sum(durations) / len(durations), 1) if durations else 0,
+    }
 
 
 @app.get("/report")
@@ -6446,6 +6990,8 @@ async def get_report(domain: str = "", url: str = "", fields: str = ""):
     key_src = domain or url
     if not key_src:
         raise HTTPException(status_code=400, detail="Podaj parametr 'domain' lub 'url'")
+    if _report_key(key_src).startswith("__org__"):
+        raise HTTPException(status_code=404, detail="Report not found")
 
     def _slim(result: dict) -> dict:
         if fields and isinstance(result, dict):

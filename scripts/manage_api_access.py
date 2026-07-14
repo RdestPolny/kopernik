@@ -167,7 +167,7 @@ def main() -> None:
     create.add_argument("--organization", dest="organization_id", required=True)
     create.add_argument("--name", required=True)
     create.add_argument("--environment", choices=("live", "test"), default="live")
-    create.add_argument("--scopes", default="audits:create,audits:read")
+    create.add_argument("--scopes", default="audits:create,audits:read,usage:read")
     create.add_argument("--expires-at", default="", help="ISO-8601 timestamp")
     create.set_defaults(handler=create_key)
 
